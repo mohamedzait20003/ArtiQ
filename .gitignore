@@ -1,0 +1,86 @@
+# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# Frontend
+
+# Compiled output
+/frontend/dist
+/frontend/tmp
+/frontend/out-tsc
+/frontend/bazel-out
+
+# Node
+/frontend/node_modules
+npm-debug.log
+yarn-error.log
+
+# Miscellaneous
+/frontend/.angular/cache
+.sass-cache/
+/frontend/connect.lock
+/frontend/coverage
+/frontend/libpeerconnection.log
+testem.log
+/frontend/typings
+__screenshots__/
+
+# Backend / Python
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+backend/.vscode/
+.history/*
+
+# System files
+.DS_Store
+Thumbs.db
