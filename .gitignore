@@ -64,6 +64,12 @@ ENV/
 env.bak/
 venv.bak/
 
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
 # IDEs and editors
 .idea/
 .project
