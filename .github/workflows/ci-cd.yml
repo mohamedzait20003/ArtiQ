@@ -180,6 +180,19 @@ jobs:
         cd backend/services/lambda-service
         sam build --use-container
     
+    - name: Check and delete failed stack
+      run: |
+        STACK_STATUS=$(aws cloudformation describe-stacks --stack-name ml-models-lambda-stack --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+        if [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ]; then
+          echo "Stack is in ROLLBACK_COMPLETE state. Deleting..."
+          aws cloudformation delete-stack --stack-name ml-models-lambda-stack --region us-east-2
+          aws cloudformation wait stack-delete-complete --stack-name ml-models-lambda-stack --region us-east-2
+          echo "Stack deleted successfully."
+        else
+          echo "Stack status: $STACK_STATUS"
+        fi
+      continue-on-error: true
+    
     - name: Deploy Lambda with API Gateway
       run: |
         cd backend/services/lambda-service
