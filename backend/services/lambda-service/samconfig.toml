@@ -1,0 +1,11 @@
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "ml-models-lambda-stack"
+s3_bucket = ""
+s3_prefix = "ml-models-lambda"
+region = "us-east-2"
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = ""
+image_repositories = []
