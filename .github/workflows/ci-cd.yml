@@ -7,8 +7,8 @@ on:
     branches: [ main, develop, model-eval ]
 
 jobs:
-  backend:
-    name: Backend CI/CD
+  lambda-service:
+    name: Lambda Service CI/CD
     runs-on: ubuntu-latest
     
     steps:
@@ -23,13 +23,13 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+        key: ${{ runner.os }}-pip-lambda-${{ hashFiles('backend/services/lambda-service/requirements.txt') }}
         restore-keys: |
-          ${{ runner.os }}-pip-
+          ${{ runner.os }}-pip-lambda-
     
     - name: Install dependencies
       run: |
-        cd backend
+        cd backend/services/lambda-service
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
@@ -41,7 +41,40 @@ jobs:
     
     - name: Lint with flake8
       run: |
-        cd backend
+        cd backend/services/lambda-service
+        pip install flake8
+        flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+  fargate-service:
+    name: Fargate Service CI/CD
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Cache Python dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-fargate-${{ hashFiles('backend/services/fargate-service/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-fargate-
+    
+    - name: Install dependencies
+      run: |
+        cd backend/services/fargate-service
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Lint with flake8
+      run: |
+        cd backend/services/fargate-service
         pip install flake8
         flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
@@ -81,10 +114,11 @@ jobs:
         cd frontend
         npm run test -- --watch=false --browsers=ChromeHeadless
 
-  fargate-image:
+  build-fargate-image:
     name: Build & Push Fargate Image
     runs-on: ubuntu-latest
-    needs: backend   # wait for backend CI to finish first
+    needs: fargate-service
+    if: github.ref == 'refs/heads/main'
 
     steps:
     - uses: actions/checkout@v3
@@ -103,9 +137,11 @@ jobs:
     - name: Build, tag, and push image to ECR
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: model_eval_fargate
-        IMAGE_TAG: latest
+        ECR_REPOSITORY: fargate-service
+        IMAGE_TAG: ${{ github.sha }}
       run: |
-        cd backend/fargate_task
+        cd backend/services/fargate-service
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
