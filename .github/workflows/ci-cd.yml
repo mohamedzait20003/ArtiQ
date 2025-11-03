@@ -178,12 +178,18 @@ jobs:
     - name: Build Lambda function
       run: |
         cd backend/services/lambda-service
-        sam build
+        sam build --use-container
     
     - name: Deploy Lambda with API Gateway
       run: |
         cd backend/services/lambda-service
-        sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --stack-name ml-models-lambda-stack --capabilities CAPABILITY_IAM --region us-east-2
+        sam deploy \
+          --no-confirm-changeset \
+          --no-fail-on-empty-changeset \
+          --stack-name ml-models-lambda-stack \
+          --capabilities CAPABILITY_IAM \
+          --region us-east-2 \
+          --resolve-s3
     
     - name: Get API Gateway URL
       run: |
