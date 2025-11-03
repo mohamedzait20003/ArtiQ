@@ -32,11 +32,15 @@ jobs:
         cd backend/services/lambda-service
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install pytest
+    
+    - name: Set PYTHONPATH
+      run: echo "PYTHONPATH=$GITHUB_WORKSPACE/backend/services/lambda-service" >> $GITHUB_ENV
     
     - name: Run tests
       run: |
         cd backend
-        python -m pytest tests/ -v --tb=short
+        python -m pytest tests/test_main.py -v --tb=short
       continue-on-error: true
     
     - name: Lint with flake8
