@@ -15,7 +15,8 @@ artifact_controller = ArtifactController()
 
 # Register routers
 app.include_router(auth_controller.get_router(), prefix="/auth", tags=["auth"])
-app.include_router(artifact_controller.get_router(), prefix="/api", tags=["artifacts"])
+app.include_router(artifact_controller.get_router(), prefix="/api", 
+                   tags=["artifacts"])
 
 
 # AWS Lambda handler
