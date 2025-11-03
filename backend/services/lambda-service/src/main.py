@@ -4,8 +4,7 @@ from mangum import Mangum
 from src.controllers import AuthController
 from src.controllers.artifact_controller import ArtifactController
 
-# Set AWS region from environment variable (fallback to us-east-2)
-os.environ.setdefault("AWS_DEFAULT_REGION", "us-east-2")
+os.environ.setdefault("AWS_REGION", "us-east-2")
 
 app = FastAPI(title="Serverless FastAPI", version="0.1.0")
 

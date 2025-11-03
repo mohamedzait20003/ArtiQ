@@ -15,9 +15,6 @@ Resources:
       FunctionName: ml-models-lambda-api
       CodeUri: .
       Handler: src.main.handler
-      Environment:
-        Variables:
-          AWS_DEFAULT_REGION: us-east-2
       Policies:
         - DynamoDBCrudPolicy:
             TableName: Users
