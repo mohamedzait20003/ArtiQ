@@ -1,5 +1,6 @@
 import hashlib
 from .Model import Model
+from .Role_Model import Role_Model
 from typing import Optional
 
 
@@ -12,6 +13,7 @@ class Auth_Model(Model):
     - Name: User's display name
     - Email (Unique, Indexed): User's email address
     - Password: Hashed password for authentication
+    - RoleID: ID of the role assigned to this user (one role per user)
     """
 
     table_name: str = "Users"
@@ -24,6 +26,7 @@ class Auth_Model(Model):
         Name: str,
         Email: str,
         Password: str,
+        RoleID: Optional[str] = None,
         **kwargs
     ):
         """
@@ -34,11 +37,13 @@ class Auth_Model(Model):
             Name: User's display name
             Email: User's email (should be unique and indexed in DynamoDB)
             Password: User's hashed password
+            RoleID: Role ID assigned to this user
         """
         self.ID = ID
         self.Name = Name
         self.Email = Email
         self.Password = Password
+        self.RoleID = RoleID
 
         super().__init__(**kwargs)
 
@@ -65,6 +70,57 @@ class Auth_Model(Model):
         is_correct_length = len(password) == 64
         is_hex = all(c in '0123456789abcdef' for c in password.lower())
         return is_correct_length and is_hex
+
+    def assign_role(self, role_id: str) -> bool:
+        """
+        Assign a role to this user
+
+        Args:
+            role_id: The role ID to assign
+
+        Returns:
+            True if successful, False otherwise
+        """
+        self.RoleID = role_id
+        return self.save()
+
+    def get_role(self) -> Optional[Role_Model]:
+        """
+        Get the role assigned to this user
+
+        Returns:
+            Role_Model instance if user has a role, None otherwise
+        """
+        if self.RoleID:
+            return Role_Model.get({"RoleID": self.RoleID})
+        return None
+
+    def has_permission(self, permission_title: str) -> bool:
+        """
+        Check if user has a specific permission through their role
+
+        Args:
+            permission_title: Title of the permission to check
+
+        Returns:
+            True if user has permission, False otherwise
+        """
+        role = self.get_role()
+        if role:
+            return role.has_permission(permission_title)
+        return False
+
+    def get_permissions(self) -> list:
+        """
+        Get all permissions for this user through their role
+
+        Returns:
+            List of Permission_Model instances
+        """
+        role = self.get_role()
+        if role:
+            return role.get_permissions()
+        return []
 
     @classmethod
     def check_user(cls, email: str, password: str) -> Optional['Auth_Model']:
