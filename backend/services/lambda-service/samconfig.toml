@@ -9,5 +9,4 @@ s3_prefix = "ml-models-lambda"
 region = "us-east-2"
 confirm_changeset = false
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = ""
 image_repositories = []
