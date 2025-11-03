@@ -2,7 +2,9 @@ import sys
 import os
 
 # Add lambda-service to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../services/lambda-service'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__),
+                                '../services/lambda-service'))
+
 
 from src.main import app
 from fastapi.testclient import TestClient
@@ -26,7 +28,7 @@ def test_register_user():
             "password": "testpassword123"
         }
     )
-    assert response.status_code in [201, 500]  # 201 success or 500 if DynamoDB not available
+    assert response.status_code in [201, 500]
 
 
 def test_register_missing_fields():
