@@ -34,14 +34,10 @@ jobs:
         pip install -r requirements.txt
         pip install pytest
     
-    - name: Set PYTHONPATH
-      run: echo "PYTHONPATH=$GITHUB_WORKSPACE/backend/services/lambda-service" >> $GITHUB_ENV
-    
     - name: Run tests
       run: |
-        cd backend
-        python -m pytest tests/test_main.py -v --tb=short
-      continue-on-error: true
+        cd backend/services/lambda-service
+        python -m pytest tests/test_lambda_service.py -v --tb=short
     
     - name: Lint with flake8
       run: |
