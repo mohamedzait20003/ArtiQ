@@ -12,9 +12,14 @@ app = FastAPI(title="Serverless FastAPI", version="0.1.0")
 auth_controller = AuthController()
 artifact_controller = ArtifactController()
 
+# Health endpoint
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
 # Register routers
-app.include_router(auth_controller.get_router(), prefix="/auth", tags=["auth"])
-app.include_router(artifact_controller.get_router(), prefix="/api",
+app.include_router(auth_controller.get_router(), prefix="", tags=["auth"])
+app.include_router(artifact_controller.get_router(), prefix="",
                    tags=["artifacts"])
 
 
