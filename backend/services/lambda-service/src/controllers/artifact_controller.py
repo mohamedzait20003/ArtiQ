@@ -1,9 +1,34 @@
 import uuid
 import json
-from typing import Optional
+from typing import Optional, List
 from .controller import Controller
-from src.models.ML_Model import ML_Model
-from fastapi import HTTPException, status, UploadFile, File, Form
+from src.models.Artifact_Model import Artifact_Model
+from fastapi import HTTPException, status, Query, Path, Body
+from pydantic import BaseModel
+
+
+# Pydantic models for request/response schemas
+class ArtifactQuery(BaseModel):
+    name: str
+    types: Optional[List[str]] = None
+
+class ArtifactData(BaseModel):
+    url: str
+
+class ArtifactMetadata(BaseModel):
+    name: str
+    id: str
+    artifact_type: str
+
+class Artifact(BaseModel):
+    metadata: ArtifactMetadata
+    data: ArtifactData
+
+class ArtifactRegEx(BaseModel):
+    regex: str
+
+class SimpleLicenseCheckRequest(BaseModel):
+    github_url: str
 
 
 class ArtifactController(Controller):
@@ -15,202 +40,126 @@ class ArtifactController(Controller):
     def register_routes(self):
         """Register artifact routes"""
 
-        @self.router.post("/models/upload",
-                          status_code=status.HTTP_201_CREATED)
-        async def upload_model(
-            title: str = Form(...),
-            model_file: UploadFile = File(...),
-            metadata: Optional[str] = Form(None)
+        @self.router.post("/artifacts", 
+                         status_code=status.HTTP_200_OK,
+                         response_model=List[ArtifactMetadata])
+        async def artifacts_list(
+            queries: List[ArtifactQuery],
+            offset: Optional[str] = Query(None, description="Pagination offset")
         ):
-            """
-            Upload a new ML model with artifact
+            """Get the artifacts from the registry (BASELINE)"""
+            # TODO: Implement logic
+            raise HTTPException(status_code=501, detail="Not implemented")
 
-            Args:
-                title: Model title
-                model_file: Binary model file (pickle, h5, pt, etc.)
-                metadata: JSON string of model metadata (optional)
+        @self.router.post("/artifact/{artifact_type}",
+                         status_code=status.HTTP_201_CREATED,
+                         response_model=Artifact)
+        async def artifact_create(
+            artifact_type: str = Path(..., description="Type of artifact being ingested"),
+            artifact_data: ArtifactData = Body(...)
+        ):
+            """Register a new artifact (BASELINE)"""
+            # TODO: Implement logic
+            raise HTTPException(status_code=501, detail="Not implemented")
 
-            Returns:
-                Success message with model ID
+        @self.router.get("/artifacts/{artifact_type}/{id}",
+                        status_code=status.HTTP_200_OK,
+                        response_model=Artifact)
+        async def artifact_retrieve(
+            artifact_type: str = Path(..., description="Type of artifact to fetch"),
+            id: str = Path(..., description="ID of artifact to fetch")
+        ):
+            """Interact with the artifact with this id (BASELINE)"""
+            # TODO: Implement logic
+            raise HTTPException(status_code=501, detail="Not implemented")
 
-            Raises:
-                HTTPException: If upload fails
-            """
-            # Read the uploaded file
-            model_artifact = await model_file.read()
+        @self.router.put("/artifacts/{artifact_type}/{id}",
+                        status_code=status.HTTP_200_OK)
+        async def artifact_update(
+            artifact_type: str = Path(..., description="Type of artifact to update"),
+            id: str = Path(..., description="Artifact ID"),
+            artifact: Artifact = Body(...)
+        ):
+            """Update this content of the artifact (BASELINE)"""
+            # TODO: Implement logic
+            raise HTTPException(status_code=501, detail="Not implemented")
 
-            # Parse JSON strings
-            metadata_dict = json.loads(metadata) if metadata else {}
+        @self.router.delete("/artifacts/{artifact_type}/{id}",
+                           status_code=status.HTTP_200_OK)
+        async def artifact_delete(
+            artifact_type: str = Path(..., description="Type of artifact to delete"),
+            id: str = Path(..., description="Artifact ID")
+        ):
+            """Delete this artifact (NON-BASELINE)"""
+            # TODO: Implement logic
+            raise HTTPException(status_code=501, detail="Not implemented")
 
-            # Create ML model
-            model = ML_Model(
-                ModelID=str(uuid.uuid4()),
-                Title=title,
-                Metadata=metadata_dict,
-                ModelArtifact=model_artifact
-            )
+        @self.router.get("/artifact/model/{id}/rate",
+                        status_code=status.HTTP_200_OK)
+        async def model_artifact_rate(
+            id: str = Path(..., description="Artifact ID")
+        ):
+            """Get ratings for this model artifact (BASELINE)"""
+            # TODO: Implement logic
+            raise HTTPException(status_code=501, detail="Not implemented")
 
-            if model.save():
-                return {
-                    "message": "Model uploaded successfully",
-                    "model_id": model.ModelID,
-                    "s3_key": model.ModelArtifact_s3_key
-                }
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Failed to upload model"
-                )
+        @self.router.get("/artifact/{artifact_type}/{id}/cost",
+                        status_code=status.HTTP_200_OK)
+        async def artifact_cost(
+            artifact_type: str = Path(..., description="Type of artifact"),
+            id: str = Path(..., description="Artifact ID"),
+            dependency: Optional[bool] = Query(False, description="Include dependencies")
+        ):
+            """Get the cost of an artifact (BASELINE)"""
+            # TODO: Implement logic
+            raise HTTPException(status_code=501, detail="Not implemented")
 
-        @self.router.get("/models/{model_id}")
-        async def get_model(model_id: str):
-            """
-            Get model metadata by ID
+        @self.router.get("/artifact/byName/{name}",
+                        status_code=status.HTTP_200_OK,
+                        response_model=List[ArtifactMetadata])
+        async def artifact_by_name_get(
+            name: str = Path(..., description="Artifact name")
+        ):
+            """List artifact metadata for this name (NON-BASELINE)"""
+            # TODO: Implement logic
+            raise HTTPException(status_code=501, detail="Not implemented")
 
-            Args:
-                model_id: The model ID
+        @self.router.get("/artifact/{artifact_type}/{id}/audit",
+                        status_code=status.HTTP_200_OK)
+        async def artifact_audit_get(
+            artifact_type: str = Path(..., description="Type of artifact to audit"),
+            id: str = Path(..., description="Artifact ID")
+        ):
+            """Retrieve audit entries for this artifact (NON-BASELINE)"""
+            # TODO: Implement logic
+            raise HTTPException(status_code=501, detail="Not implemented")
 
-            Returns:
-                Model metadata (without binary artifact)
+        @self.router.get("/artifact/model/{id}/lineage",
+                        status_code=status.HTTP_200_OK)
+        async def artifact_lineage_get(
+            id: str = Path(..., description="Artifact ID")
+        ):
+            """Retrieve the lineage graph for this artifact (BASELINE)"""
+            # TODO: Implement logic
+            raise HTTPException(status_code=501, detail="Not implemented")
 
-            Raises:
-                HTTPException: If model not found
-            """
-            model = ML_Model.get({"ModelID": model_id})
-            if not model:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Model not found"
-                )
+        @self.router.post("/artifact/model/{id}/license-check",
+                         status_code=status.HTTP_200_OK,
+                         response_model=bool)
+        async def artifact_license_check(
+            id: str = Path(..., description="Artifact ID"),
+            request: SimpleLicenseCheckRequest = Body(...)
+        ):
+            """Assess license compatibility for fine-tune and inference usage (BASELINE)"""
+            # TODO: Implement logic
+            raise HTTPException(status_code=501, detail="Not implemented")
 
-            return model.to_dict()
-
-        @self.router.get("/models/{model_id}/download")
-        async def get_model_download_url(model_id: str):
-            """
-            Get presigned URL to download model artifact
-
-            Args:
-                model_id: The model ID
-
-            Returns:
-                Presigned URL for downloading the model artifact
-
-            Raises:
-                HTTPException: If model not found
-            """
-            model = ML_Model.get({"ModelID": model_id})
-            if not model:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Model not found"
-                )
-
-            url = model.get_file_url("ModelArtifact", expires_in=3600)
-            if not url:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Failed to generate download URL"
-                )
-
-            return {"download_url": url, "expires_in": 3600}
-
-        @self.router.get("/models")
-        async def list_models():
-            """
-            List all ML models
-
-            Returns:
-                List of model metadata
-            """
-            models = ML_Model.list_all()
-            return [model.to_dict() for model in models]
-
-        @self.router.put("/models/{model_id}/evaluation")
-        async def update_evaluation(model_id: str, metrics: dict):
-            """
-            Update model evaluation metrics
-
-            Args:
-                model_id: The model ID
-                metrics: Dictionary of evaluation metrics
-
-            Returns:
-                Success message
-
-            Raises:
-                HTTPException: If model not found or update fails
-            """
-            model = ML_Model.get({"ModelID": model_id})
-            if not model:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Model not found"
-                )
-
-            if model.update_evaluation(metrics):
-                return {"message": "Evaluation updated successfully"}
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Failed to update evaluation"
-                )
-
-        @self.router.put("/models/{model_id}/metadata")
-        async def update_metadata(model_id: str, metadata: dict):
-            """
-            Update model metadata
-
-            Args:
-                model_id: The model ID
-                metadata: Dictionary of metadata fields
-
-            Returns:
-                Success message
-
-            Raises:
-                HTTPException: If model not found or update fails
-            """
-            model = ML_Model.get({"ModelID": model_id})
-            if not model:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Model not found"
-                )
-
-            if model.update_metadata(metadata):
-                return {"message": "Metadata updated successfully"}
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Failed to update metadata"
-                )
-
-        @self.router.delete("/models/{model_id}")
-        async def delete_model(model_id: str):
-            """
-            Delete a model and its artifact from S3
-
-            Args:
-                model_id: The model ID
-
-            Returns:
-                Success message
-
-            Raises:
-                HTTPException: If model not found or deletion fails
-            """
-            model = ML_Model.get({"ModelID": model_id})
-            if not model:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Model not found"
-                )
-
-            if model.delete():
-                return {"message": "Model deleted successfully"}
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Failed to delete model"
-                )
+        @self.router.post("/artifact/byRegEx",
+                         status_code=status.HTTP_200_OK,
+                         response_model=List[ArtifactMetadata])
+        async def artifact_by_regex_get(
+            regex_request: ArtifactRegEx = Body(...)
+        ):
+            """Get any artifacts fitting the regular expression (BASELINE)"""
+            # TODO: Implement logic
+            raise HTTPException(status_code=501, detail="Not implemented")

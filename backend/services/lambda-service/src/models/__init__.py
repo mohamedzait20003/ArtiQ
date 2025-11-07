@@ -9,11 +9,13 @@ from .Auth_Model import Auth_Model
 from .Session_Model import Session_Model
 from .Role_Model import Role_Model
 from .Permission_Model import Permission_Model
+from .Artifact_Model import Artifact_Model
 
 __all__ = [
     "Model",
-    "Auth_Model",
+    "Auth_Model", 
     "Session_Model",
     "Role_Model",
     "Permission_Model",
+    "Artifact_Model",
 ]
