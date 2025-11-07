@@ -15,7 +15,7 @@ class Artifact_Model(Model):
         self,
         id: str,
         name: str,
-        type: str,  # model, dataset, or code
+        artifact_type: str,  # model, dataset, or code
         source_url: str,
         file_size: Optional[int] = None,
         license: Optional[str] = None,
@@ -27,7 +27,7 @@ class Artifact_Model(Model):
         """
         self.id = id
         self.name = name
-        self.type = type
+        self.artifact_type = artifact_type
         self.source_url = source_url
         self.file_size = file_size
         self.license = license
