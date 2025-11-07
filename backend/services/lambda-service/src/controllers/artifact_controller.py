@@ -18,7 +18,7 @@ class ArtifactData(BaseModel):
 class ArtifactMetadata(BaseModel):
     name: str
     id: str
-    type: str
+    artifact_type: str
 
 class Artifact(BaseModel):
     metadata: ArtifactMetadata
