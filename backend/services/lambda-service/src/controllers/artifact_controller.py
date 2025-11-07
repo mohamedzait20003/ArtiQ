@@ -3,7 +3,7 @@ import json
 from typing import Optional, List
 from .controller import Controller
 from src.models.Artifact_Model import Artifact_Model
-from fastapi import HTTPException, status, UploadFile, File, Form, Query, Path, Body
+from fastapi import HTTPException, status, Query, Path, Body
 from pydantic import BaseModel
 
 
