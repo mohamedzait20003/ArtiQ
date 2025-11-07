@@ -4,7 +4,24 @@ from typing import Optional, Dict, Any
 
 class Artifact_Model(Model):
     """
-    Artifact Model for storing machine learning models, datasets, and code artifacts
+    Artifact Model for storing machine learning models, datasets, and code artifacts.
+
+    DynamoDB Schema:
+        Table Name: Artifacts
+        Primary Key:
+            - id (str): Unique identifier for the artifact.
+        Attributes:
+            - id (str): Unique identifier for the artifact. (Primary Key)
+            - name (str): Name of the artifact.
+            - type (str): Type of artifact (e.g., model, dataset, code).
+            - source_url (str): URL or location where the artifact can be accessed.
+            - file_size (Optional[int]): Size of the artifact file in bytes.
+            - license (Optional[str]): License information for the artifact.
+            - rating (Optional[Dict[str, Any]]): Ratings or reviews for the artifact.
+            - artifact_content (S3): Content of the artifact, stored in S3 (see s3_fields).
+
+    s3_fields:
+        - artifact_content: The actual content of the artifact is stored in the S3 bucket defined by s3_bucket.
     """
 
     table_name: str = "Artifacts"
