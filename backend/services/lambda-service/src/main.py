@@ -62,6 +62,18 @@ async def reset_registry(x_authorization: str = Header(alias="X-Authorization"))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+# Tracks endpoint
+@app.get("/tracks")
+async def get_tracks():
+    """
+    Get the list of tracks team 25 has planned to implement in their code
+    """
+    return {
+        "plannedTracks": [
+            
+        ]
+    }
+
 # Register routers
 app.include_router(auth_controller.get_router(), prefix="", tags=["auth"])
 app.include_router(artifact_controller.get_router(), prefix="",
