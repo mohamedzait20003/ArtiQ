@@ -3,7 +3,8 @@ import boto3
 
 
 # Get AWS configuration from environment variables
-AWS_REGION = os.getenv("AWS_REGION", "us-east-2")
+# In Lambda, AWS_REGION is automatically set by the runtime
+AWS_REGION = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION", "us-east-2")
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 
@@ -17,7 +18,9 @@ def _get_boto3_config():
     """
     config = {"region_name": AWS_REGION}
 
-    if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
+    # In Lambda, use IAM role instead of manual credentials
+    # Only use manual credentials if we're running outside Lambda
+    if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY and not os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
         config.update({
             "aws_access_key_id": AWS_ACCESS_KEY_ID,
             "aws_secret_access_key": AWS_SECRET_ACCESS_KEY
