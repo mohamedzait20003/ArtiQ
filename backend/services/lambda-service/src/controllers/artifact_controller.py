@@ -5,7 +5,7 @@ import boto3
 from typing import Optional, List
 from .controller import Controller
 from src.models.Artifact_Model import Artifact_Model
-from fastapi import HTTPException, status, Query, Path, Body
+from fastapi import HTTPException, status, Query, Path, Body, Header
 from pydantic import BaseModel
 
 
@@ -47,18 +47,50 @@ class ArtifactController(Controller):
         """Register artifact routes"""
 
 
-        @self.router.post("/artifacts", 
+        @self.router.post("/artifacts",
                          status_code=status.HTTP_200_OK,
                          response_model=List[ArtifactMetadata])
         async def artifacts_list(
-            queries: List[ArtifactQuery],
-            offset: Optional[str] = Query(None, description="Pagination offset")
+            artifact_queries: List[ArtifactQuery] = Body(...),
+            offset: Optional[str] = Query(None, description="Pagination offset"),
+            authorization: str = Header(None, alias="X-Authorization")
         ):
             """Get the artifacts from the registry (BASELINE)"""
             print("POST /artifacts called")
-            # TODO: Implement logic
-            print("POST /artifacts RETURNING: 501 - Not implemented")
-            raise HTTPException(status_code=501, detail="Not implemented")
+            try:
+                # Get function name from environment variable
+                function_name = os.getenv('ARTIFACTS_LIST_FUNCTION', 'ece461-artifacts-list')
+                
+                # Prepare payload for Lambda function
+                payload = {
+                    'artifact_queries': [query.model_dump() for query in artifact_queries],
+                    'offset': offset,
+                    'auth_token': authorization  # Pass auth token but ignore for now
+                }
+                
+                # Invoke the Lambda function
+                response = self.lambda_client.invoke(
+                    FunctionName=function_name,
+                    InvocationType='RequestResponse',  # Synchronous
+                    Payload=json.dumps(payload)
+                )
+                
+                # Parse response
+                result = json.loads(response['Payload'].read())
+                
+                if response['StatusCode'] == 200:
+                    print("POST /artifacts RETURNING: 200 - success")
+                    return result['artifacts']  # Return the artifacts array
+                else:
+                    print(f"POST /artifacts RETURNING: {response.get('StatusCode', 500)} - Lambda error")
+                    raise HTTPException(
+                        status_code=response.get('StatusCode', 500),
+                        detail=result.get('errorMessage', 'Lambda function execution failed')
+                    )
+                    
+            except Exception as e:
+                print(f"POST /artifacts RETURNING: 500 - Exception: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Error invoking artifacts_list: {str(e)}")
 
 
         @self.router.post("/artifact/{artifact_type}",
