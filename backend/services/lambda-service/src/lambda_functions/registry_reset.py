@@ -9,18 +9,6 @@ def lambda_handler(event, context):
     Reset the registry to a system default state
     """
     try:
-        # Get the authorization header from the event
-        auth_header = event.get('X-Authorization')
-        
-        if not auth_header:
-            return {
-                'statusCode': 403,
-                'body': json.dumps({'error': 'Authentication failed due to invalid or missing AuthenticationToken'})
-            }
-        
-        # TODO: Add proper authentication check here
-        # For now, we'll assume the token is valid
-        
         # Reset DynamoDB tables - clear all items from Artifacts table
         artifacts_table = dynamodb.Table('Artifacts')
         
@@ -78,7 +66,7 @@ def lambda_handler(event, context):
         
         return {
             'statusCode': 200,
-            'body': json.dumps({'message': 'Registry is reset'})
+            'body': json.dumps({'message': 'Registry is reset.'})
         }
         
     except Exception as e:
