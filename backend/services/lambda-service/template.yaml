@@ -9,17 +9,24 @@ Globals:
     Runtime: python3.11
 
 Resources:
-  MLModelsAPI:
+  # Main FastAPI Lambda
+  ModelRegistryAPI:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: ml-models-lambda-api
+      FunctionName: ece461-model-registry-api
       CodeUri: .
       Handler: src.main.handler
+      Environment:
+        Variables:
+          ARTIFACT_CREATE_FUNCTION: !Ref ArtifactCreateFunction
+          ARTIFACTS_LIST_FUNCTION: !Ref ArtifactsListFunction
+          REGISTRY_RESET_FUNCTION: !Ref RegistryResetFunction
+          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
       Policies:
         - DynamoDBCrudPolicy:
             TableName: Users
         - DynamoDBCrudPolicy:
-            TableName: ML_Models
+            TableName: !Ref ArtifactsTable
         - DynamoDBCrudPolicy:
             TableName: Roles
         - DynamoDBCrudPolicy:
@@ -27,7 +34,15 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: Sessions
         - S3CrudPolicy:
-            BucketName: ml-models-bucket
+            BucketName: !Ref ArtifactsBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource: 
+                - !GetAtt ArtifactCreateFunction.Arn
+                - !GetAtt ArtifactsListFunction.Arn
+                - !GetAtt RegistryResetFunction.Arn
       Events:
         ApiEvent:
           Type: HttpApi
@@ -35,7 +50,91 @@ Resources:
             Path: /{proxy+}
             Method: ANY
 
+  # Individual Lambda Functions
+  ArtifactCreateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ece461-artifact-create
+      CodeUri: .
+      Handler: src.lambda_functions.artifact_create.lambda_handler
+      Environment:
+        Variables:
+          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ArtifactsTable
+        - S3CrudPolicy:
+            BucketName: !Ref ArtifactsBucket
+
+  ArtifactsListFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ece461-artifacts-list
+      CodeUri: .
+      Handler: src.lambda_functions.artifacts_list.lambda_handler
+      Environment:
+        Variables:
+          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ArtifactsTable
+        - S3CrudPolicy:
+            BucketName: !Ref ArtifactsBucket
+
+  RegistryResetFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ece461-registry-reset
+      CodeUri: .
+      Handler: src.lambda_functions.registry_reset.lambda_handler
+      Environment:
+        Variables:
+          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ArtifactsTable
+        - S3CrudPolicy:
+            BucketName: !Ref ArtifactsBucket
+
+  # DynamoDB Table for Artifacts
+  ArtifactsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Artifacts
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  # S3 Bucket for Artifact Content Storage
+  ArtifactsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "ece461-artifacts-${AWS::AccountId}-${AWS::Region}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+
 Outputs:
   ApiUrl:
     Description: "API Gateway endpoint URL"
     Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/"
+  
+  ArtifactsTableName:
+    Description: "DynamoDB table name for artifacts"
+    Value: !Ref ArtifactsTable
+    Export:
+      Name: !Sub "${AWS::StackName}-ArtifactsTable"
+  
+  ArtifactsBucketName:
+    Description: "S3 bucket name for artifact content"
+    Value: !Ref ArtifactsBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-ArtifactsBucket"

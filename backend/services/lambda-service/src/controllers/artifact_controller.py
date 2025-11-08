@@ -1,9 +1,12 @@
 import uuid
 import json
+import os
+import boto3
 from typing import Optional, List
 from .controller import Controller
 from src.models.Artifact_Model import Artifact_Model
-from fastapi import HTTPException, status, Query, Path, Body
+from fastapi import HTTPException, status, Query, Path, Body, Header
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 
@@ -18,7 +21,7 @@ class ArtifactData(BaseModel):
 class ArtifactMetadata(BaseModel):
     name: str
     id: str
-    artifact_type: str
+    type: str
 
 class Artifact(BaseModel):
     metadata: ArtifactMetadata
@@ -37,19 +40,68 @@ class ArtifactController(Controller):
     Handles ML model artifact uploads, retrieval, and management
     """
 
+    def __init__(self):
+        super().__init__()
+        self.lambda_client = boto3.client('lambda')
+
     def register_routes(self):
         """Register artifact routes"""
 
-        @self.router.post("/artifacts", 
+
+        @self.router.post("/artifacts",
                          status_code=status.HTTP_200_OK,
                          response_model=List[ArtifactMetadata])
         async def artifacts_list(
-            queries: List[ArtifactQuery],
-            offset: Optional[str] = Query(None, description="Pagination offset")
+            artifact_queries: List[ArtifactQuery] = Body(...),
+            offset: Optional[str] = Query(None, description="Pagination offset"),
+            authorization: str = Header(None, alias="X-Authorization")
         ):
             """Get the artifacts from the registry (BASELINE)"""
-            # TODO: Implement logic
-            raise HTTPException(status_code=501, detail="Not implemented")
+            print("POST /artifacts called")
+            try:
+                # Get function name from environment variable
+                function_name = os.getenv('ARTIFACTS_LIST_FUNCTION', 'ece461-artifacts-list')
+                
+                # Prepare payload for Lambda function
+                payload = {
+                    'artifact_queries': [query.model_dump() for query in artifact_queries],
+                    'offset': offset,
+                    'auth_token': authorization  # Pass auth token but ignore for now
+                }
+                
+                # Invoke the Lambda function
+                response = self.lambda_client.invoke(
+                    FunctionName=function_name,
+                    InvocationType='RequestResponse',  # Synchronous
+                    Payload=json.dumps(payload)
+                )
+                
+                # Parse response
+                result = json.loads(response['Payload'].read())
+                
+                if response['StatusCode'] == 200:
+                    print("POST /artifacts RETURNING: 200 - success")
+                    
+                    # Create custom response with offset header if provided
+                    headers = {}
+                    if result.get('offset'):
+                        headers["offset"] = result['offset']
+                    
+                    return JSONResponse(
+                        content=result['artifacts'],
+                        headers=headers
+                    )
+                else:
+                    print(f"POST /artifacts RETURNING: {response.get('StatusCode', 500)} - Lambda error")
+                    raise HTTPException(
+                        status_code=response.get('StatusCode', 500),
+                        detail=result.get('errorMessage', 'Lambda function execution failed')
+                    )
+                    
+            except Exception as e:
+                print(f"POST /artifacts RETURNING: 500 - Exception: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Error invoking artifacts_list: {str(e)}")
+
 
         @self.router.post("/artifact/{artifact_type}",
                          status_code=status.HTTP_201_CREATED,
@@ -59,8 +111,41 @@ class ArtifactController(Controller):
             artifact_data: ArtifactData = Body(...)
         ):
             """Register a new artifact (BASELINE)"""
-            # TODO: Implement logic
-            raise HTTPException(status_code=501, detail="Not implemented")
+            print(f"POST /artifact/{artifact_type} called")
+            try:
+                # Get function name from environment variable
+                function_name = os.getenv('ARTIFACT_CREATE_FUNCTION', 'ece461-artifact-create')
+                
+                # Prepare payload for Lambda function
+                payload = {
+                    'artifact_type': artifact_type,
+                    'artifact_data': artifact_data.model_dump()
+                }
+                
+                # Invoke the Lambda function
+                response = self.lambda_client.invoke(
+                    FunctionName=function_name,
+                    InvocationType='RequestResponse',  # Synchronous
+                    Payload=json.dumps(payload)
+                )
+                
+                # Parse response
+                result = json.loads(response['Payload'].read())
+                
+                if response['StatusCode'] == 200:
+                    print(f"POST /artifact/{artifact_type} RETURNING: 201 - success")
+                    return result
+                else:
+                    print(f"POST /artifact/{artifact_type} RETURNING: {response.get('StatusCode', 500)} - Lambda error")
+                    raise HTTPException(
+                        status_code=response.get('StatusCode', 500),
+                        detail=result.get('errorMessage', 'Lambda function execution failed')
+                    )
+                    
+            except Exception as e:
+                print(f"POST /artifact/{artifact_type} RETURNING: 500 - Exception: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Error invoking artifact_create: {str(e)}")
+
 
         @self.router.get("/artifacts/{artifact_type}/{id}",
                         status_code=status.HTTP_200_OK,
@@ -70,8 +155,11 @@ class ArtifactController(Controller):
             id: str = Path(..., description="ID of artifact to fetch")
         ):
             """Interact with the artifact with this id (BASELINE)"""
+            print(f"GET /artifacts/{artifact_type}/{id} called")
             # TODO: Implement logic
+            print(f"GET /artifacts/{artifact_type}/{id} RETURNING: 501 - Not implemented")
             raise HTTPException(status_code=501, detail="Not implemented")
+
 
         @self.router.put("/artifacts/{artifact_type}/{id}",
                         status_code=status.HTTP_200_OK)
@@ -81,8 +169,11 @@ class ArtifactController(Controller):
             artifact: Artifact = Body(...)
         ):
             """Update this content of the artifact (BASELINE)"""
+            print(f"PUT /artifacts/{artifact_type}/{id} called")
             # TODO: Implement logic
+            print(f"PUT /artifacts/{artifact_type}/{id} RETURNING: 501 - Not implemented")
             raise HTTPException(status_code=501, detail="Not implemented")
+
 
         @self.router.delete("/artifacts/{artifact_type}/{id}",
                            status_code=status.HTTP_200_OK)
@@ -91,8 +182,10 @@ class ArtifactController(Controller):
             id: str = Path(..., description="Artifact ID")
         ):
             """Delete this artifact (NON-BASELINE)"""
+            print(f"DELETE /artifacts/{artifact_type}/{id} called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
+
 
         @self.router.get("/artifact/model/{id}/rate",
                         status_code=status.HTTP_200_OK)
@@ -100,8 +193,10 @@ class ArtifactController(Controller):
             id: str = Path(..., description="Artifact ID")
         ):
             """Get ratings for this model artifact (BASELINE)"""
+            print(f"GET /artifact/model/{id}/rate called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
+
 
         @self.router.get("/artifact/{artifact_type}/{id}/cost",
                         status_code=status.HTTP_200_OK)
@@ -111,8 +206,10 @@ class ArtifactController(Controller):
             dependency: Optional[bool] = Query(False, description="Include dependencies")
         ):
             """Get the cost of an artifact (BASELINE)"""
+            print(f"GET /artifact/{artifact_type}/{id}/cost called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
+
 
         @self.router.get("/artifact/byName/{name}",
                         status_code=status.HTTP_200_OK,
@@ -121,8 +218,10 @@ class ArtifactController(Controller):
             name: str = Path(..., description="Artifact name")
         ):
             """List artifact metadata for this name (NON-BASELINE)"""
+            print(f"GET /artifact/byName/{name} called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
+
 
         @self.router.get("/artifact/{artifact_type}/{id}/audit",
                         status_code=status.HTTP_200_OK)
@@ -131,8 +230,10 @@ class ArtifactController(Controller):
             id: str = Path(..., description="Artifact ID")
         ):
             """Retrieve audit entries for this artifact (NON-BASELINE)"""
+            print(f"GET /artifact/{artifact_type}/{id}/audit called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
+
 
         @self.router.get("/artifact/model/{id}/lineage",
                         status_code=status.HTTP_200_OK)
@@ -140,8 +241,10 @@ class ArtifactController(Controller):
             id: str = Path(..., description="Artifact ID")
         ):
             """Retrieve the lineage graph for this artifact (BASELINE)"""
+            print(f"GET /artifact/model/{id}/lineage called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
+
 
         @self.router.post("/artifact/model/{id}/license-check",
                          status_code=status.HTTP_200_OK,
@@ -151,8 +254,10 @@ class ArtifactController(Controller):
             request: SimpleLicenseCheckRequest = Body(...)
         ):
             """Assess license compatibility for fine-tune and inference usage (BASELINE)"""
+            print(f"POST /artifact/model/{id}/license-check called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
+
 
         @self.router.post("/artifact/byRegEx",
                          status_code=status.HTTP_200_OK,
@@ -161,5 +266,6 @@ class ArtifactController(Controller):
             regex_request: ArtifactRegEx = Body(...)
         ):
             """Get any artifacts fitting the regular expression (BASELINE)"""
+            print("POST /artifact/byRegEx called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
