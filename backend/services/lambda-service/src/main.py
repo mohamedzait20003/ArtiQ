@@ -20,7 +20,10 @@ lambda_client = boto3.client('lambda')
 # Health endpoint
 @app.get("/health")
 async def health_check():
-    return {"status": "ok"}
+    print("GET /health called")
+    result = {"status": "ok"}
+    print(f"HEALTH RETURNING: {result}")
+    return result
 
 # Reset endpoint
 @app.delete("/reset")
@@ -28,6 +31,7 @@ async def reset_registry(x_authorization: str = Header(default=None, alias="X-Au
     """
     Reset the registry to a system default state
     """
+    print("DELETE /reset called")
     # Temporarily skip authentication check for testing
     # if not x_authorization:
     #     raise HTTPException(status_code=403, detail="Authentication failed due to invalid or missing AuthenticationToken")
@@ -55,17 +59,24 @@ async def reset_registry(x_authorization: str = Header(default=None, alias="X-Au
         result = json.loads(response['Payload'].read())
         
         if response['StatusCode'] == 200 and result.get('statusCode') == 200:
-            return {"message": "Registry is reset"}
+            result = {"message": "Registry is reset."}
+            print(f"RESET RETURNING: 200: {result}")
+            return result
         elif result.get('statusCode') == 403:
+            print("RESET RETURNING: 403 - auth failed")
             raise HTTPException(status_code=403, detail="Authentication failed due to invalid or missing AuthenticationToken")
         elif result.get('statusCode') == 401:
+            print("RESET RETURNING: 401 - permission denied")
             raise HTTPException(status_code=401, detail="You do not have permission to reset the registry")
         else:
+            print(f"RESET RETURNING: 500 - error: {result}")
             raise HTTPException(status_code=500, detail="Internal server error")
             
-    except HTTPException:
+    except HTTPException as he:
+        print(f"RESET HTTPException: {he.status_code} - {he.detail}")
         raise
     except Exception as e:
+        print(f"RESET Exception: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 # Tracks endpoint
@@ -74,11 +85,14 @@ async def get_tracks():
     """
     Get the list of tracks team 25 has planned to implement in their code
     """
-    return {
+    print("GET /tracks called")
+    result = {
         "plannedTracks": [
             "Access control track"
         ]
     }
+    print(f"TRACKS RETURNING: {result}")
+    return result
 
 # Register routers
 app.include_router(auth_controller.get_router(), prefix="", tags=["auth"])

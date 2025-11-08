@@ -55,7 +55,9 @@ class ArtifactController(Controller):
             offset: Optional[str] = Query(None, description="Pagination offset")
         ):
             """Get the artifacts from the registry (BASELINE)"""
+            print("POST /artifacts called")
             # TODO: Implement logic
+            print("POST /artifacts RETURNING: 501 - Not implemented")
             raise HTTPException(status_code=501, detail="Not implemented")
 
 
@@ -67,6 +69,7 @@ class ArtifactController(Controller):
             artifact_data: ArtifactData = Body(...)
         ):
             """Register a new artifact (BASELINE)"""
+            print(f"POST /artifact/{artifact_type} called")
             try:
                 # Get function name from environment variable
                 function_name = os.getenv('ARTIFACT_CREATE_FUNCTION', 'ece461-artifact-create')
@@ -88,14 +91,17 @@ class ArtifactController(Controller):
                 result = json.loads(response['Payload'].read())
                 
                 if response['StatusCode'] == 200:
+                    print(f"POST /artifact/{artifact_type} RETURNING: 201 - success")
                     return result
                 else:
+                    print(f"POST /artifact/{artifact_type} RETURNING: {response.get('StatusCode', 500)} - Lambda error")
                     raise HTTPException(
                         status_code=response.get('StatusCode', 500),
                         detail=result.get('errorMessage', 'Lambda function execution failed')
                     )
                     
             except Exception as e:
+                print(f"POST /artifact/{artifact_type} RETURNING: 500 - Exception: {str(e)}")
                 raise HTTPException(status_code=500, detail=f"Error invoking artifact_create: {str(e)}")
 
 
@@ -107,7 +113,9 @@ class ArtifactController(Controller):
             id: str = Path(..., description="ID of artifact to fetch")
         ):
             """Interact with the artifact with this id (BASELINE)"""
+            print(f"GET /artifacts/{artifact_type}/{id} called")
             # TODO: Implement logic
+            print(f"GET /artifacts/{artifact_type}/{id} RETURNING: 501 - Not implemented")
             raise HTTPException(status_code=501, detail="Not implemented")
 
 
@@ -119,7 +127,9 @@ class ArtifactController(Controller):
             artifact: Artifact = Body(...)
         ):
             """Update this content of the artifact (BASELINE)"""
+            print(f"PUT /artifacts/{artifact_type}/{id} called")
             # TODO: Implement logic
+            print(f"PUT /artifacts/{artifact_type}/{id} RETURNING: 501 - Not implemented")
             raise HTTPException(status_code=501, detail="Not implemented")
 
 
@@ -130,6 +140,7 @@ class ArtifactController(Controller):
             id: str = Path(..., description="Artifact ID")
         ):
             """Delete this artifact (NON-BASELINE)"""
+            print(f"DELETE /artifacts/{artifact_type}/{id} called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
 
@@ -140,6 +151,7 @@ class ArtifactController(Controller):
             id: str = Path(..., description="Artifact ID")
         ):
             """Get ratings for this model artifact (BASELINE)"""
+            print(f"GET /artifact/model/{id}/rate called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
 
@@ -152,6 +164,7 @@ class ArtifactController(Controller):
             dependency: Optional[bool] = Query(False, description="Include dependencies")
         ):
             """Get the cost of an artifact (BASELINE)"""
+            print(f"GET /artifact/{artifact_type}/{id}/cost called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
 
@@ -163,6 +176,7 @@ class ArtifactController(Controller):
             name: str = Path(..., description="Artifact name")
         ):
             """List artifact metadata for this name (NON-BASELINE)"""
+            print(f"GET /artifact/byName/{name} called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
 
@@ -174,6 +188,7 @@ class ArtifactController(Controller):
             id: str = Path(..., description="Artifact ID")
         ):
             """Retrieve audit entries for this artifact (NON-BASELINE)"""
+            print(f"GET /artifact/{artifact_type}/{id}/audit called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
 
@@ -184,6 +199,7 @@ class ArtifactController(Controller):
             id: str = Path(..., description="Artifact ID")
         ):
             """Retrieve the lineage graph for this artifact (BASELINE)"""
+            print(f"GET /artifact/model/{id}/lineage called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
 
@@ -196,6 +212,7 @@ class ArtifactController(Controller):
             request: SimpleLicenseCheckRequest = Body(...)
         ):
             """Assess license compatibility for fine-tune and inference usage (BASELINE)"""
+            print(f"POST /artifact/model/{id}/license-check called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
 
@@ -207,5 +224,6 @@ class ArtifactController(Controller):
             regex_request: ArtifactRegEx = Body(...)
         ):
             """Get any artifacts fitting the regular expression (BASELINE)"""
+            print("POST /artifact/byRegEx called")
             # TODO: Implement logic
             raise HTTPException(status_code=501, detail="Not implemented")
