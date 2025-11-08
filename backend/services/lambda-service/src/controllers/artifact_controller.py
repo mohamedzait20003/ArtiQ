@@ -6,6 +6,7 @@ from typing import Optional, List
 from .controller import Controller
 from src.models.Artifact_Model import Artifact_Model
 from fastapi import HTTPException, status, Query, Path, Body, Header
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 
@@ -80,7 +81,16 @@ class ArtifactController(Controller):
                 
                 if response['StatusCode'] == 200:
                     print("POST /artifacts RETURNING: 200 - success")
-                    return result['artifacts']  # Return the artifacts array
+                    
+                    # Create custom response with offset header if provided
+                    headers = {}
+                    if result.get('offset'):
+                        headers["offset"] = result['offset']
+                    
+                    return JSONResponse(
+                        content=result['artifacts'],
+                        headers=headers
+                    )
                 else:
                     print(f"POST /artifacts RETURNING: {response.get('StatusCode', 500)} - Lambda error")
                     raise HTTPException(
