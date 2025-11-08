@@ -199,7 +199,6 @@ jobs:
         sam deploy \
           --no-confirm-changeset \
           --no-fail-on-empty-changeset \
-          --stack-name ml-models-lambda-stack \
           --capabilities CAPABILITY_IAM \
           --region us-east-2 \
           --resolve-s3
