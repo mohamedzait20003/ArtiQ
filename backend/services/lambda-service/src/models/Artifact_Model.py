@@ -1,3 +1,4 @@
+import os
 from .Model import Model
 from typing import Optional, Dict, Any
 
@@ -13,7 +14,7 @@ class Artifact_Model(Model):
         Attributes:
             - id (str): Unique identifier for the artifact. (Primary Key)
             - name (str): Name of the artifact.
-            - type (str): Type of artifact (e.g., model, dataset, code).
+            - artifact_type (str): Type of artifact (e.g., model, dataset, code).
             - source_url (str): URL or location where the artifact can be accessed.
             - file_size (Optional[int]): Size of the artifact file in bytes.
             - license (Optional[str]): License information for the artifact.
@@ -25,7 +26,7 @@ class Artifact_Model(Model):
     """
 
     table_name: str = "Artifacts"
-    s3_bucket: Optional[str] = "artifacts-bucket"
+    s3_bucket: Optional[str] = os.environ.get('ARTIFACTS_BUCKET', 'artifacts-bucket')
     s3_fields: list[str] = ["artifact_content"]
 
     def __init__(

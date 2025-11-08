@@ -3,10 +3,14 @@ version = 0.1
 [default]
 [default.deploy]
 [default.deploy.parameters]
-stack_name = "ml-models-lambda-stack"
+stack_name = "ece461-model-registry-stack"
 s3_bucket = ""
-s3_prefix = "ml-models-lambda"
-region = "us-east-2"
-confirm_changeset = false
+s3_prefix = "ece461-model-registry-stack"
+confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 image_repositories = []
+resolve_s3 = true
+disable_rollback = true
+
+[default.global.parameters]
+region = "us-east-2"
