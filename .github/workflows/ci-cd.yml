@@ -10,6 +10,10 @@ jobs:
   lambda-service:
     name: Lambda Service CI/CD
     runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-2
+      AWS_DEFAULT_REGION: us-east-2
+
     
     steps:
     - uses: actions/checkout@v3
