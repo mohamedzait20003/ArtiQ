@@ -21,6 +21,7 @@ Resources:
           ARTIFACT_CREATE_FUNCTION: !Ref ArtifactCreateFunction
           ARTIFACTS_LIST_FUNCTION: !Ref ArtifactsListFunction
           REGISTRY_RESET_FUNCTION: !Ref RegistryResetFunction
+          ARTIFACT_RETRIEVE_FUNCTION: !Ref ArtifactRetrieveFunction
           ARTIFACTS_BUCKET: !Ref ArtifactsBucket
       Policies:
         - DynamoDBCrudPolicy:
@@ -43,6 +44,7 @@ Resources:
                 - !GetAtt ArtifactCreateFunction.Arn
                 - !GetAtt ArtifactsListFunction.Arn
                 - !GetAtt RegistryResetFunction.Arn
+                - !GetAtt ArtifactRetrieveFunction.Arn
       Events:
         ApiEvent:
           Type: HttpApi
@@ -87,6 +89,21 @@ Resources:
       FunctionName: ece461-registry-reset
       CodeUri: .
       Handler: src.lambda_functions.registry_reset.lambda_handler
+      Environment:
+        Variables:
+          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ArtifactsTable
+        - S3CrudPolicy:
+            BucketName: !Ref ArtifactsBucket
+
+  ArtifactRetrieveFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ece461-artifact-retrieve
+      CodeUri: .
+      Handler: src.lambda_functions.artifact_retrieve.lambda_handler
       Environment:
         Variables:
           ARTIFACTS_BUCKET: !Ref ArtifactsBucket
