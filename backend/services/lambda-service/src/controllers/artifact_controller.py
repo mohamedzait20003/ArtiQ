@@ -244,8 +244,39 @@ class ArtifactController(Controller):
         ):
             """Delete this artifact (NON-BASELINE)"""
             print(f"DELETE /artifacts/{artifact_type}/{id} called")
-            # TODO: Implement logic
-            raise HTTPException(status_code=501, detail="Not implemented")
+            try:
+                # Get function name from environment variable
+                function_name = os.getenv('ARTIFACT_DELETE_FUNCTION', 'ece461-artifact-delete')
+                
+                # Prepare payload for Lambda function
+                payload = {
+                    'artifact_type': artifact_type,
+                    'id': id
+                }
+                
+                # Invoke the Lambda function
+                response = self.lambda_client.invoke(
+                    FunctionName=function_name,
+                    InvocationType='RequestResponse',
+                    Payload=json.dumps(payload)
+                )
+                
+                # Parse response
+                result = json.loads(response['Payload'].read())
+                
+                if response['StatusCode'] == 200:
+                    print(f"DELETE /artifacts/{artifact_type}/{id} RETURNING: 200 - success")
+                    return result
+                else:
+                    print(f"DELETE /artifacts/{artifact_type}/{id} RETURNING: {response.get('StatusCode', 500)} - Lambda error")
+                    raise HTTPException(
+                        status_code=response.get('StatusCode', 500),
+                        detail=result.get('errorMessage', 'Lambda function execution failed')
+                    )
+                    
+            except Exception as e:
+                print(f"DELETE /artifacts/{artifact_type}/{id} RETURNING: 500 - Exception: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Error invoking artifact_delete: {str(e)}")
 
 
         @self.router.get("/artifact/model/{id}/rate",
