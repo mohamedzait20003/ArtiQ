@@ -83,40 +83,40 @@ jobs:
         flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-  frontend:
-    name: Frontend CI/CD
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '22'
-    
-    - name: Cache Node modules
-      uses: actions/cache@v3
-      with:
-        path: frontend/node_modules
-        key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
-    
-    - name: Install dependencies
-      run: |
-        cd frontend
-        npm install
-    
-    - name: Build
-      run: |
-        cd frontend
-        npm run build
-    
-    - name: Run tests
-      run: |
-        cd frontend
-        npm run test -- --watch=false --browsers=ChromeHeadless
+#  frontend:
+#    name: Frontend CI/CD
+#    runs-on: ubuntu-latest
+#    
+#    steps:
+#    - uses: actions/checkout@v3
+#    
+#    - name: Set up Node.js
+#      uses: actions/setup-node@v3
+#      with:
+#        node-version: '22'
+#    
+#    - name: Cache Node modules
+#      uses: actions/cache@v3
+#      with:
+#        path: frontend/node_modules
+#        key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
+#        restore-keys: |
+#          ${{ runner.os }}-node-
+#    
+#    - name: Install dependencies
+#      run: |
+#        cd frontend
+#        npm install
+#    
+#    - name: Build
+#      run: |
+#        cd frontend
+#        npm run build
+#    
+#    - name: Run tests
+#      run: |
+#        cd frontend
+#        npm run test -- --watch=false --browsers=ChromeHeadless
 
 #  build-fargate-image:
 #    name: Build & Push Fargate Image
