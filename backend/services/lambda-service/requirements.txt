@@ -3,3 +3,4 @@ boto3==1.40.56
 pydantic==2.9.0
 mangum==0.19.0
 pytest==7.4.3
+pytest-cov==7.0.0

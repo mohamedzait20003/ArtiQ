@@ -7,6 +7,6 @@ architecture = "x86_64"
 handler = "src.main.handler"
 manifest_hash = ""
 packagetype = "Zip"
-functions = ["ModelRegistryAPI", "ArtifactCreateFunction", "ArtifactsListFunction", "RegistryResetFunction"]
+functions = ["ModelRegistryAPI", "ArtifactCreateFunction", "ArtifactsListFunction", "RegistryResetFunction", "ArtifactRetrieveFunction", "ArtifactUpdateFunction", "ArtifactDeleteFunction"]
 
 [layer_build_definitions]
