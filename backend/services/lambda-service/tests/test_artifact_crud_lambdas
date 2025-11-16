@@ -1,0 +1,237 @@
+# backend/services/lambda-service/tests/test_artifact_crud_lambdas.py
+
+import os
+import sys
+import json
+from unittest.mock import Mock, patch
+
+import pytest
+
+# Make sure src is on the path (same trick as your existing test file)
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+
+
+# ---------- artifact_retrieve lambda ----------
+
+class TestArtifactRetrieveLambda:
+    """Unit tests for artifact_retrieve lambda function"""
+
+    @patch("src.lambda_functions.artifact_retrieve.Artifact_Model")
+    def test_retrieve_success(self, mock_artifact_model):
+        """Happy path: artifact is found and returned"""
+
+        from src.lambda_functions.artifact_retrieve import lambda_handler
+
+        # Mock the model / lookup
+        mock_artifact = Mock()
+        mock_artifact.id = "abc-123"
+        mock_artifact.name = "test-model"
+        mock_artifact.artifact_type = "model"
+        mock_artifact.source_url = "https://huggingface.co/test"
+
+        # However your real code does the lookup, this keeps it generic:
+        # e.g., Artifact_Model.table().get_item(...) or a classmethod
+        # Here we just pretend there's a classmethod get_by_id.
+        mock_artifact_model.get_by_id.return_value = mock_artifact
+
+        event = {
+            "artifact_type": "model",
+            "id": "abc-123",
+        }
+
+        result = lambda_handler(event, None)
+
+        # Basic shape checks – adjust keys to match your real handler
+        assert result["metadata"]["id"] == "abc-123"
+        assert result["metadata"]["name"] == "test-model"
+        assert result["metadata"]["type"] == "model"
+        assert result["data"]["url"] == "https://huggingface.co/test"
+
+        mock_artifact_model.get_by_id.assert_called_once()
+
+    @patch("src.lambda_functions.artifact_retrieve.Artifact_Model")
+    def test_retrieve_not_found_404(self, mock_artifact_model):
+        """If the artifact is not found, handler should raise a 404 error (wrapped in JSON)."""
+
+        from src.lambda_functions.artifact_retrieve import lambda_handler
+
+        mock_artifact_model.get_by_id.return_value = None
+
+        event = {
+            "artifact_type": "model",
+            "id": "missing-id",
+        }
+
+        with pytest.raises(Exception) as excinfo:
+            lambda_handler(event, None)
+
+        err = json.loads(str(excinfo.value))
+        assert err["statusCode"] == 404
+
+    def test_retrieve_missing_fields_400(self):
+        """If required fields are missing, handler should return a 400 error."""
+
+        from src.lambda_functions.artifact_retrieve import lambda_handler
+
+        event = {
+            # "artifact_type" missing on purpose
+            "id": "abc-123",
+        }
+
+        with pytest.raises(Exception) as excinfo:
+            lambda_handler(event, None)
+
+        err = json.loads(str(excinfo.value))
+        assert err["statusCode"] == 400
+
+
+# ---------- artifact_update lambda ----------
+
+class TestArtifactUpdateLambda:
+    """Unit tests for artifact_update lambda function"""
+
+    @patch("src.lambda_functions.artifact_update.Artifact_Model")
+    def test_update_success(self, mock_artifact_model):
+        """Happy path: update succeeds and returns updated metadata/data"""
+
+        from src.lambda_functions.artifact_update import lambda_handler
+
+        # Mock existing artifact instance
+        mock_artifact = Mock()
+        mock_artifact.id = "abc-123"
+        mock_artifact.name = "test-model"
+        mock_artifact.artifact_type = "model"
+        mock_artifact.source_url = "https://huggingface.co/old"
+        mock_artifact.save.return_value = True
+
+        # Pretend your code constructs an Artifact_Model and/or looks it up
+        mock_artifact_model.return_value = mock_artifact
+
+        event = {
+            "artifact_type": "model",
+            "id": "abc-123",
+            "artifact_data": {
+                "name": "test-model",
+                "url": "https://huggingface.co/new",
+            },
+        }
+
+        result = lambda_handler(event, None)
+
+        assert result["metadata"]["id"] == "abc-123"
+        assert result["metadata"]["name"] == "test-model"
+        assert result["metadata"]["type"] == "model"
+        assert result["data"]["url"] == "https://huggingface.co/new"
+
+        # Ensure save was attempted
+        assert mock_artifact.save.called
+
+    def test_update_name_id_mismatch_400(self):
+        """Name and id mismatch should raise a 400-style exception per spec."""
+
+        from src.lambda_functions.artifact_update import lambda_handler
+
+        event = {
+            "artifact_type": "model",
+            "id": "abc-123",
+            "artifact_data": {
+                "name": "different-name",  # doesn't match the id/name rule
+                "url": "https://huggingface.co/new",
+            },
+        }
+
+        with pytest.raises(Exception) as excinfo:
+            lambda_handler(event, None)
+
+        err = json.loads(str(excinfo.value))
+        assert err["statusCode"] == 400
+
+    @patch("src.lambda_functions.artifact_update.Artifact_Model")
+    def test_update_internal_error_500(self, mock_artifact_model):
+        """If something unexpected happens, it should be wrapped as a 500."""
+
+        from src.lambda_functions.artifact_update import lambda_handler
+
+        mock_artifact_model.side_effect = RuntimeError("boom")
+
+        event = {
+            "artifact_type": "model",
+            "id": "abc-123",
+            "artifact_data": {
+                "name": "test-model",
+                "url": "https://huggingface.co/new",
+            },
+        }
+
+        with pytest.raises(Exception) as excinfo:
+            lambda_handler(event, None)
+
+        err = json.loads(str(excinfo.value))
+        assert err["statusCode"] == 500
+        assert "Error updating artifact" in err["errorMessage"]
+
+
+# ---------- artifact_delete lambda ----------
+
+class TestArtifactDeleteLambda:
+    """Unit tests for artifact_delete lambda function"""
+
+    @patch("src.lambda_functions.artifact_delete.Artifact_Model")
+    def test_delete_success(self, mock_artifact_model):
+        """Happy path: delete succeeds and returns a success message."""
+
+        from src.lambda_functions.artifact_delete import lambda_handler
+
+        mock_artifact_instance = Mock()
+        mock_artifact_instance.delete.return_value = True
+
+        # Pretend lambda finds the artifact and wraps it as an Artifact_Model
+        mock_artifact_model.return_value = mock_artifact_instance
+
+        event = {
+            "artifact_type": "model",
+            "id": "abc-123",
+        }
+
+        result = lambda_handler(event, None)
+
+        assert result["statusCode"] in (200, 204)
+        assert "deleted" in result.get("message", "").lower()
+
+        mock_artifact_instance.delete.assert_called_once()
+
+    @patch("src.lambda_functions.artifact_delete.Artifact_Model")
+    def test_delete_artifact_not_found_404(self, mock_artifact_model):
+        """If artifact is not found, expect a 404 error."""
+
+        from src.lambda_functions.artifact_delete import lambda_handler
+
+        # However your real code behaves, simulate the "not found" path.
+        mock_artifact_model.get_by_id.return_value = None
+
+        event = {
+            "artifact_type": "model",
+            "id": "does-not-exist",
+        }
+
+        with pytest.raises(Exception) as excinfo:
+            lambda_handler(event, None)
+
+        err = json.loads(str(excinfo.value))
+        assert err["statusCode"] == 404
+
+    def test_delete_missing_fields_400(self):
+        """Missing id or artifact_type should raise a 400."""
+
+        from src.lambda_functions.artifact_delete import lambda_handler
+
+        event = {
+            # "artifact_type" intentionally omitted
+            "id": "abc-123",
+        }
+
+        with pytest.raises(Exception) as excinfo:
+            lambda_handler(event, None)
+
+        err = json.loads(str(excinfo.value))
+        assert err["statusCode"] == 400
