@@ -41,7 +41,8 @@ jobs:
     - name: Run tests
       run: |
         cd backend/services/lambda-service
-        python -m pytest tests/test_lambda_service.py -v --tb=short
+        # Run the full split test suite (avoid the single skipped combined file)
+        python -m pytest -v --tb=short tests
     
     - name: Lint with flake8
       run: |
