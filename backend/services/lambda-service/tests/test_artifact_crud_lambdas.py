@@ -1,4 +1,20 @@
-# backend/services/lambda-service/tests/test_artifact_crud_lambdas.py
+import os
+import sys
+import json
+from unittest.mock import Mock, patch
+
+import pytest
+
+# Original combined CRUD test file — kept for history but skipped to avoid
+# duplicate test collection. See the split modules:
+# - test_artifact_retrieve.py
+# - test_artifact_update.py
+# - test_artifact_delete.py
+pytest.skip("Original combined CRUD tests skipped — use split modules instead", allow_module_level=True)
+
+def test_placeholder():
+    # Placeholder so pytest has at least one test if this file accidentally runs
+    assert True
 
 import os
 import sys
@@ -7,7 +23,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-# Make sure src is on the path (same trick as your existing test file)
+# Ensure src is importable
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
 
@@ -29,25 +45,20 @@ class TestArtifactRetrieveLambda:
         mock_artifact.artifact_type = "model"
         mock_artifact.source_url = "https://huggingface.co/test"
 
-        # However your real code does the lookup, this keeps it generic:
-        # e.g., Artifact_Model.table().get_item(...) or a classmethod
-        # Here we just pretend there's a classmethod get_by_id.
-        mock_artifact_model.get_by_id.return_value = mock_artifact
+        # Lambda calls Artifact_Model.get(...)
+        mock_artifact_model.get.return_value = mock_artifact
 
-        event = {
-            "artifact_type": "model",
-            "id": "abc-123",
-        }
+        event = {"artifact_type": "model", "id": "abc-123"}
 
         result = lambda_handler(event, None)
 
-        # Basic shape checks – adjust keys to match your real handler
+        # Basic shape checks
         assert result["metadata"]["id"] == "abc-123"
         assert result["metadata"]["name"] == "test-model"
         assert result["metadata"]["type"] == "model"
         assert result["data"]["url"] == "https://huggingface.co/test"
 
-        mock_artifact_model.get_by_id.assert_called_once()
+        mock_artifact_model.get.assert_called_once_with({"id": "abc-123"}, load_s3_data=False)
 
     @patch("src.lambda_functions.artifact_retrieve.Artifact_Model")
     def test_retrieve_not_found_404(self, mock_artifact_model):
@@ -55,12 +66,9 @@ class TestArtifactRetrieveLambda:
 
         from src.lambda_functions.artifact_retrieve import lambda_handler
 
-        mock_artifact_model.get_by_id.return_value = None
+        mock_artifact_model.get.return_value = None
 
-        event = {
-            "artifact_type": "model",
-            "id": "missing-id",
-        }
+        event = {"artifact_type": "model", "id": "missing-id"}
 
         with pytest.raises(Exception) as excinfo:
             lambda_handler(event, None)
@@ -73,10 +81,7 @@ class TestArtifactRetrieveLambda:
 
         from src.lambda_functions.artifact_retrieve import lambda_handler
 
-        event = {
-            # "artifact_type" missing on purpose
-            "id": "abc-123",
-        }
+        event = {"id": "abc-123"}  # artifact_type missing
 
         with pytest.raises(Exception) as excinfo:
             lambda_handler(event, None)
@@ -86,6 +91,7 @@ class TestArtifactRetrieveLambda:
 
 
 # ---------- artifact_update lambda ----------
+
 
 class TestArtifactUpdateLambda:
     """Unit tests for artifact_update lambda function"""
@@ -104,15 +110,16 @@ class TestArtifactUpdateLambda:
         mock_artifact.source_url = "https://huggingface.co/old"
         mock_artifact.save.return_value = True
 
-        # Pretend your code constructs an Artifact_Model and/or looks it up
-        mock_artifact_model.return_value = mock_artifact
+        # Lambda looks up existing artifact with Artifact_Model.get(...)
+        mock_artifact_model.get.return_value = mock_artifact
 
+        # Lambda expects nested artifact with metadata and data
         event = {
             "artifact_type": "model",
             "id": "abc-123",
-            "artifact_data": {
-                "name": "test-model",
-                "url": "https://huggingface.co/new",
+            "artifact": {
+                "metadata": {"id": "abc-123", "name": "test-model"},
+                "data": {"url": "https://huggingface.co/new"},
             },
         }
 
@@ -131,12 +138,13 @@ class TestArtifactUpdateLambda:
 
         from src.lambda_functions.artifact_update import lambda_handler
 
+        # Send metadata.id that doesn't match the path id to trigger 400
         event = {
             "artifact_type": "model",
             "id": "abc-123",
-            "artifact_data": {
-                "name": "different-name",  # doesn't match the id/name rule
-                "url": "https://huggingface.co/new",
+            "artifact": {
+                "metadata": {"id": "different-id", "name": "different-name"},
+                "data": {"url": "https://huggingface.co/new"},
             },
         }
 
@@ -152,14 +160,15 @@ class TestArtifactUpdateLambda:
 
         from src.lambda_functions.artifact_update import lambda_handler
 
-        mock_artifact_model.side_effect = RuntimeError("boom")
+        # Simulate an unexpected error during lookup
+        mock_artifact_model.get.side_effect = RuntimeError("boom")
 
         event = {
             "artifact_type": "model",
             "id": "abc-123",
-            "artifact_data": {
-                "name": "test-model",
-                "url": "https://huggingface.co/new",
+            "artifact": {
+                "metadata": {"id": "abc-123", "name": "test-model"},
+                "data": {"url": "https://huggingface.co/new"},
             },
         }
 
@@ -173,6 +182,7 @@ class TestArtifactUpdateLambda:
 
 # ---------- artifact_delete lambda ----------
 
+
 class TestArtifactDeleteLambda:
     """Unit tests for artifact_delete lambda function"""
 
@@ -183,20 +193,22 @@ class TestArtifactDeleteLambda:
         from src.lambda_functions.artifact_delete import lambda_handler
 
         mock_artifact_instance = Mock()
+        # ensure artifact_type and id match expected values so the lambda's
+        # type check passes
+        mock_artifact_instance.id = "abc-123"
+        mock_artifact_instance.artifact_type = "model"
         mock_artifact_instance.delete.return_value = True
 
-        # Pretend lambda finds the artifact and wraps it as an Artifact_Model
-        mock_artifact_model.return_value = mock_artifact_instance
+        # Lambda will call Artifact_Model.get(...)
+        mock_artifact_model.get.return_value = mock_artifact_instance
 
-        event = {
-            "artifact_type": "model",
-            "id": "abc-123",
-        }
+        event = {"artifact_type": "model", "id": "abc-123"}
 
         result = lambda_handler(event, None)
 
-        assert result["statusCode"] in (200, 204)
-        assert "deleted" in result.get("message", "").lower()
+        # The lambda returns a simple message dict on success
+        assert isinstance(result, dict)
+        assert "message" in result and "deleted" in result["message"].lower()
 
         mock_artifact_instance.delete.assert_called_once()
 
@@ -206,13 +218,10 @@ class TestArtifactDeleteLambda:
 
         from src.lambda_functions.artifact_delete import lambda_handler
 
-        # However your real code behaves, simulate the "not found" path.
-        mock_artifact_model.get_by_id.return_value = None
+        # Simulate not found
+        mock_artifact_model.get.return_value = None
 
-        event = {
-            "artifact_type": "model",
-            "id": "does-not-exist",
-        }
+        event = {"artifact_type": "model", "id": "does-not-exist"}
 
         with pytest.raises(Exception) as excinfo:
             lambda_handler(event, None)
@@ -225,10 +234,7 @@ class TestArtifactDeleteLambda:
 
         from src.lambda_functions.artifact_delete import lambda_handler
 
-        event = {
-            # "artifact_type" intentionally omitted
-            "id": "abc-123",
-        }
+        event = {"id": "abc-123"}  # artifact_type intentionally omitted
 
         with pytest.raises(Exception) as excinfo:
             lambda_handler(event, None)
