@@ -24,6 +24,9 @@
       <div class="hidden lg:flex flex-1 max-w-md mx-8">
         <div class="relative w-full">
           <input 
+            [(ngModel)]="headerSearch"
+            (ngModelChange)="onSearch($event)"
+            (keyup.enter)="onEnter()"
             type="text" 
             placeholder="Search models, datasets, users..." 
             class="w-full px-4 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
