@@ -47,19 +47,36 @@ def run_fargate_task(message="Hello from test script!"):
         
         print(f"Task started successfully!")
         print(f"Task ARN: {task_arn}")
-        print(f"\nWaiting for task to complete...")
+        print(f"\nMonitoring task status...")
         
-        # Wait for task to complete
-        waiter = ecs_client.get_waiter('tasks_stopped')
-        try:
-            waiter.wait(
+        # Poll task status until it completes
+        max_wait_time = 300  # 5 minutes
+        poll_interval = 5
+        elapsed_time = 0
+        
+        while elapsed_time < max_wait_time:
+            # Get current task status
+            task_details = ecs_client.describe_tasks(
                 cluster=CLUSTER_NAME,
-                tasks=[task_arn],
-                WaiterConfig={'Delay': 5, 'MaxAttempts': 60}
+                tasks=[task_arn]
             )
-            print("Task completed!")
-        except Exception as e:
-            print(f"Task may still be running: {str(e)}")
+            
+            if task_details['tasks']:
+                task = task_details['tasks'][0]
+                last_status = task.get('lastStatus', 'UNKNOWN')
+                
+                print(f"  [{elapsed_time}s] Status: {last_status}")
+                
+                # Check if task has stopped
+                if last_status == 'STOPPED':
+                    print("\nTask completed!")
+                    break
+            
+            time.sleep(poll_interval)
+            elapsed_time += poll_interval
+        
+        if elapsed_time >= max_wait_time:
+            print(f"\nWarning: Task still running after {max_wait_time}s")
         
         # Get task details
         task_details = ecs_client.describe_tasks(
