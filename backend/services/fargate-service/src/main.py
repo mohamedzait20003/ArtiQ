@@ -1,14 +1,21 @@
-def main(input_string: str) -> str:
+import json
+
+
+def main(input_string: str) -> dict:
     """
-    Takes a string as input and returns it back.
+    Takes a string as input and returns a JSON response.
     
     Args:
-        input_string: The input string to echo back
+        input_string: The input string to process
         
     Returns:
-        The same string that was provided as input
+        A dictionary with the input and additional fields
     """
-    return input_string
+    result = {
+        "input": input_string,
+        # Add more fields here in the future
+    }
+    return result
 
 
 if __name__ == "__main__":
@@ -17,7 +24,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         input_text = " ".join(sys.argv[1:])
         result = main(input_text)
-        print(result)
+        print(json.dumps(result))
     else:
         print("Usage: python main.py <string>")
         sys.exit(1)
