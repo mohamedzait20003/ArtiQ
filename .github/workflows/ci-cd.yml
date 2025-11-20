@@ -141,7 +141,7 @@ jobs:
     - name: Build, tag, and push image to ECR
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: fargate-service
+        ECR_REPOSITORY: ece30861/model_eval_fargate
         IMAGE_TAG: ${{ github.sha }}
       run: |
         cd backend/services/fargate-service
