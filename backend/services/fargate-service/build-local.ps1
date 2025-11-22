@@ -136,7 +136,8 @@ Write-Host ""
 
 if ($SkipPush) {
     Write-Host "Next steps:" -ForegroundColor Cyan
-    Write-Host "  - Run the image: docker run --rm fargate-service:$ImageTag" -ForegroundColor Gray
-    Write-Host "  - Run with tests: docker run --rm fargate-service:$ImageTag pytest" -ForegroundColor Gray
+    Write-Host "  - Run the image: docker run --rm -e GITHUB_TOKEN=your_token fargate-service:$ImageTag" -ForegroundColor Gray
+    Write-Host "  - Run with .env file: docker run --rm --env-file .env fargate-service:$ImageTag" -ForegroundColor Gray
+    Write-Host "  - Run with tests: docker run --rm -e GITHUB_TOKEN=your_token fargate-service:$ImageTag pytest" -ForegroundColor Gray
     Write-Host "  - Push to ECR: .\build-local.ps1 -ImageTag $ImageTag" -ForegroundColor Gray
 }

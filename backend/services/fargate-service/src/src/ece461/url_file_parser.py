@@ -8,15 +8,10 @@ class ModelLinks:
         self.code = code
         self.model_id = model_id
 
-def parse_url_file(path: str) -> List[ModelLinks]:
+def parse_urls(urls: str) -> List[ModelLinks]:
     links: List[ModelLinks] = []
-
-    if not os.path.exists(path):
-        logging.exception("Error: URL file path doesn't exist")
-        sys.exit(1)
-
-    with open(path, 'r') as file:
-        lines: List[str] = file.readlines()
+    
+    lines = [urls]
 
     for line in lines:
         stuff: List[str] = line.strip().split(",")
@@ -27,7 +22,7 @@ def parse_url_file(path: str) -> List[ModelLinks]:
 
         if not model:
             logging.exception("Error: model link not found")
-            sys.exit(1)
+            raise ValueError("Model link is required")
         else:
             validators.url(model)
 

@@ -2,7 +2,7 @@ import boto3
 import json
 import time
 
-def run_fargate_task(message="Hello from test script!"):
+def run_fargate_task(input="https://huggingface.co/openai/whisper-tiny/tree/main"):
     """
     Test script to run the Fargate task and fetch logs
     """
@@ -17,7 +17,7 @@ def run_fargate_task(message="Hello from test script!"):
     SECURITY_GROUP = "sg-09e4b74cc268af399"
     LOG_GROUP = "/ecs/ModelEvalTask"
     
-    print(f"Running Fargate task with message: '{message}'")
+    print(f"Running Fargate task with input: '{input}'")
     
     try:
         # Run the task
@@ -36,7 +36,7 @@ def run_fargate_task(message="Hello from test script!"):
                 'containerOverrides': [
                     {
                         'name': CONTAINER_NAME,
-                        'command': [message]
+                        'command': [input]
                     }
                 ]
             }
@@ -132,4 +132,4 @@ def run_fargate_task(message="Hello from test script!"):
 
 if __name__ == "__main__":
     # Test with a custom message
-    run_fargate_task("Testing Fargate from Python script!")
+    run_fargate_task(input="https://huggingface.co/openai/whisper-tiny/tree/main")

@@ -2,7 +2,7 @@ import sys, time, os, re
 import logging
 import json
 from ece461.logging_setup import setup as setup_logging
-from ece461.url_file_parser import parse_url_file, ModelLinks
+from ece461.url_file_parser import parse_urls, ModelLinks
 from ece461.metricCalcs import metrics as met
 from ece461.metricCalcs.net_score import calculate_net_score
 from typing import List
@@ -20,8 +20,8 @@ def main() -> int:
         log.exception("bad GITHUB_TOKEN.")
         return 1
 
-    models: List[ModelLinks] = parse_url_file(sys.argv[1])
-      
+    models: List[ModelLinks] = parse_urls(f",,{sys.argv[1]}")
+
     for m in models:
         start_time = time.perf_counter()
         results = met.run_metrics(m)

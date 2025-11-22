@@ -12,7 +12,7 @@ def setup() -> None:
     else:
 
         logging.error("Invalid LOG_FILE Path")
-        sys.exit(1)
+        raise ValueError("LOG_FILE environment variable is not set")
 
     # --- NEW: validate target is a writable file path (not a directory) ---
     log_file.parent.mkdir(parents=True, exist_ok=True)
@@ -24,7 +24,8 @@ def setup() -> None:
             pass
     except Exception as e:
         logging.error(f"Invalid LOG_FILE: {e}")
-        sys.exit(1)
+        # sys.exit(1) # What is the point of catching if we just exit?
+        raise ValueError(f"Invalid LOG_FILE: {e}")
     # ----------------------------------------------------------------------
     lvl = os.getenv("LOG_LEVEL", "0").strip()
     if lvl == "2":

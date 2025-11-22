@@ -15,7 +15,7 @@ if (-not $env:LOG_LEVEL) { $env:LOG_LEVEL = "2" }
 $cmd = if ($args.Count -gt 0) { $args[0] } else { "" }
 
 if ([string]::IsNullOrEmpty($cmd)) {
-    Write-Host "Usage: .\run.ps1 install|test|<path_to_URL>"
+    Write-Host "Usage: .\run.ps1 install|test|<model_url>"
     exit 1
 }
 elseif ($cmd -eq "install") {
