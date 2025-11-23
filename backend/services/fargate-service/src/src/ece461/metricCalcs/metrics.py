@@ -326,23 +326,36 @@ def calculate_code_quality(model: ModelLinks) -> tuple[float, float]:
     """
     t = time.perf_counter()
 
-    #Only handle GitHub repos
-    if "github.com" not in model.code:
+    # If no code URL/path is provided, return 0 immediately
+    if not model.code:
         return (0.0, (time.perf_counter() - t) * 1000.0)
 
-    tmp = os.path.join(os.getcwd(), f"_cq_{int(t*1000)}")
-    os.makedirs(tmp, exist_ok=True)
-
+    # Determine if model.code is a local path or a git URL
+    created_tmp = False
+    tmp = None
+    code_src = model.code
     try:
-        #Shallow clone
-        proc = subprocess.run(
-            ["git", "clone", "--depth", "1", model.code, tmp],
-            capture_output=True, text=True
-        )
-        if proc.returncode != 0:
-            return (0.0, (time.perf_counter() - t) * 1000.0)
+        # If it's a local directory, use it directly
+        if os.path.isdir(code_src):
+            tmp = code_src
+        # If it looks like a git URL (simple heuristic), clone it
+        elif code_src.startswith("http://") or code_src.startswith("https://") or code_src.startswith("git@"):
+            tmp = os.path.join(os.getcwd(), f"_cq_{int(t*1000)}")
+            os.makedirs(tmp, exist_ok=True)
+            created_tmp = True
+            proc = subprocess.run([
+                "git", "clone", "--depth", "1", code_src, tmp
+            ], capture_output=True, text=True)
+            if proc.returncode != 0:
+                return (0.0, (time.perf_counter() - t) * 1000.0)
+        else:
+            # Unknown format (e.g., short path string) - try to treat as local
+            if os.path.isdir(code_src):
+                tmp = code_src
+            else:
+                return (0.0, (time.perf_counter() - t) * 1000.0)
 
-        #Run pylint
+        # Run pylint on tmp
         out = subprocess.run(
             [sys.executable, "-m", "pylint", "--exit-zero", "--score=y", tmp],
             capture_output=True, text=True
@@ -355,16 +368,23 @@ def calculate_code_quality(model: ModelLinks) -> tuple[float, float]:
 
     lat = (time.perf_counter() - t) * 1000.0
 
-    #Cleanup
-    for root, dirs, files in os.walk(tmp, topdown=False):
-        for n in files: 
-            try: os.remove(os.path.join(root, n))
-            except: pass
-        for d in dirs: 
-            try: os.rmdir(os.path.join(root, d))
-            except: pass
-    try: os.rmdir(tmp)
-    except: pass
+    # Cleanup only when we created the temporary clone
+    if created_tmp and tmp:
+        for root, dirs, files in os.walk(tmp, topdown=False):
+            for n in files:
+                try:
+                    os.remove(os.path.join(root, n))
+                except:
+                    pass
+            for d in dirs:
+                try:
+                    os.rmdir(os.path.join(root, d))
+                except:
+                    pass
+        try:
+            os.rmdir(tmp)
+        except:
+            pass
 
     return (round(score, 2), round(lat))
 
