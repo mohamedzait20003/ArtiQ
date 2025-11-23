@@ -10,13 +10,13 @@ def setup() -> None:
         if not log_file.is_absolute():
             log_file = Path(__file__).resolve().parents[2] / log_file
     else:
-
         logging.error("Invalid LOG_FILE Path")
-        raise ValueError("LOG_FILE environment variable is not set")
+        sys.exit(1)
 
     # --- NEW: validate target is a writable file path (not a directory) ---
     log_file.parent.mkdir(parents=True, exist_ok=True)
     if log_file.exists() and log_file.is_dir():
+        logging.error(f"LOG_FILE points to a directory: {log_file}")
         raise ValueError(f"LOG_FILE points to a directory: {log_file}")
     try:
         # this surfaces permission / invalid-path issues early
@@ -24,8 +24,7 @@ def setup() -> None:
             pass
     except Exception as e:
         logging.error(f"Invalid LOG_FILE: {e}")
-        # sys.exit(1) # What is the point of catching if we just exit?
-        raise ValueError(f"Invalid LOG_FILE: {e}")
+        sys.exit(1)
     # ----------------------------------------------------------------------
     lvl = os.getenv("LOG_LEVEL", "0").strip()
     if lvl == "2":
