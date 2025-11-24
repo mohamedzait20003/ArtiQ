@@ -156,9 +156,55 @@ class ArtifactController(Controller):
         ):
             """Interact with the artifact with this id (BASELINE)"""
             print(f"GET /artifacts/{artifact_type}/{id} called")
-            # TODO: Implement logic
-            print(f"GET /artifacts/{artifact_type}/{id} RETURNING: 501 - Not implemented")
-            raise HTTPException(status_code=501, detail="Not implemented")
+            try:
+                # Get function name from environment variable
+                function_name = os.getenv('ARTIFACT_RETRIEVE_FUNCTION', 'ece461-artifact-retrieve')
+                
+                # Prepare payload for Lambda function
+                payload = {
+                    'artifact_type': artifact_type,
+                    'id': id
+                }
+                
+                # Invoke the Lambda function
+                response = self.lambda_client.invoke(
+                    FunctionName=function_name,
+                    InvocationType='RequestResponse',
+                    Payload=json.dumps(payload)
+                )
+                
+                # Parse response
+                result = json.loads(response['Payload'].read())
+                
+                # Check if Lambda returned an error
+                if 'errorMessage' in result:
+                    try:
+                        # Try to parse the error message as JSON (Lambda functions return JSON-encoded errors)
+                        error_data = json.loads(result['errorMessage'])
+                        error_status = error_data.get('statusCode', 500)
+                        error_message = error_data.get('errorMessage', 'Lambda function execution failed')
+                        print(f"GET /artifacts/{artifact_type}/{id} RETURNING: {error_status} - {error_message}")
+                        raise HTTPException(status_code=error_status, detail=error_message)
+                    except json.JSONDecodeError:
+                        # If error message is not JSON, treat as generic error
+                        print(f"GET /artifacts/{artifact_type}/{id} RETURNING: 500 - {result['errorMessage']}")
+                        raise HTTPException(status_code=500, detail=result['errorMessage'])
+                
+                if response['StatusCode'] == 200:
+                    print(f"GET /artifacts/{artifact_type}/{id} RETURNING: 200 - success")
+                    return result
+                else:
+                    print(f"GET /artifacts/{artifact_type}/{id} RETURNING: {response.get('StatusCode', 500)} - Lambda error")
+                    raise HTTPException(
+                        status_code=response.get('StatusCode', 500),
+                        detail=result.get('errorMessage', 'Lambda function execution failed')
+                    )
+                    
+            except HTTPException:
+                raise
+            except Exception as e:
+                print(f"GET /artifacts/{artifact_type}/{id} RETURNING: 500 - Exception: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Error invoking artifact_retrieve: {str(e)}")
 
 
         @self.router.put("/artifacts/{artifact_type}/{id}",
@@ -170,9 +216,56 @@ class ArtifactController(Controller):
         ):
             """Update this content of the artifact (BASELINE)"""
             print(f"PUT /artifacts/{artifact_type}/{id} called")
-            # TODO: Implement logic
-            print(f"PUT /artifacts/{artifact_type}/{id} RETURNING: 501 - Not implemented")
-            raise HTTPException(status_code=501, detail="Not implemented")
+            try:
+                # Get function name from environment variable
+                function_name = os.getenv('ARTIFACT_UPDATE_FUNCTION', 'ece461-artifact-update')
+                
+                # Prepare payload for Lambda function
+                payload = {
+                    'artifact_type': artifact_type,
+                    'id': id,
+                    'artifact': artifact.model_dump()
+                }
+                
+                # Invoke the Lambda function
+                response = self.lambda_client.invoke(
+                    FunctionName=function_name,
+                    InvocationType='RequestResponse',
+                    Payload=json.dumps(payload)
+                )
+                
+                # Parse response
+                result = json.loads(response['Payload'].read())
+                
+                # Check if Lambda returned an error
+                if 'errorMessage' in result:
+                    try:
+                        # Try to parse the error message as JSON (Lambda functions return JSON-encoded errors)
+                        error_data = json.loads(result['errorMessage'])
+                        error_status = error_data.get('statusCode', 500)
+                        error_message = error_data.get('errorMessage', 'Lambda function execution failed')
+                        print(f"PUT /artifacts/{artifact_type}/{id} RETURNING: {error_status} - {error_message}")
+                        raise HTTPException(status_code=error_status, detail=error_message)
+                    except json.JSONDecodeError:
+                        # If error message is not JSON, treat as generic error
+                        print(f"PUT /artifacts/{artifact_type}/{id} RETURNING: 500 - {result['errorMessage']}")
+                        raise HTTPException(status_code=500, detail=result['errorMessage'])
+                
+                if response['StatusCode'] == 200:
+                    print(f"PUT /artifacts/{artifact_type}/{id} RETURNING: 200 - success")
+                    return result
+                else:
+                    print(f"PUT /artifacts/{artifact_type}/{id} RETURNING: {response.get('StatusCode', 500)} - Lambda error")
+                    raise HTTPException(
+                        status_code=response.get('StatusCode', 500),
+                        detail=result.get('errorMessage', 'Lambda function execution failed')
+                    )
+                    
+            except HTTPException:
+                raise
+            except Exception as e:
+                print(f"PUT /artifacts/{artifact_type}/{id} RETURNING: 500 - Exception: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Error invoking artifact_update: {str(e)}")
 
 
         @self.router.delete("/artifacts/{artifact_type}/{id}",
@@ -183,8 +276,55 @@ class ArtifactController(Controller):
         ):
             """Delete this artifact (NON-BASELINE)"""
             print(f"DELETE /artifacts/{artifact_type}/{id} called")
-            # TODO: Implement logic
-            raise HTTPException(status_code=501, detail="Not implemented")
+            try:
+                # Get function name from environment variable
+                function_name = os.getenv('ARTIFACT_DELETE_FUNCTION', 'ece461-artifact-delete')
+                
+                # Prepare payload for Lambda function
+                payload = {
+                    'artifact_type': artifact_type,
+                    'id': id
+                }
+                
+                # Invoke the Lambda function
+                response = self.lambda_client.invoke(
+                    FunctionName=function_name,
+                    InvocationType='RequestResponse',
+                    Payload=json.dumps(payload)
+                )
+                
+                # Parse response
+                result = json.loads(response['Payload'].read())
+                
+                # Check if Lambda returned an error
+                if 'errorMessage' in result:
+                    try:
+                        # Try to parse the error message as JSON (Lambda functions return JSON-encoded errors)
+                        error_data = json.loads(result['errorMessage'])
+                        error_status = error_data.get('statusCode', 500)
+                        error_message = error_data.get('errorMessage', 'Lambda function execution failed')
+                        print(f"DELETE /artifacts/{artifact_type}/{id} RETURNING: {error_status} - {error_message}")
+                        raise HTTPException(status_code=error_status, detail=error_message)
+                    except json.JSONDecodeError:
+                        # If error message is not JSON, treat as generic error
+                        print(f"DELETE /artifacts/{artifact_type}/{id} RETURNING: 500 - {result['errorMessage']}")
+                        raise HTTPException(status_code=500, detail=result['errorMessage'])
+                
+                if response['StatusCode'] == 200:
+                    print(f"DELETE /artifacts/{artifact_type}/{id} RETURNING: 200 - success")
+                    return result
+                else:
+                    print(f"DELETE /artifacts/{artifact_type}/{id} RETURNING: {response.get('StatusCode', 500)} - Lambda error")
+                    raise HTTPException(
+                        status_code=response.get('StatusCode', 500),
+                        detail=result.get('errorMessage', 'Lambda function execution failed')
+                    )
+                    
+            except HTTPException:
+                raise
+            except Exception as e:
+                print(f"DELETE /artifacts/{artifact_type}/{id} RETURNING: 500 - Exception: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Error invoking artifact_delete: {str(e)}")
 
 
         @self.router.get("/artifact/model/{id}/rate",
