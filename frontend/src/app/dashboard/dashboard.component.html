@@ -1,0 +1,203 @@
+<div class="flex h-screen bg-gray-100">
+  <!-- Sidebar -->
+  <div [class.w-64]="sidebarOpen" [class.w-0]="!sidebarOpen" class="bg-gray-900 text-white transition-all duration-300 overflow-hidden">
+    <div class="p-6">
+      <h1 class="text-2xl font-bold mb-8">ModelHub</h1>
+      <nav class="space-y-4">
+        <a href="#" class="block px-4 py-2 rounded-lg bg-yellow-500 text-gray-900 font-semibold hover:bg-yellow-600 transition">
+          Dashboard
+        </a>
+        <a href="#" class="block px-4 py-2 rounded-lg text-gray-300 hover:bg-gray-800 transition">
+          Models
+        </a>
+        <a href="#" class="block px-4 py-2 rounded-lg text-gray-300 hover:bg-gray-800 transition">
+          Datasets
+        </a>
+        <a href="#" class="block px-4 py-2 rounded-lg text-gray-300 hover:bg-gray-800 transition">
+          Spaces
+        </a>
+        <a href="#" class="block px-4 py-2 rounded-lg text-gray-300 hover:bg-gray-800 transition">
+          Settings
+        </a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col">
+    <!-- Top Navigation Bar -->
+    <div class="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+          <button (click)="toggleSidebar()" class="p-2 hover:bg-gray-100 rounded-lg transition">
+            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          <h2 class="text-2xl font-bold text-gray-900">Dashboard</h2>
+        </div>
+        <div class="flex items-center space-x-4">
+          <button class="p-2 hover:bg-gray-100 rounded-lg transition">
+            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+            </svg>
+          </button>
+          <div class="flex items-center space-x-3 pl-4 border-l border-gray-200">
+            <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+              <span class="text-white font-bold">U</span>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-gray-900">User</p>
+              <p class="text-xs text-gray-500">Profile</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 overflow-auto p-6">
+      <!-- Welcome Section -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome back!</h1>
+        <p class="text-gray-600">Here's an overview of your activity</p>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Stat Card 1 -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-500 text-sm font-medium">Total Models</p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">12</p>
+            </div>
+            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+              </svg>
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 mt-4">↑ 2 this month</p>
+        </div>
+
+        <!-- Stat Card 2 -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-500 text-sm font-medium">Total Datasets</p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">8</p>
+            </div>
+            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+              </svg>
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 mt-4">↑ 1 this month</p>
+        </div>
+
+        <!-- Stat Card 3 -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-500 text-sm font-medium">Total Downloads</p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">2.4K</p>
+            </div>
+            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+              <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 mt-4">↑ 12% from last week</p>
+        </div>
+
+        <!-- Stat Card 4 -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-500 text-sm font-medium">Active Spaces</p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">5</p>
+            </div>
+            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+              <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+              </svg>
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 mt-4">↑ 1 from last month</p>
+        </div>
+      </div>
+
+      <!-- Recent Activity Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Recent Models -->
+        <div class="lg:col-span-2 bg-white rounded-lg shadow p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">Recent Models</h3>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <span class="text-blue-600 font-bold">M</span>
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-900">GPT-Vision v2.1</p>
+                  <p class="text-sm text-gray-500">Updated 2 hours ago</p>
+                </div>
+              </div>
+              <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full">Computer Vision</span>
+            </div>
+            <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <span class="text-green-600 font-bold">L</span>
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-900">LLaMA-3</p>
+                  <p class="text-sm text-gray-500">Updated 1 day ago</p>
+                </div>
+              </div>
+              <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">Text Generation</span>
+            </div>
+            <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <span class="text-purple-600 font-bold">W</span>
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-900">Whisper-v3</p>
+                  <p class="text-sm text-gray-500">Updated 3 days ago</p>
+                </div>
+              </div>
+              <span class="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full">Audio</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
+          <div class="space-y-3">
+            <button class="w-full px-4 py-3 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold rounded-lg transition shadow-sm">
+              + New Model
+            </button>
+            <button class="w-full px-4 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-900 font-semibold rounded-lg transition">
+              + New Dataset
+            </button>
+            <button class="w-full px-4 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-900 font-semibold rounded-lg transition">
+              + New Space
+            </button>
+            <hr class="my-4" />
+            <button class="w-full px-4 py-3 text-gray-600 hover:text-gray-900 font-semibold text-sm transition">
+              View Documentation
+            </button>
+            <button class="w-full px-4 py-3 text-gray-600 hover:text-gray-900 font-semibold text-sm transition">
+              Contact Support
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
