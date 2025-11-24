@@ -58,7 +58,7 @@ def normalize(ret: ReturnType) -> MetricValue:
         })
     # Edge cases
     else:
-        out.update({"ok": False, "score": None, "latency": None})
+        out.update({"ok": False, "score": None, "latency_ms": None})
     
     return out
 
@@ -117,10 +117,8 @@ def calculate_ramp_up_metric(model: ModelLinks) -> tuple[float, float]:
     """
         Calculate ramp-up time metric.
     """
-    # Start latency calculation
     start_time = time.perf_counter()
 
-    # Initiate Ramp-up metric calculation
     readme_data = fetch_readme_content(model.model_id)
     if readme_data == "":
         logging.info("No README content found for model %s", model.model_id)
@@ -129,27 +127,32 @@ def calculate_ramp_up_metric(model: ModelLinks) -> tuple[float, float]:
         prompt = build_ramp_up_prompt(readme_data)
         response = llm_api.query_llm(prompt)
         logging.debug("Ramp-up LLM response: %s", response)
-        # Extract the ramp_up_score from the JSON response
         try:
-            m = re.search(r'"ramp_up_score"\s*:\s*([0-9]+(?:\.[0-9]+)?)', response)
-            extracted = float(m.group(1))
-            if extracted < 0.0:
+            if not isinstance(response, dict):
+                raise TypeError(f"Expected dict from LLM, got {type(response)}")
+
+            raw = response.get("ramp_up_score", 0.0)
+            score = float(raw)
+            # clamp to [0, 1]
+            if score < 0.0:
                 score = 0.0
-            elif extracted > 1.0:
+            elif score > 1.0:
                 score = 1.0
-            else:
-                score = extracted
-        except:
+        except Exception as e:
             score = 0.0
-            logging.error("Unexpected LLM response format for model %s: %s", model.model_id, response)
-    
-    logging.info("Ramp-up metric LLM score for model %f", score)
-    # End latency calculation
+            logging.error(
+                "Unexpected LLM response format for model %s: %s (error=%s)",
+                model.model_id,
+                response,
+                e,
+            )
+
+    logging.info("Ramp-up metric LLM score for model %.3f", score)
     end_time = time.perf_counter()
-    latency = (end_time - start_time) * 1000  # Convert to milliseconds
+    latency = (end_time - start_time) * 1000  # ms
     logging.info("Ramp-up metric latency for model %s: %.2f ms", model.model_id, latency)
-    
-    return (score, round(latency))
+
+    return round(score, 2), round(latency)
 
 def get_doc_score(model_card_text: str) -> float:
     """Calculates the documentation score based on the README content."""
@@ -229,10 +232,8 @@ def calculate_license_metric(model: ModelLinks) -> tuple[float, float]:
     """
         Calculate license compatibility score.
     """
-    # Start latency calculation
     start_time = time.perf_counter()
 
-    # Initiate license metric calculation
     model_card_data = fetch_model_card_content(model.model_id)
     if model_card_data == "":
         logging.info("No model card content found for model %s", model.model_id)
@@ -241,37 +242,39 @@ def calculate_license_metric(model: ModelLinks) -> tuple[float, float]:
         prompt = build_license_prompt(model_card_data)
         response = llm_api.query_llm(prompt)
         logging.debug("License LLM response: %s", response)
-        # Extract the license_score from the JSON response
         try:
-            m = re.search(r'"license_score"\s*:\s*([0-9]+(?:\.[0-9]+)?)', response)
-            extracted = float(m.group(1))
-            if extracted < 0.0:
+            if not isinstance(response, dict):
+                raise TypeError(f"Expected dict from LLM, got {type(response)}")
+
+            raw = response.get("license_score", 0.0)
+            score = float(raw)
+            if score < 0.0:
                 score = 0.0
-            elif extracted > 1.0:
+            elif score > 1.0:
                 score = 1.0
-            else:
-                score = extracted
-        except:
+        except Exception as e:
             score = 0.0
-            logging.error("Unexpected LLM response format for model %s: %s", model.model_id, response)
-    
-    logging.info("License metric LLM score for model %f", score)
-    # End latency calculation
+            logging.error(
+                "Unexpected LLM response format for model %s: %s (error=%s)",
+                model.model_id,
+                response,
+                e,
+            )
+
+    logging.info("License metric LLM score for model %.3f", score)
     end_time = time.perf_counter()
-    latency = (end_time - start_time) * 1000  # Convert to milliseconds
+    latency = (end_time - start_time) * 1000
     logging.info("License metric latency for model %s: %.2f ms", model.model_id, latency)
-    
-    return (round(score, 2), round(latency))
+
+    return round(score, 2), round(latency)
 
 @metric("performance")
 def calculate_performance_metric(model: ModelLinks) -> tuple[float, float]:
     """
         Calculate performance benchmark score.
     """
-    # Start latency calculation
     start_time = time.perf_counter()
 
-    # Initiate performance metric calculation
     model_card_data = fetch_model_card_content(model.model_id)
     if model_card_data == "":
         logging.info("No model card content found for model %s", model.model_id)
@@ -280,27 +283,32 @@ def calculate_performance_metric(model: ModelLinks) -> tuple[float, float]:
         prompt = build_performance_prompt(model_card_data)
         response = llm_api.query_llm(prompt)
         logging.debug("Performance LLM response: %s", response)
-        # Extract the ramp_up_score from the JSON response
         try:
-            m = re.search(r'"performance_score"\s*:\s*([0-9]+(?:\.[0-9]+)?)', response)
-            extracted = float(m.group(1))
-            if extracted < 0.0:
+            if not isinstance(response, dict):
+                raise TypeError(f"Expected dict from LLM, got {type(response)}")
+
+            raw = response.get("performance_score", 0.0)
+            score = float(raw)
+            if score < 0.0:
                 score = 0.0
-            elif extracted > 1.0:
+            elif score > 1.0:
                 score = 1.0
-            else:
-                score = extracted
-        except:
+        except Exception as e:
             score = 0.0
-            logging.error("Unexpected LLM response format for model %s: %s", model.model_id, response)
-    
-    logging.info("Performance metric LLM score for model %f", score)
-    # End latency calculation
+            logging.error(
+                "Unexpected LLM response format for model %s: %s (error=%s)",
+                model.model_id,
+                response,
+                e,
+            )
+
+    logging.info("Performance metric LLM score for model %.3f", score)
     end_time = time.perf_counter()
-    latency = (end_time - start_time) * 1000  # Convert to milliseconds
+    latency = (end_time - start_time) * 1000
     logging.info("Performance metric latency for model %s: %.2f ms", model.model_id, latency)
 
-    return (round(score, 2), round(latency))
+    return round(score, 2), round(latency)
+
 
 @metric("size")
 def calculate_size_metric(model: ModelLinks) -> tuple[float, float]:
@@ -394,31 +402,30 @@ def calculate_dataset_and_code_score(model: ModelLinks) -> tuple[float, float]:
         Calculate the dataset and code quality score
     """
     start_time = time.perf_counter()
+
     if model.dataset is None and model.code is None:
         score = 0.0
     else:
-        prompt = build_dataset_code_prompt(model.dataset, model.code)
+        # use empty string if None so the prompt still works
+        prompt = build_dataset_code_prompt(model.dataset or "", model.code or "")
         try:
             response = llm_api.query_llm(prompt)
             logging.debug("Dataset and code LLM response: %s", response)
-            # Extract the score from the JSON response
-            m = re.search(r'"dataset_code_score"\s*:\s*([0-9]+(?:\.[0-9]+)?)', response)
-            if m:
-                extracted = float(m.group(1))
-                score = max(0.0, min(1.0, extracted))
-            else:
-                logging.error("Could not extract dataset_code_score from LLM response")
-                score = 0.0
+
+            if not isinstance(response, dict):
+                raise TypeError(f"Expected dict from LLM, got {type(response)}")
+
+            raw = response.get("dataset_code_score", 0.0)
+            score = float(raw)
+            score = max(0.0, min(1.0, score))
         except Exception as e:
-            logging.error("Error analyzing dataset and code: %s", e)
+            logging.error("Error analyzing dataset and code for model %s: %s", model.model_id, e)
             score = 0.0
     
     logging.info("Dataset and code metric score: %.3f", score)
     
-    # End latency calculation
     end_time = time.perf_counter()
-    latency = round((end_time - start_time) * 1000)  # Convert to milliseconds
-        
+    latency = round((end_time - start_time) * 1000)
     return round(score, 2), round(latency)
 
 @metric("dataset_quality")
@@ -437,24 +444,22 @@ def calculate_dataset_quality(model: ModelLinks) -> tuple[float, float]:
             response = llm_api.query_llm(prompt)
             logging.debug("Dataset quality LLM response: %s", response)
             
-            # Extract the score from the JSON response
-            m = re.search(r'"dataset_quality_score"\s*:\s*([0-9]+(?:\.[0-9]+)?)', response)
-            if m:
-                extracted = float(m.group(1))
-                score = max(0.0, min(1.0, extracted))
-            else:
-                logging.error("Could not extract dataset_quality_score from LLM response")
-                score = 0.0
+            if not isinstance(response, dict):
+                raise TypeError(f"Expected dict from LLM, got {type(response)}")
+
+            raw = response.get("dataset_quality_score", 0.0)
+            score = float(raw)
+            score = max(0.0, min(1.0, score))
         except Exception as e:
-            logging.error("Error analyzing dataset quality: %s", e)
+            logging.error("Error analyzing dataset quality for model %s: %s", model.model_id, e)
             score = 0.0
     
     logging.info("Dataset quality metric score: %.3f", score)
     
     end_time = time.perf_counter()
     latency = round((end_time - start_time) * 1000)
-    
     return round(score, 2), round(latency)
+
 
 ################################# Supporting Functions #################################
 # License metric calculation

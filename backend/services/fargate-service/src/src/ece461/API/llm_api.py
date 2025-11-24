@@ -1,63 +1,85 @@
-import os
+import boto3
 import json
 import logging
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
+bedrock = boto3.client("bedrock-runtime", region_name="us-east-2")
+MODEL_ID = "openai.gpt-oss-120b-1:0"
 
 
-def _invoke_bedrock(prompt: str) -> str:
-    """Invoke AWS Bedrock runtime and return the textual output.
+def _call_bedrock(prompt: str) -> str:
+    """Call GPT-OSS via Bedrock and return the assistant's *raw* content string."""
+    native_request = {
+        "model": MODEL_ID,
+        "messages": [
+            {"role": "system", "content": "You are a JSON-only responder."},
+            {"role": "user", "content": prompt},
+        ],
+        "max_completion_tokens": 1024,
+        "temperature": 0.2,
+        "top_p": 0.9,
+    }
 
-    Requires:
-      - boto3 available in runtime
-      - BEDROCK_MODEL_ID environment variable set
-    """
+    response = bedrock.invoke_model(
+        modelId=MODEL_ID,
+        body=json.dumps(native_request),
+        accept="application/json",
+        contentType="application/json",
+    )
+
+    body_bytes = response["body"].read()
+    if not body_bytes:
+        raise ValueError("Bedrock returned empty body")
+
+    body_str = body_bytes.decode("utf-8")
     try:
-        import boto3
+        body_json = json.loads(body_str)
     except Exception:
-        logging.error("boto3 is required for Bedrock calls. Add boto3 to requirements.")
+        logger.error("Failed to parse Bedrock body as JSON: %s", body_str[:500])
         raise
 
-    model_id = os.getenv("BEDROCK_MODEL_ID")
-    if not model_id:
-        raise ValueError("BEDROCK_MODEL_ID environment variable must be set for Bedrock provider")
-
-    client = boto3.client("bedrock-runtime")
-    payload = json.dumps({"input": prompt}).encode("utf-8")
-    resp = client.invoke_model(modelId=model_id, body=payload, contentType="application/json")
-    body_bytes = resp["body"].read()
-
-    # Try to decode JSON, else return raw text
     try:
-        data = json.loads(body_bytes)
-    except Exception:
-        try:
-            return body_bytes.decode("utf-8")
-        except Exception:
-            return str(body_bytes)
+        content = body_json["choices"][0]["message"]["content"]
+    except (KeyError, IndexError) as e:
+        logger.error("Unexpected GPT-OSS response structure: %s", body_str[:500])
+        raise e
 
-    # Heuristic extraction of text from common keys
-    for candidate in ("output", "outputs", "results", "result", "completion", "completions", "text"):
-        if candidate in data:
-            val = data[candidate]
-            if isinstance(val, list) and val:
-                first = val[0]
-                if isinstance(first, dict) and "content" in first:
-                    return first["content"]
-                if isinstance(first, str):
-                    return first
-            if isinstance(val, dict) and "content" in val:
-                return val["content"]
-            if isinstance(val, str):
-                return val
+    if not isinstance(content, str):
+        raise TypeError("Expected GPT-OSS content to be a string")
 
-    # fallback: return JSON string
-    return json.dumps(data)
+    return content
 
 
-def query_llm(prompt: str) -> str:
-    """Query AWS Bedrock for an LLM completion and return the textual result.
+def _extract_json_from_content(content: str) -> str:
+    """Strip <reasoning> wrapper and extract JSON."""
+    content = content.strip()
 
-    This function only supports Bedrock. It will raise ValueError if
-    the `BEDROCK_MODEL_ID` environment variable is not set.
+    if content.startswith("<reasoning>"):
+        closing = content.find("</reasoning>")
+        if closing != -1:
+            content = content[closing + len("</reasoning>") :].strip()
+
+    start = content.find("{")
+    end = content.rfind("}")
+
+    if start == -1 or end == -1 or end < start:
+        logger.error("LLM did not return JSON. Raw content: %r", content[:500])
+        raise ValueError("LLM response does not contain a JSON object")
+
+    return content[start : end + 1].strip()
+
+
+def query_llm(prompt: str) -> Any:
     """
-    # Only Bedrock is supported
-    return _invoke_bedrock(prompt)
+    Call GPT-OSS once (no manual retries) and return parsed JSON.
+    Bedrock performs its own retry logic internally.
+    """
+    raw_content = _call_bedrock(prompt).strip()
+    logger.debug("GPT-OSS raw content (truncated): %s", raw_content[:200])
+
+    json_str = _extract_json_from_content(raw_content)
+    logger.debug("GPT-OSS cleaned JSON (truncated): %s", json_str[:200])
+
+    return json.loads(json_str)
