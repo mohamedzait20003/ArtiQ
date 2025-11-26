@@ -2,6 +2,7 @@ import sys
 import os
 import pytest
 from fastapi.testclient import TestClient
+from moto import mock_aws
 
 from app.main import app
 
@@ -31,6 +32,15 @@ os.environ['AWS_SECRET_ACCESS_KEY'] = 'testing'
 os.environ['AWS_SECURITY_TOKEN'] = 'testing'
 os.environ['AWS_SESSION_TOKEN'] = 'testing'
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+
+
+@pytest.fixture(scope="function", autouse=True)
+def aws_credentials():
+    """Mocked AWS Credentials for moto."""
+    mock = mock_aws()
+    mock.start()
+    yield
+    mock.stop()
 
 
 def pytest_configure(config):
