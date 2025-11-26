@@ -10,10 +10,12 @@ sys.path.insert(
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app.main import app, artifact_controller  # noqa: E402
+from app.main import app  # noqa: E402
+from app.controllers.artifact_controller import ArtifactController  # noqa: E402
 
 
 client = TestClient(app)
+artifact_controller = ArtifactController()
 
 
 def make_payload(obj):

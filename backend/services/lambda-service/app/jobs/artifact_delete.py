@@ -32,7 +32,7 @@ def lambda_handler(event, context):
             raise ValueError("Artifact ID is required")
         
         if not re.match(r'^[a-zA-Z0-9\-]+$', artifact_id):
-            raise ValueError(f"Invalid artifact ID format: {artifact_id}. Must match pattern: ^[a-zA-Z0-9\-]+$")
+            raise ValueError(f"Invalid artifact ID format: {artifact_id}. Must match pattern: ^[a-zA-Z0-9\\-]+$")
         
         # Retrieve artifact from database
         artifact = Artifact_Model.get({'id': artifact_id}, load_s3_data=False)

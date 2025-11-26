@@ -35,7 +35,7 @@ def lambda_handler(event, context):
             raise ValueError("Artifact ID is required")
         
         if not re.match(r'^[a-zA-Z0-9\-]+$', artifact_id):
-            raise ValueError(f"Invalid artifact ID format: {artifact_id}. Must match pattern: ^[a-zA-Z0-9\-]+$")
+            raise ValueError(f"Invalid artifact ID format: {artifact_id}. Must match pattern: ^[a-zA-Z0-9\\-]+$")
         
         # Validate artifact_data structure
         if not artifact_data:

@@ -49,8 +49,8 @@ jobs:
       run: |
         cd backend/services/lambda-service
         pip install flake8
-        flake8 app routes --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 app routes --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 app --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
   fargate-service:
     name: Fargate Service CI/CD
