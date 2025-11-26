@@ -10,6 +10,7 @@ class Auth_Model(Model):
 
     DynamoDB Schema:
     - ID (Primary Key): Unique identifier for the user
+    - Username (Unique, Indexed): User's unique username for login
     - Name: User's display name
     - Email (Unique, Indexed): User's email address
     - Password: Hashed password for authentication
@@ -26,7 +27,8 @@ class Auth_Model(Model):
         Name: str,
         Email: str,
         Password: str,
-        RoleID: Optional[str] = None,
+        Username: str = "",
+        RoleID: str = "",
         **kwargs
     ):
         """
@@ -37,12 +39,14 @@ class Auth_Model(Model):
             Name: User's display name
             Email: User's email (should be unique and indexed in DynamoDB)
             Password: User's hashed password
+            Username: User's unique username for login (defaults to Name if not provided)
             RoleID: Role ID assigned to this user
         """
         self.ID = ID
         self.Name = Name
         self.Email = Email
         self.Password = Password
+        self.Username = Username if Username else Name
         self.RoleID = RoleID
 
         super().__init__(**kwargs)
@@ -84,6 +88,19 @@ class Auth_Model(Model):
         self.RoleID = role_id
         return self.save()
 
+    @property
+    def is_admin(self) -> bool:
+        """
+        Check if user has admin privileges
+        
+        Returns:
+            True if user has a role with admin privileges, False otherwise
+        """
+        if self.RoleID:
+            role = self.get_role()
+            return role and role.Name == 'Admin'
+        return False
+    
     def get_role(self) -> Optional[Role_Model]:
         """
         Get the role assigned to this user
@@ -96,24 +113,25 @@ class Auth_Model(Model):
         return None
 
     @classmethod
-    def check_user(cls, email: str, password: str) -> Optional['Auth_Model']:
+    def check_user(cls, username: str, password: str) -> Optional['Auth_Model']:
         """
-        Authenticate user by email and password
+        Authenticate user by username and password
         Args:
-            email: The email address to search for
+            username: The username (Username or Email) to search for
             password: The plain text password to verify
         Returns:
             Auth_Model instance if credentials are valid, None otherwise
-        Note: This assumes you have a GSI on the Email attribute in DynamoDB
+        Note: This searches by Username or Email only
         """
         try:
-            response = cls.table().query(
-                IndexName='EmailIndex',
-                KeyConditionExpression='Email = :email',
-                ExpressionAttributeValues={':email': email}
+            # Try to find user by Username or Email using scan
+            response = cls.table().scan(
+                FilterExpression='Username = :username OR Email = :username',
+                ExpressionAttributeValues={':username': username}
             )
 
             items = response.get('Items', [])
+            
             if items:
                 user = cls(**items[0])
                 if user.Password == cls._hash_password(password):
