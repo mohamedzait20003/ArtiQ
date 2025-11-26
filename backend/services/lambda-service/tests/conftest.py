@@ -15,6 +15,12 @@ if LAMBDA_SERVICE_PATH in sys.path:
     sys.path.remove(LAMBDA_SERVICE_PATH)
 sys.path.insert(0, LAMBDA_SERVICE_PATH)
 
+# Also set PYTHONPATH environment variable to ensure all imports work
+current_pythonpath = os.environ.get('PYTHONPATH', '')
+os.environ['PYTHONPATH'] = (
+    LAMBDA_SERVICE_PATH + os.pathsep + current_pythonpath
+)
+
 
 def pytest_configure(config):
     """
