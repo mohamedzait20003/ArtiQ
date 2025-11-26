@@ -2,9 +2,9 @@
 import sys
 import os
 
-# Ensure src is in sys.path for import
+# Ensure lambda-service is in sys.path for import
 sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../app'))
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 )
 
 # Third-party imports
