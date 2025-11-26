@@ -36,7 +36,7 @@ def test_upload_download_delete_s3_success_and_failure(monkeypatch):
     mock_s3 = Mock()
     mock_s3.put_object.return_value = {}
     # Patch the AWS services module
-    mod_aws_services = importlib.import_module("lib.aws")
+    mod_aws_services = importlib.import_module("app.lib.aws")
 
     # Mock get_s3() to return our mock client
     monkeypatch.setattr(mod_aws_services, "get_s3", lambda: mock_s3)
@@ -162,7 +162,7 @@ def test_get_file_and_url_and_validation(monkeypatch):
     inst.file_s3_key = "k1"
     mock_s3 = Mock()
     mock_s3.generate_presigned_url.return_value = "https://signed"
-    mod_aws_services = importlib.import_module("lib.aws")
+    mod_aws_services = importlib.import_module("app.lib.aws")
 
     # Mock get_s3() to return our mock client
     monkeypatch.setattr(mod_aws_services, "get_s3", lambda: mock_s3)
