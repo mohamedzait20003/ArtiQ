@@ -2,14 +2,16 @@
 import sys
 import os
 
-# Third-party imports
-from fastapi.testclient import TestClient
-
 # Ensure src is in sys.path for import
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../app')))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../app'))
+)
+
+# Third-party imports
+from fastapi.testclient import TestClient  # noqa: E402
 
 # Import the FastAPI app
-from app.main import app
+from app.main import app  # noqa: E402
 
 # TestClient instance
 client = TestClient(app)

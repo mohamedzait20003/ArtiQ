@@ -1,5 +1,5 @@
-import uuid
-from unittest.mock import Mock, patch
+import importlib
+from unittest.mock import Mock
 
 import pytest
 from botocore.exceptions import ClientError
@@ -21,9 +21,6 @@ def make_client_error():
     return ClientError({"Error": {"Message": "boom", "Code": "500"}}, "Op")
 
 
-import importlib
-
-
 def test_upload_download_delete_s3_success_and_failure(monkeypatch):
     inst = DummyModel()
 
@@ -32,7 +29,7 @@ def test_upload_download_delete_s3_success_and_failure(monkeypatch):
     mock_s3.put_object.return_value = {}
     # Patch the AWS services module
     mod_aws_services = importlib.import_module("lib.aws")
-    
+
     # Mock get_s3() to return our mock client
     monkeypatch.setattr(mod_aws_services, "get_s3", lambda: mock_s3)
 
@@ -78,10 +75,11 @@ def test_save_put_item_and_s3_handling(monkeypatch):
     mock_table = Mock()
     mock_table.put_item.return_value = {}
     # Patch table() to return our mock
-    monkeypatch.setattr(DummyModel, "table", classmethod(lambda cls: mock_table))
+    monkeypatch.setattr(DummyModel, "table",
+                        classmethod(lambda cls: mock_table))
 
     assert inst.save() is True
-    # ensure put_item was called with item that contains file_s3_key and not file
+
     called_item = mock_table.put_item.call_args[1]["Item"]
     assert "file_s3_key" in called_item
     assert "file" not in called_item
@@ -92,6 +90,7 @@ def test_save_put_item_and_s3_handling(monkeypatch):
 
     # If put_item raises ClientError, save should return False
     monkeypatch.setattr(DummyModel, "_upload_to_s3", lambda self, f, d: "k123")
+
     def raise_err(*args, **kwargs):
         raise make_client_error()
 
@@ -105,10 +104,12 @@ def test_get_load_s3_data_and_clienterror(monkeypatch):
 
     mock_table = Mock()
     mock_table.get_item.return_value = {"Item": item}
-    monkeypatch.setattr(DummyModel, "table", classmethod(lambda cls: mock_table))
+    monkeypatch.setattr(DummyModel, "table",
+                        classmethod(lambda cls: mock_table))
 
     # Patch _download_from_s3 to return bytes when loading
-    monkeypatch.setattr(DummyModel, "_download_from_s3", lambda self, k: b"blob")
+    monkeypatch.setattr(DummyModel, "_download_from_s3",
+                        lambda self, k: b"blob")
 
     inst = DummyModel.get({"id": "1"}, load_s3_data=True)
     assert isinstance(inst, DummyModel)
@@ -154,10 +155,10 @@ def test_get_file_and_url_and_validation(monkeypatch):
     mock_s3 = Mock()
     mock_s3.generate_presigned_url.return_value = "https://signed"
     mod_aws_services = importlib.import_module("lib.aws")
-    
+
     # Mock get_s3() to return our mock client
     monkeypatch.setattr(mod_aws_services, "get_s3", lambda: mock_s3)
-    
+
     url = inst.get_file_url("file", expires_in=10)
     assert url == "https://signed"
 
@@ -175,6 +176,7 @@ def test_delete_calls_s3_and_table(monkeypatch):
 
     # Patch _delete_from_s3 to record calls
     called = {}
+
     def fake_delete(self, key):
         called['k'] = key
         return True
@@ -183,7 +185,8 @@ def test_delete_calls_s3_and_table(monkeypatch):
 
     mock_table = Mock()
     mock_table.delete_item.return_value = {}
-    monkeypatch.setattr(DummyModel, "table", classmethod(lambda cls: mock_table))
+    monkeypatch.setattr(DummyModel, "table",
+                        classmethod(lambda cls: mock_table))
 
     assert inst.delete() is True
     assert called['k'] == "k1"

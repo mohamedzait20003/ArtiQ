@@ -6,7 +6,9 @@ from unittest.mock import Mock, patch
 import pytest
 
 # Ensure src is importable
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../app')))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../app'))
+)
 
 
 class TestArtifactDeleteLambda:

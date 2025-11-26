@@ -6,7 +6,9 @@ from unittest.mock import Mock, patch
 import pytest
 
 # Ensure src is importable
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../app')))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../app'))
+)
 
 
 class TestArtifactUpdateLambda:
@@ -103,7 +105,10 @@ class TestArtifactUpdateLambda:
         event = {
             "artifact_type": "badtype",
             "id": "abc-123",
-            "artifact": {"metadata": {"id": "abc-123", "name": "test-model"}, "data": {"url": "u"}},
+            "artifact": {
+                "metadata": {"id": "abc-123", "name": "test-model"},
+                "data": {"url": "u"}
+            },
         }
 
         with pytest.raises(Exception) as excinfo:
@@ -118,7 +123,10 @@ class TestArtifactUpdateLambda:
         event = {
             "artifact_type": "model",
             "id": "bad id",
-            "artifact": {"metadata": {"id": "bad id", "name": "test-model"}, "data": {"url": "u"}},
+            "artifact": {
+                "metadata": {"id": "bad id", "name": "test-model"},
+                "data": {"url": "u"}
+            },
         }
 
         with pytest.raises(Exception) as excinfo:
@@ -152,7 +160,10 @@ class TestArtifactUpdateLambda:
         event = {
             "artifact_type": "model",
             "id": "abc-123",
-            "artifact": {"metadata": {"id": "abc-123", "name": "test-model"}, "data": {"url": "u"}},
+            "artifact": {
+                "metadata": {"id": "abc-123", "name": "test-model"},
+                "data": {"url": "u"}
+            },
         }
 
         with pytest.raises(Exception) as excinfo:
@@ -177,7 +188,8 @@ class TestArtifactUpdateLambda:
         event = {
             "artifact_type": "model",
             "id": "abc-123",
-            "artifact": {"metadata": {"id": "abc-123", "name": "test-model"}, "data": {"url": "u"}},
+            "artifact": {"metadata": {"id": "abc-123", "name": "test-model"},
+                         "data": {"url": "u"}},
         }
 
         with pytest.raises(Exception) as excinfo:
@@ -202,7 +214,13 @@ class TestArtifactUpdateLambda:
         event = {
             "artifact_type": "model",
             "id": "abc-123",
-            "artifact": {"metadata": {"id": "abc-123", "name": "different-name"}, "data": {"url": "u"}},
+            "artifact": {
+                "metadata": {
+                    "id": "abc-123",
+                    "name": "different-name"
+                },
+                "data": {"url": "u"}
+            },
         }
 
         with pytest.raises(Exception) as excinfo:
@@ -227,7 +245,10 @@ class TestArtifactUpdateLambda:
         event = {
             "artifact_type": "model",
             "id": "abc-123",
-            "artifact": {"metadata": {"id": "abc-123", "name": "test-model"}, "data": {"url": "u"}},
+            "artifact": {
+                "metadata": {"id": "abc-123", "name": "test-model"},
+                "data": {"url": "u"}
+            },
         }
 
         with pytest.raises(Exception) as excinfo:

@@ -12,7 +12,7 @@ from app.controllers.admin_controller import AdminController
 from app.middlewares.auth_middleware import (
     auth_optional,
     auth_required,
-    auth_admin
+    # auth_admin
 )
 
 

@@ -1,5 +1,3 @@
-import os
-import sys
 import json
 from unittest.mock import Mock, patch
 
@@ -10,21 +8,16 @@ import pytest
 # - test_artifact_retrieve.py
 # - test_artifact_update.py
 # - test_artifact_delete.py
-pytest.skip("Original combined CRUD tests skipped — use split modules instead", allow_module_level=True)
+pytest.skip(
+    "Original combined CRUD tests skipped — use split modules instead",
+    allow_module_level=True
+)
+
 
 def test_placeholder():
-    # Placeholder so pytest has at least one test if this file accidentally runs
+    # Placeholder so pytest has at least one test
+    # if this file accidentally runs
     assert True
-
-import os
-import sys
-import json
-from unittest.mock import Mock, patch
-
-import pytest
-
-# Ensure src is importable
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../app')))
 
 
 # ---------- artifact_retrieve lambda ----------
@@ -58,11 +51,16 @@ class TestArtifactRetrieveLambda:
         assert result["metadata"]["type"] == "model"
         assert result["data"]["url"] == "https://huggingface.co/test"
 
-        mock_artifact_model.get.assert_called_once_with({"id": "abc-123"}, load_s3_data=False)
+        mock_artifact_model.get.assert_called_once_with(
+            {"id": "abc-123"}, load_s3_data=False
+        )
 
     @patch("app.jobs.artifact_retrieve.Artifact_Model")
     def test_retrieve_not_found_404(self, mock_artifact_model):
-        """If the artifact is not found, handler should raise a 404 error (wrapped in JSON)."""
+        """
+        If the artifact is not found,
+        handler should raise a 404 error (wrapped in JSON).
+        """
 
         from app.jobs.artifact_retrieve import lambda_handler
 
@@ -77,7 +75,10 @@ class TestArtifactRetrieveLambda:
         assert err["statusCode"] == 404
 
     def test_retrieve_missing_fields_400(self):
-        """If required fields are missing, handler should return a 400 error."""
+        """
+        If required fields are missing,
+        handler should return a 400 error.
+        """
 
         from app.jobs.artifact_retrieve import lambda_handler
 
