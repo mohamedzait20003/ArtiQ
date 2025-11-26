@@ -1,18 +1,10 @@
-import sys
-import os
 import importlib
 from unittest.mock import Mock
 
 import pytest
+from botocore.exceptions import ClientError
 
-# Ensure lambda-service is importable
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-)
-
-from botocore.exceptions import ClientError  # noqa: E402
-
-from app.models.Model import Model  # noqa: E402
+from app.models.Model import Model
 
 
 class DummyModel(Model):
@@ -29,7 +21,7 @@ def make_client_error():
     return ClientError({"Error": {"Message": "boom", "Code": "500"}}, "Op")
 
 
-def test_upload_download_delete_s3_success_and_failure(monkeypatch):
+def test_upload_download_delete_s3(monkeypatch):
     inst = DummyModel()
 
     # Mock successful put_object
@@ -78,13 +70,16 @@ def test_save_put_item_and_s3_handling(monkeypatch):
     inst = DummyModel(id="1", file=b"bytesdata", other="x")
 
     # Patch _upload_to_s3 to return a key
-    monkeypatch.setattr(DummyModel, "_upload_to_s3", lambda self, f, d: "k123")
+    monkeypatch.setattr(
+        DummyModel, "_upload_to_s3", lambda self, f, d: "k123"
+    )
 
     mock_table = Mock()
     mock_table.put_item.return_value = {}
     # Patch table() to return our mock
-    monkeypatch.setattr(DummyModel, "table",
-                        classmethod(lambda cls: mock_table))
+    monkeypatch.setattr(
+        DummyModel, "table", classmethod(lambda cls: mock_table)
+    )
 
     assert inst.save() is True
 
@@ -93,11 +88,15 @@ def test_save_put_item_and_s3_handling(monkeypatch):
     assert "file" not in called_item
 
     # If upload fails (returns None) save should return False
-    monkeypatch.setattr(DummyModel, "_upload_to_s3", lambda self, f, d: None)
+    monkeypatch.setattr(
+        DummyModel, "_upload_to_s3", lambda self, f, d: None
+    )
     assert inst.save() is False
 
     # If put_item raises ClientError, save should return False
-    monkeypatch.setattr(DummyModel, "_upload_to_s3", lambda self, f, d: "k123")
+    monkeypatch.setattr(
+        DummyModel, "_upload_to_s3", lambda self, f, d: "k123"
+    )
 
     def raise_err(*args, **kwargs):
         raise make_client_error()
@@ -106,18 +105,20 @@ def test_save_put_item_and_s3_handling(monkeypatch):
     assert inst.save() is False
 
 
-def test_get_load_s3_data_and_clienterror(monkeypatch):
+def test_get_load_s3_data(monkeypatch):
     # Setup item returned from DynamoDB
     item = {"id": "1", "file_s3_key": "k123"}
 
     mock_table = Mock()
     mock_table.get_item.return_value = {"Item": item}
-    monkeypatch.setattr(DummyModel, "table",
-                        classmethod(lambda cls: mock_table))
+    monkeypatch.setattr(
+        DummyModel, "table", classmethod(lambda cls: mock_table)
+    )
 
     # Patch _download_from_s3 to return bytes when loading
-    monkeypatch.setattr(DummyModel, "_download_from_s3",
-                        lambda self, k: b"blob")
+    monkeypatch.setattr(
+        DummyModel, "_download_from_s3", lambda self, k: b"blob"
+    )
 
     inst = DummyModel.get({"id": "1"}, load_s3_data=True)
     assert isinstance(inst, DummyModel)
@@ -135,7 +136,7 @@ def test_get_load_s3_data_and_clienterror(monkeypatch):
     assert DummyModel.get({"id": "1"}) is None
 
 
-def test_get_file_and_url_and_validation(monkeypatch):
+def test_get_file_and_url(monkeypatch):
     inst = DummyModel(id="1")
 
     # field not present in s3_fields -> ValueError
@@ -147,7 +148,9 @@ def test_get_file_and_url_and_validation(monkeypatch):
 
     # Provide s3 key and patch download
     inst.file_s3_key = "k1"
-    monkeypatch.setattr(DummyModel, "_download_from_s3", lambda self, k: b"b")
+    monkeypatch.setattr(
+        DummyModel, "_download_from_s3", lambda self, k: b"b"
+    )
     assert inst.get_file("file") == b"b"
 
     # get_file_url validation
@@ -193,8 +196,9 @@ def test_delete_calls_s3_and_table(monkeypatch):
 
     mock_table = Mock()
     mock_table.delete_item.return_value = {}
-    monkeypatch.setattr(DummyModel, "table",
-                        classmethod(lambda cls: mock_table))
+    monkeypatch.setattr(
+        DummyModel, "table", classmethod(lambda cls: mock_table)
+    )
 
     assert inst.delete() is True
     assert called['k'] == "k1"

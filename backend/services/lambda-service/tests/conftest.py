@@ -1,62 +1,109 @@
-import sys
 import os
+import sys
+
+import boto3
 import pytest
 from fastapi.testclient import TestClient
 from moto import mock_aws
 
-from app.main import app
-
-
-# Add lambda-service directory to Python path FIRST
-# This must happen before any imports
-# Get the path to the lambda-service directory (parent of tests/)
-LAMBDA_SERVICE_PATH = os.path.dirname(
-    os.path.dirname(os.path.abspath(__file__))
-)
-
-# Ensure the lambda-service directory is at the front of sys.path
-# Remove it first if it exists elsewhere
-if LAMBDA_SERVICE_PATH in sys.path:
-    sys.path.remove(LAMBDA_SERVICE_PATH)
-sys.path.insert(0, LAMBDA_SERVICE_PATH)
-
-# Also set PYTHONPATH environment variable to ensure all imports work
-current_pythonpath = os.environ.get('PYTHONPATH', '')
-os.environ['PYTHONPATH'] = (
-    LAMBDA_SERVICE_PATH + os.pathsep + current_pythonpath
-)
-
-# Set fake AWS credentials to prevent boto3 from failing
+# Configure AWS credentials before any boto3 imports
 os.environ['AWS_ACCESS_KEY_ID'] = 'testing'
 os.environ['AWS_SECRET_ACCESS_KEY'] = 'testing'
 os.environ['AWS_SECURITY_TOKEN'] = 'testing'
 os.environ['AWS_SESSION_TOKEN'] = 'testing'
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
 
+# Add lambda-service directory to Python path
+LAMBDA_SERVICE_PATH = os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))
+)
+if LAMBDA_SERVICE_PATH not in sys.path:
+    sys.path.insert(0, LAMBDA_SERVICE_PATH)
 
-@pytest.fixture(scope="function", autouse=True)
-def aws_credentials():
-    """Mocked AWS Credentials for moto."""
-    mock = mock_aws()
-    mock.start()
-    yield
-    mock.stop()
+from app.main import app  # noqa: E402
 
 
 def pytest_configure(config):
-    """
-    Pytest hook that runs before test collection.
-    Ensures the lambda-service directory is in sys.path.
-    """
-    # Double-check the path is set correctly
+    """Pytest hook that runs before test collection."""
     if LAMBDA_SERVICE_PATH not in sys.path:
         sys.path.insert(0, LAMBDA_SERVICE_PATH)
-    elif sys.path[0] != LAMBDA_SERVICE_PATH:
-        sys.path.remove(LAMBDA_SERVICE_PATH)
-        sys.path.insert(0, LAMBDA_SERVICE_PATH)
+
+
+@pytest.fixture(scope="function", autouse=True)
+def aws_resources():
+    """
+    Setup mocked AWS resources for all tests.
+    Creates DynamoDB tables and S3 buckets needed for testing.
+    """
+    with mock_aws():
+        # Create DynamoDB client
+        dynamodb = boto3.resource('dynamodb', region_name='us-east-2')
+
+        # Create Artifacts table
+        dynamodb.create_table(
+            TableName='Artifacts',
+            KeySchema=[
+                {'AttributeName': 'type', 'KeyType': 'HASH'},
+                {'AttributeName': 'id', 'KeyType': 'RANGE'}
+            ],
+            AttributeDefinitions=[
+                {'AttributeName': 'type', 'AttributeType': 'S'},
+                {'AttributeName': 'id', 'AttributeType': 'S'}
+            ],
+            BillingMode='PAY_PER_REQUEST'
+        )
+
+        # Create Sessions table
+        dynamodb.create_table(
+            TableName='Sessions',
+            KeySchema=[
+                {'AttributeName': 'token', 'KeyType': 'HASH'}
+            ],
+            AttributeDefinitions=[
+                {'AttributeName': 'token', 'AttributeType': 'S'}
+            ],
+            BillingMode='PAY_PER_REQUEST'
+        )
+
+        # Create Auth table
+        dynamodb.create_table(
+            TableName='Auth',
+            KeySchema=[
+                {'AttributeName': 'username', 'KeyType': 'HASH'}
+            ],
+            AttributeDefinitions=[
+                {'AttributeName': 'username', 'AttributeType': 'S'}
+            ],
+            BillingMode='PAY_PER_REQUEST'
+        )
+
+        # Create dummy-table for Model tests
+        dynamodb.create_table(
+            TableName='dummy-table',
+            KeySchema=[
+                {'AttributeName': 'id', 'KeyType': 'HASH'}
+            ],
+            AttributeDefinitions=[
+                {'AttributeName': 'id', 'AttributeType': 'S'}
+            ],
+            BillingMode='PAY_PER_REQUEST'
+        )
+
+        # Create S3 buckets
+        s3 = boto3.client('s3', region_name='us-east-2')
+        s3.create_bucket(
+            Bucket='dummy-bucket',
+            CreateBucketConfiguration={'LocationConstraint': 'us-east-2'}
+        )
+        s3.create_bucket(
+            Bucket='test-artifacts-bucket',
+            CreateBucketConfiguration={'LocationConstraint': 'us-east-2'}
+        )
+
+        yield
 
 
 @pytest.fixture(scope="session")
 def test_client():
-    """Create a test client for the FastAPI application"""
+    """Create a test client for the FastAPI application."""
     return TestClient(app)

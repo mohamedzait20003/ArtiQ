@@ -1,13 +1,6 @@
-import sys
-import os
 from unittest.mock import Mock, patch
 
 import pytest
-
-# Ensure src is importable
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../app'))
-)
 
 
 class TestArtifactCreateLambda:
@@ -15,7 +8,7 @@ class TestArtifactCreateLambda:
 
     @patch('app.jobs.artifact_create.Artifact_Model')
     @patch('app.jobs.artifact_create.uuid.uuid4')
-    def test_lambda_handler_success(self, mock_uuid, mock_artifact_model):
+    def test_lambda_handler_success(self, mock_uuid, mock_model):
         """Test successful artifact creation"""
         from app.jobs.artifact_create import lambda_handler
 
@@ -27,7 +20,7 @@ class TestArtifactCreateLambda:
         # Mock artifact instance
         mock_artifact = Mock()
         mock_artifact.save.return_value = True
-        mock_artifact_model.return_value = mock_artifact
+        mock_model.return_value = mock_artifact
 
         event = {
             'artifact_type': 'model',
@@ -43,13 +36,12 @@ class TestArtifactCreateLambda:
         assert result['metadata']['type'] == 'model'
         # Fixed to match the UUID.hex value
         assert result['metadata']['id'] == 'test-id-123'
-        assert result['data']['url'] == (
-            'https://huggingface.co/bert-base-uncased'
-        )
+        url = 'https://huggingface.co/bert-base-uncased'
+        assert result['data']['url'] == url
 
     @patch('app.jobs.artifact_create.Artifact_Model')
     @patch('app.jobs.artifact_create.uuid.uuid4')
-    def test_lambda_handler_save_failure(self, mock_uuid, mock_artifact_model):
+    def test_lambda_handler_save_failure(self, mock_uuid, mock_model):
         """Test artifact creation with save failure"""
         from app.jobs.artifact_create import lambda_handler
 
@@ -61,7 +53,7 @@ class TestArtifactCreateLambda:
         # Mock artifact instance to fail save
         mock_artifact = Mock()
         mock_artifact.save.return_value = False
-        mock_artifact_model.return_value = mock_artifact
+        mock_model.return_value = mock_artifact
 
         event = {
             'artifact_type': 'model',

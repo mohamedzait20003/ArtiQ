@@ -1,17 +1,10 @@
-import sys
-import os
 import json
 from unittest.mock import Mock
 
-# Ensure lambda-service is importable
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-)
+from fastapi.testclient import TestClient
 
-from fastapi.testclient import TestClient  # noqa: E402
-
-from app.main import app  # noqa: E402
-from app.controllers.artifact_controller import ArtifactController  # noqa: E402
+from app.main import app
+from app.controllers.artifact_controller import ArtifactController
 
 
 client = TestClient(app)
@@ -50,7 +43,7 @@ def test_artifact_retrieve_success():
     )
 
 
-def test_artifact_retrieve_lambda_json_error_propagates_status():
+def test_artifact_retrieve_lambda_error_status():
     # Arrange: lambda returns an errorMessage which is JSON-encoded
     # with statusCode
     error = {"statusCode": 404, "errorMessage": "Not found"}
@@ -68,7 +61,7 @@ def test_artifact_retrieve_lambda_json_error_propagates_status():
     assert resp.json()["detail"] == "Not found"
 
 
-def test_artifact_update_lambda_json_error_propagates_400():
+def test_artifact_update_lambda_error_400():
     # Arrange: lambda returns a 400 error encoded in errorMessage
     error = {"statusCode": 400, "errorMessage": "Bad request"}
     artifact_controller.lambda_client = Mock()
@@ -90,7 +83,7 @@ def test_artifact_update_lambda_json_error_propagates_400():
     assert resp.json()["detail"] == "Bad request"
 
 
-def test_artifact_delete_lambda_json_error_propagates_404():
+def test_artifact_delete_lambda_error_404():
     # Arrange: lambda returns a 404 error encoded in errorMessage
     error = {"statusCode": 404, "errorMessage": "Not found"}
     artifact_controller.lambda_client = Mock()
@@ -107,8 +100,9 @@ def test_artifact_delete_lambda_json_error_propagates_404():
     assert resp.json()["detail"] == "Not found"
 
 
-def test_artifact_retrieve_non_json_error_message_returns_500():
-    # Lambda returns errorMessage as plain text (not JSON) -> should map to 500
+def test_artifact_retrieve_non_json_error_returns_500():
+    # Lambda returns errorMessage as plain text (not JSON)
+    # should map to 500
     artifact_controller.lambda_client = Mock()
     artifact_controller.lambda_client.invoke.return_value = {
         "StatusCode": 200,
@@ -120,9 +114,9 @@ def test_artifact_retrieve_non_json_error_message_returns_500():
     assert resp.json()["detail"] == "plain text error"
 
 
-def test_artifact_retrieve_statuscode_non_200_without_error_message():
+def test_artifact_retrieve_statuscode_non_200():
     # Lambda returns non-200 StatusCode and no errorMessage
-    # -> controller should return the same status code with generic detail
+    # controller should return same status code with generic detail
     artifact_controller.lambda_client = Mock()
     artifact_controller.lambda_client.invoke.return_value = {
         "StatusCode": 502,
@@ -134,11 +128,13 @@ def test_artifact_retrieve_statuscode_non_200_without_error_message():
     assert resp.json()["detail"] == "Lambda function execution failed"
 
 
-def test_artifact_update_non_json_error_message_returns_500():
+def test_artifact_update_non_json_error_returns_500():
     artifact_controller.lambda_client = Mock()
     artifact_controller.lambda_client.invoke.return_value = {
         "StatusCode": 200,
-        "Payload": make_payload({"errorMessage": "update failed plain"})
+        "Payload": make_payload(
+            {"errorMessage": "update failed plain"}
+        )
     }
 
     payload = {
@@ -150,7 +146,7 @@ def test_artifact_update_non_json_error_message_returns_500():
     assert resp.json()["detail"] == "update failed plain"
 
 
-def test_artifact_update_statuscode_non_200_without_error_message():
+def test_artifact_update_statuscode_non_200():
     artifact_controller.lambda_client = Mock()
     artifact_controller.lambda_client.invoke.return_value = {
         "StatusCode": 503,
@@ -166,11 +162,13 @@ def test_artifact_update_statuscode_non_200_without_error_message():
     assert resp.json()["detail"] == "Lambda function execution failed"
 
 
-def test_artifact_delete_non_json_error_message_returns_500():
+def test_artifact_delete_non_json_error_returns_500():
     artifact_controller.lambda_client = Mock()
     artifact_controller.lambda_client.invoke.return_value = {
         "StatusCode": 200,
-        "Payload": make_payload({"errorMessage": "delete failed plain"})
+        "Payload": make_payload(
+            {"errorMessage": "delete failed plain"}
+        )
     }
 
     resp = client.delete("/artifacts/model/to-delete")
@@ -178,7 +176,7 @@ def test_artifact_delete_non_json_error_message_returns_500():
     assert resp.json()["detail"] == "delete failed plain"
 
 
-def test_artifact_delete_statuscode_non_200_without_error_message():
+def test_artifact_delete_statuscode_non_200():
     artifact_controller.lambda_client = Mock()
     artifact_controller.lambda_client.invoke.return_value = {
         "StatusCode": 504,

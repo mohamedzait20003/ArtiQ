@@ -1,13 +1,6 @@
-import sys
-import os
 from unittest.mock import Mock
 
-# Ensure lambda-service is importable
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-)
-
-from app.models.Artifact_Model import Artifact_Model  # noqa: E402
+from app.models.Artifact_Model import Artifact_Model
 
 
 def test_primary_key_and_init():

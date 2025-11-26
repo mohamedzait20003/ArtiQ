@@ -1,17 +1,10 @@
-import sys
-import os
 import json
 from unittest.mock import Mock
 
-# Ensure lambda-service is importable
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-)
+from fastapi.testclient import TestClient
 
-from fastapi.testclient import TestClient  # noqa: E402
-
-from app.main import app  # noqa: E402
-from app.controllers.artifact_controller import ArtifactController  # noqa: E402
+from app.main import app
+from app.controllers.artifact_controller import ArtifactController
 
 
 client = TestClient(app)
@@ -49,7 +42,7 @@ def test_artifacts_list_success_with_offset():
     assert isinstance(resp.json(), list)
 
 
-def test_artifacts_list_statuscode_non_200_without_error_message():
+def test_artifacts_list_statuscode_non_200():
     artifact_controller.lambda_client = Mock()
     artifact_controller.lambda_client.invoke.return_value = {
         "StatusCode": 500,

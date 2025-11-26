@@ -1,19 +1,8 @@
-# Standard library imports
-import sys
-import os
+from fastapi.testclient import TestClient
 
-# Ensure lambda-service is in sys.path for import
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-)
+from app.main import app
 
-# Third-party imports
-from fastapi.testclient import TestClient  # noqa: E402
 
-# Import the FastAPI app
-from app.main import app  # noqa: E402
-
-# TestClient instance
 client = TestClient(app)
 
 

@@ -1,13 +1,6 @@
-import sys
-import os
-import json
 import base64
+import json
 from unittest.mock import Mock, patch
-
-# Ensure src is importable
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../app'))
-)
 
 
 class TestArtifactsListLambda:
@@ -206,7 +199,7 @@ class TestArtifactsListLambda:
             )
             assert decoded_offset == next_key
 
-    def test_lambda_handler_multiple_queries_with_deduplication(self):
+    def test_lambda_handler_multiple_queries_dedup(self):
         """Test lambda_handler with multiple queries and deduplication"""
         from app.jobs.artifacts_list import lambda_handler
 
