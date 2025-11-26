@@ -1,0 +1,157 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Dashboard Header -->
+  <div class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Welcome back, {{ (user$ | async)?.name || 'User' }}</h1>
+          <p class="mt-2 text-gray-600">Here's what's happening with your AI resources today</p>
+        </div>
+        <div class="flex space-x-3">
+          <button class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition">
+            <span class="flex items-center space-x-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              <span>Upload Model</span>
+            </span>
+          </button>
+          <button class="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg font-semibold transition shadow-sm">
+            <span class="flex items-center space-x-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+              </svg>
+              <span>Upload Dataset</span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      @for (stat of quickStats; track stat) {
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600 font-medium">{{ stat.label }}</p>
+              <p class="text-3xl font-bold text-gray-900 mt-2">{{ stat.value }}</p>
+            </div>
+            <div class="px-3 py-1 rounded-full text-sm font-semibold"
+              [ngClass]="stat.trend === 'up' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+              {{ stat.change }}
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Recent Models -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold text-gray-900">Recent Models</h2>
+            <a routerLink="/dashboard/models" class="text-yellow-600 hover:text-yellow-700 font-medium text-sm transition">
+              View all →
+            </a>
+          </div>
+        </div>
+        <div class="divide-y divide-gray-200">
+          @for (model of recentModels; track model) {
+            <div class="p-6 hover:bg-gray-50 transition cursor-pointer">
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <h3 class="font-semibold text-gray-900 text-lg">{{ model.name }}</h3>
+                  <p class="text-sm text-gray-600 mt-1">{{ model.type }}</p>
+                  <div class="flex items-center space-x-4 mt-3">
+                    <span class="text-xs text-gray-500">Updated {{ model.updated }}</span>
+                    <span class="text-xs text-gray-500">•</span>
+                    <span class="text-xs text-gray-500">{{ model.downloads }} downloads</span>
+                  </div>
+                </div>
+                <div class="w-12 h-12 bg-linear-to-br from-yellow-400 via-orange-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Recent Datasets -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold text-gray-900">Recent Datasets</h2>
+            <a routerLink="/dashboard/datasets" class="text-yellow-600 hover:text-yellow-700 font-medium text-sm transition">
+              View all →
+            </a>
+          </div>
+        </div>
+        <div class="divide-y divide-gray-200">
+          @for (dataset of recentDatasets; track dataset) {
+            <div class="p-6 hover:bg-gray-50 transition cursor-pointer">
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <h3 class="font-semibold text-gray-900 text-lg">{{ dataset.name }}</h3>
+                  <p class="text-sm text-gray-600 mt-1">{{ dataset.type }}</p>
+                  <div class="flex items-center space-x-4 mt-3">
+                    <span class="text-xs text-gray-500">{{ dataset.size }}</span>
+                    <span class="text-xs text-gray-500">•</span>
+                    <span class="text-xs text-gray-500">Updated {{ dataset.updated }}</span>
+                  </div>
+                </div>
+                <div class="w-12 h-12 bg-linear-to-br from-blue-400 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mt-8 bg-linear-to-br from-yellow-50 via-orange-50 to-pink-50 rounded-xl border border-yellow-200 p-8">
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">Quick Actions</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <button class="bg-white hover:shadow-md rounded-lg p-6 text-left transition border border-gray-200">
+          <div class="w-10 h-10 bg-yellow-400 rounded-lg flex items-center justify-center mb-3">
+            <svg class="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-gray-900 mb-1">Browse Models</h3>
+          <p class="text-sm text-gray-600">Explore our collection of AI models</p>
+        </button>
+        <button class="bg-white hover:shadow-md rounded-lg p-6 text-left transition border border-gray-200">
+          <div class="w-10 h-10 bg-orange-400 rounded-lg flex items-center justify-center mb-3">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-gray-900 mb-1">Documentation</h3>
+          <p class="text-sm text-gray-600">Learn how to use our platform</p>
+        </button>
+        <button class="bg-white hover:shadow-md rounded-lg p-6 text-left transition border border-gray-200">
+          <div class="w-10 h-10 bg-pink-400 rounded-lg flex items-center justify-center mb-3">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-gray-900 mb-1">Community</h3>
+          <p class="text-sm text-gray-600">Connect with other AI enthusiasts</p>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

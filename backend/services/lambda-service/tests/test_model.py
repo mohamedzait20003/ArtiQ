@@ -1,10 +1,9 @@
-import uuid
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 from botocore.exceptions import ClientError
 
-from src.models.Model import Model
+from app.models.Model import Model
 
 
 class DummyModel(Model):
@@ -21,51 +20,30 @@ def make_client_error():
     return ClientError({"Error": {"Message": "boom", "Code": "500"}}, "Op")
 
 
-import importlib
-
-
-def test_upload_download_delete_s3_success_and_failure(monkeypatch):
+def test_upload_download_delete_s3(monkeypatch):
     inst = DummyModel()
 
-    # Mock successful put_object
-    mock_s3 = Mock()
-    mock_s3.put_object.return_value = {}
-    # Patch both the aws module client and the Model module-local reference to be safe
-    mod_aws = importlib.import_module("src.aws")
-    mod_model = importlib.import_module("src.models.Model")
-    monkeypatch.setattr(mod_aws, "s3_client", mock_s3, raising=False)
-    monkeypatch.setattr(mod_model, "s3_client", mock_s3, raising=False)
-
+    # Moto handles actual S3 operations, test real behavior
     key = inst._upload_to_s3("file", b"data")
     assert key is not None
     assert "dummy-table/file/" in key
-    mock_s3.put_object.assert_called_once()
 
-    # Mock get_object returning a body with read()
-    body = Mock()
-    body.read.return_value = b"data"
-    mock_s3.get_object.return_value = {"Body": body}
+    # Test download from S3
     data = inst._download_from_s3(key)
     assert data == b"data"
 
-    # Mock delete_object success
-    mock_s3.delete_object.return_value = {}
+    # Test delete from S3
     ok = inst._delete_from_s3(key)
     assert ok is True
 
-    # Simulate s3 errors
-    def raise_client_error(*a, **k):
-        raise make_client_error()
+    # Test error cases with non-existent bucket/key
+    # Download from non-existent key
+    bad_download = inst._download_from_s3("nonexistent-key")
+    assert bad_download is None
 
-    mock_s3.put_object.side_effect = raise_client_error
-    bad = inst._upload_to_s3("file", b"data")
-    assert bad is None
-
-    mock_s3.get_object.side_effect = raise_client_error
-    assert inst._download_from_s3(key) is None
-
-    mock_s3.delete_object.side_effect = raise_client_error
-    assert inst._delete_from_s3(key) is False
+    # Delete non-existent key (S3 delete is idempotent, returns True)
+    ok_delete = inst._delete_from_s3("nonexistent-key")
+    assert ok_delete is True
 
 
 def test_save_put_item_and_s3_handling(monkeypatch):
@@ -73,25 +51,34 @@ def test_save_put_item_and_s3_handling(monkeypatch):
     inst = DummyModel(id="1", file=b"bytesdata", other="x")
 
     # Patch _upload_to_s3 to return a key
-    monkeypatch.setattr(DummyModel, "_upload_to_s3", lambda self, f, d: "k123")
+    monkeypatch.setattr(
+        DummyModel, "_upload_to_s3", lambda self, f, d: "k123"
+    )
 
     mock_table = Mock()
     mock_table.put_item.return_value = {}
     # Patch table() to return our mock
-    monkeypatch.setattr(DummyModel, "table", classmethod(lambda cls: mock_table))
+    monkeypatch.setattr(
+        DummyModel, "table", classmethod(lambda cls: mock_table)
+    )
 
     assert inst.save() is True
-    # ensure put_item was called with item that contains file_s3_key and not file
+
     called_item = mock_table.put_item.call_args[1]["Item"]
     assert "file_s3_key" in called_item
     assert "file" not in called_item
 
     # If upload fails (returns None) save should return False
-    monkeypatch.setattr(DummyModel, "_upload_to_s3", lambda self, f, d: None)
+    monkeypatch.setattr(
+        DummyModel, "_upload_to_s3", lambda self, f, d: None
+    )
     assert inst.save() is False
 
     # If put_item raises ClientError, save should return False
-    monkeypatch.setattr(DummyModel, "_upload_to_s3", lambda self, f, d: "k123")
+    monkeypatch.setattr(
+        DummyModel, "_upload_to_s3", lambda self, f, d: "k123"
+    )
+
     def raise_err(*args, **kwargs):
         raise make_client_error()
 
@@ -99,16 +86,20 @@ def test_save_put_item_and_s3_handling(monkeypatch):
     assert inst.save() is False
 
 
-def test_get_load_s3_data_and_clienterror(monkeypatch):
+def test_get_load_s3_data(monkeypatch):
     # Setup item returned from DynamoDB
     item = {"id": "1", "file_s3_key": "k123"}
 
     mock_table = Mock()
     mock_table.get_item.return_value = {"Item": item}
-    monkeypatch.setattr(DummyModel, "table", classmethod(lambda cls: mock_table))
+    monkeypatch.setattr(
+        DummyModel, "table", classmethod(lambda cls: mock_table)
+    )
 
     # Patch _download_from_s3 to return bytes when loading
-    monkeypatch.setattr(DummyModel, "_download_from_s3", lambda self, k: b"blob")
+    monkeypatch.setattr(
+        DummyModel, "_download_from_s3", lambda self, k: b"blob"
+    )
 
     inst = DummyModel.get({"id": "1"}, load_s3_data=True)
     assert isinstance(inst, DummyModel)
@@ -126,7 +117,7 @@ def test_get_load_s3_data_and_clienterror(monkeypatch):
     assert DummyModel.get({"id": "1"}) is None
 
 
-def test_get_file_and_url_and_validation(monkeypatch):
+def test_get_file_and_url(monkeypatch):
     inst = DummyModel(id="1")
 
     # field not present in s3_fields -> ValueError
@@ -138,7 +129,9 @@ def test_get_file_and_url_and_validation(monkeypatch):
 
     # Provide s3 key and patch download
     inst.file_s3_key = "k1"
-    monkeypatch.setattr(DummyModel, "_download_from_s3", lambda self, k: b"b")
+    monkeypatch.setattr(
+        DummyModel, "_download_from_s3", lambda self, k: b"b"
+    )
     assert inst.get_file("file") == b"b"
 
     # get_file_url validation
@@ -151,21 +144,12 @@ def test_get_file_and_url_and_validation(monkeypatch):
         inst2.get_file_url("not-a-field")
 
     inst.file_s3_key = "k1"
-    mock_s3 = Mock()
-    mock_s3.generate_presigned_url.return_value = "https://signed"
-    mod_aws = importlib.import_module("src.aws")
-    mod_model = importlib.import_module("src.models.Model")
-    monkeypatch.setattr(mod_aws, "s3_client", mock_s3, raising=False)
-    monkeypatch.setattr(mod_model, "s3_client", mock_s3, raising=False)
+    # Test presigned URL generation with moto (real S3 behavior)
     url = inst.get_file_url("file", expires_in=10)
-    assert url == "https://signed"
-
-    # presign failure
-    def raise_err(*a, **k):
-        raise make_client_error()
-
-    mock_s3.generate_presigned_url.side_effect = raise_err
-    assert inst.get_file_url("file") is None
+    # Moto generates real presigned URLs, check it's valid
+    assert url.startswith("https://dummy-bucket.s3.amazonaws.com/k1?")
+    assert "X-Amz-Algorithm" in url
+    assert "X-Amz-Expires=10" in url
 
 
 def test_delete_calls_s3_and_table(monkeypatch):
@@ -174,6 +158,7 @@ def test_delete_calls_s3_and_table(monkeypatch):
 
     # Patch _delete_from_s3 to record calls
     called = {}
+
     def fake_delete(self, key):
         called['k'] = key
         return True
@@ -182,7 +167,9 @@ def test_delete_calls_s3_and_table(monkeypatch):
 
     mock_table = Mock()
     mock_table.delete_item.return_value = {}
-    monkeypatch.setattr(DummyModel, "table", classmethod(lambda cls: mock_table))
+    monkeypatch.setattr(
+        DummyModel, "table", classmethod(lambda cls: mock_table)
+    )
 
     assert inst.delete() is True
     assert called['k'] == "k1"

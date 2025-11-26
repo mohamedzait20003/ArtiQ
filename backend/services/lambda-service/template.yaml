@@ -9,21 +9,15 @@ Globals:
     Runtime: python3.11
 
 Resources:
-  # Main FastAPI Lambda
+  # Main FastAPI Lambda (handles all requests)
   ModelRegistryAPI:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: ece461-model-registry-api
       CodeUri: .
-      Handler: src.main.handler
+      Handler: app.main.handler
       Environment:
         Variables:
-          ARTIFACT_CREATE_FUNCTION: !Ref ArtifactCreateFunction
-          ARTIFACTS_LIST_FUNCTION: !Ref ArtifactsListFunction
-          REGISTRY_RESET_FUNCTION: !Ref RegistryResetFunction
-          ARTIFACT_RETRIEVE_FUNCTION: !Ref ArtifactRetrieveFunction
-          ARTIFACT_UPDATE_FUNCTION: !Ref ArtifactUpdateFunction
-          ARTIFACT_DELETE_FUNCTION: !Ref ArtifactDeleteFunction
           ARTIFACTS_BUCKET: !Ref ArtifactsBucket
       Policies:
         - DynamoDBCrudPolicy:
@@ -38,114 +32,12 @@ Resources:
             TableName: Sessions
         - S3CrudPolicy:
             BucketName: !Ref ArtifactsBucket
-        - Statement:
-            - Effect: Allow
-              Action:
-                - lambda:InvokeFunction
-              Resource: 
-                - !GetAtt ArtifactCreateFunction.Arn
-                - !GetAtt ArtifactsListFunction.Arn
-                - !GetAtt RegistryResetFunction.Arn
-                - !GetAtt ArtifactRetrieveFunction.Arn
-                - !GetAtt ArtifactUpdateFunction.Arn
-                - !GetAtt ArtifactDeleteFunction.Arn
       Events:
         ApiEvent:
           Type: HttpApi
           Properties:
             Path: /{proxy+}
             Method: ANY
-
-  # Individual Lambda Functions
-  ArtifactCreateFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: ece461-artifact-create
-      CodeUri: .
-      Handler: src.lambda_functions.artifact_create.lambda_handler
-      Environment:
-        Variables:
-          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref ArtifactsTable
-        - S3CrudPolicy:
-            BucketName: !Ref ArtifactsBucket
-
-  ArtifactsListFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: ece461-artifacts-list
-      CodeUri: .
-      Handler: src.lambda_functions.artifacts_list.lambda_handler
-      Environment:
-        Variables:
-          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref ArtifactsTable
-        - S3CrudPolicy:
-            BucketName: !Ref ArtifactsBucket
-
-  RegistryResetFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: ece461-registry-reset
-      CodeUri: .
-      Handler: src.lambda_functions.registry_reset.lambda_handler
-      Environment:
-        Variables:
-          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref ArtifactsTable
-        - S3CrudPolicy:
-            BucketName: !Ref ArtifactsBucket
-
-  ArtifactRetrieveFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: ece461-artifact-retrieve
-      CodeUri: .
-      Handler: src.lambda_functions.artifact_retrieve.lambda_handler
-      Environment:
-        Variables:
-          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref ArtifactsTable
-        - S3CrudPolicy:
-            BucketName: !Ref ArtifactsBucket
-
-  ArtifactUpdateFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: ece461-artifact-update
-      CodeUri: .
-      Handler: src.lambda_functions.artifact_update.lambda_handler
-      Environment:
-        Variables:
-          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref ArtifactsTable
-        - S3CrudPolicy:
-            BucketName: !Ref ArtifactsBucket
-
-  ArtifactDeleteFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: ece461-artifact-delete
-      CodeUri: .
-      Handler: src.lambda_functions.artifact_delete.lambda_handler
-      Environment:
-        Variables:
-          ARTIFACTS_BUCKET: !Ref ArtifactsBucket
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref ArtifactsTable
-        - S3CrudPolicy:
-            BucketName: !Ref ArtifactsBucket
 
   # DynamoDB Table for Artifacts
   ArtifactsTable:
