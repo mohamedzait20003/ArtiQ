@@ -2,7 +2,7 @@ import uuid
 from typing import Optional
 from abc import ABC, abstractmethod
 from botocore.exceptions import ClientError
-from lib.aws import get_s3, get_dynamodb
+from app.lib.aws import get_s3, get_dynamodb
 
 
 class Model(ABC):

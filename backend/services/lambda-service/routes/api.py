@@ -4,7 +4,7 @@ Laravel-style route registration with Node.js-style middleware
 """
 
 from fastapi import APIRouter, Depends
-from lib.route import Route
+from app.lib.route import Route
 from app.controllers.auth_controller import AuthController
 from app.controllers.artifact_controller import ArtifactController
 from app.controllers.system_controller import SystemController
