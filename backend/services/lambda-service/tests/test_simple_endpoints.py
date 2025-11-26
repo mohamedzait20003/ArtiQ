@@ -6,10 +6,10 @@ import os
 from fastapi.testclient import TestClient
 
 # Ensure src is in sys.path for import
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../app')))
 
 # Import the FastAPI app
-from src.main import app
+from app.main import app
 
 # TestClient instance
 client = TestClient(app)

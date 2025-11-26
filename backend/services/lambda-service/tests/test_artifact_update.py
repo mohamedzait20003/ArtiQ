@@ -6,17 +6,17 @@ from unittest.mock import Mock, patch
 import pytest
 
 # Ensure src is importable
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../app')))
 
 
 class TestArtifactUpdateLambda:
     """Unit tests for artifact_update lambda function"""
 
-    @patch("src.lambda_functions.artifact_update.Artifact_Model")
+    @patch("app.jobs.artifact_update.Artifact_Model")
     def test_update_success(self, mock_artifact_model):
         """Happy path: update succeeds and returns updated metadata/data"""
 
-        from src.lambda_functions.artifact_update import lambda_handler
+        from app.jobs.artifact_update import lambda_handler
 
         # Mock existing artifact instance
         mock_artifact = Mock()
@@ -52,7 +52,7 @@ class TestArtifactUpdateLambda:
     def test_update_name_id_mismatch_400(self):
         """Name and id mismatch should raise a 400-style exception per spec."""
 
-        from src.lambda_functions.artifact_update import lambda_handler
+        from app.jobs.artifact_update import lambda_handler
 
         # Send metadata.id that doesn't match the path id to trigger 400
         event = {
@@ -70,11 +70,11 @@ class TestArtifactUpdateLambda:
         err = json.loads(str(excinfo.value))
         assert err["statusCode"] == 400
 
-    @patch("src.lambda_functions.artifact_update.Artifact_Model")
+    @patch("app.jobs.artifact_update.Artifact_Model")
     def test_update_internal_error_500(self, mock_artifact_model):
         """If something unexpected happens, it should be wrapped as a 500."""
 
-        from src.lambda_functions.artifact_update import lambda_handler
+        from app.jobs.artifact_update import lambda_handler
 
         # Simulate an unexpected error during lookup
         mock_artifact_model.get.side_effect = RuntimeError("boom")
@@ -98,7 +98,7 @@ class TestArtifactUpdateLambda:
     def test_update_invalid_type_400(self):
         """Providing an invalid artifact_type should return 400"""
 
-        from src.lambda_functions.artifact_update import lambda_handler
+        from app.jobs.artifact_update import lambda_handler
 
         event = {
             "artifact_type": "badtype",
@@ -113,7 +113,7 @@ class TestArtifactUpdateLambda:
         assert err["statusCode"] == 400
 
     def test_update_invalid_id_format_400(self):
-        from src.lambda_functions.artifact_update import lambda_handler
+        from app.jobs.artifact_update import lambda_handler
 
         event = {
             "artifact_type": "model",
@@ -127,9 +127,9 @@ class TestArtifactUpdateLambda:
         err = json.loads(str(excinfo.value))
         assert err["statusCode"] == 400
 
-    @patch("src.lambda_functions.artifact_update.Artifact_Model")
+    @patch("app.jobs.artifact_update.Artifact_Model")
     def test_update_missing_metadata_name_400(self, mock_artifact_model):
-        from src.lambda_functions.artifact_update import lambda_handler
+        from app.jobs.artifact_update import lambda_handler
 
         event = {
             "artifact_type": "model",
@@ -143,9 +143,9 @@ class TestArtifactUpdateLambda:
         err = json.loads(str(excinfo.value))
         assert err["statusCode"] == 400
 
-    @patch("src.lambda_functions.artifact_update.Artifact_Model")
+    @patch("app.jobs.artifact_update.Artifact_Model")
     def test_update_artifact_not_found_404(self, mock_artifact_model):
-        from src.lambda_functions.artifact_update import lambda_handler
+        from app.jobs.artifact_update import lambda_handler
 
         mock_artifact_model.get.return_value = None
 
@@ -161,9 +161,9 @@ class TestArtifactUpdateLambda:
         err = json.loads(str(excinfo.value))
         assert err["statusCode"] == 404
 
-    @patch("src.lambda_functions.artifact_update.Artifact_Model")
+    @patch("app.jobs.artifact_update.Artifact_Model")
     def test_update_type_mismatch_400(self, mock_artifact_model):
-        from src.lambda_functions.artifact_update import lambda_handler
+        from app.jobs.artifact_update import lambda_handler
 
         mock_artifact = Mock()
         mock_artifact.id = "abc-123"
@@ -186,9 +186,9 @@ class TestArtifactUpdateLambda:
         err = json.loads(str(excinfo.value))
         assert err["statusCode"] == 400
 
-    @patch("src.lambda_functions.artifact_update.Artifact_Model")
+    @patch("app.jobs.artifact_update.Artifact_Model")
     def test_update_name_mismatch_400(self, mock_artifact_model):
-        from src.lambda_functions.artifact_update import lambda_handler
+        from app.jobs.artifact_update import lambda_handler
 
         mock_artifact = Mock()
         mock_artifact.id = "abc-123"
@@ -211,9 +211,9 @@ class TestArtifactUpdateLambda:
         err = json.loads(str(excinfo.value))
         assert err["statusCode"] == 400
 
-    @patch("src.lambda_functions.artifact_update.Artifact_Model")
+    @patch("app.jobs.artifact_update.Artifact_Model")
     def test_update_save_failure_500(self, mock_artifact_model):
-        from src.lambda_functions.artifact_update import lambda_handler
+        from app.jobs.artifact_update import lambda_handler
 
         mock_artifact = Mock()
         mock_artifact.id = "abc-123"

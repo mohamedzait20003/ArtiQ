@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from src.models.Artifact_Model import Artifact_Model
+from app.models.Artifact_Model import Artifact_Model
 
 
 def test_primary_key_and_init():

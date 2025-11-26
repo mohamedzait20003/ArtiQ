@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 # Ensure src is importable
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../app')))
 
 
 class TestArtifactsListLambda:
@@ -15,21 +15,21 @@ class TestArtifactsListLambda:
     
     def test_parse_offset_with_none(self):
         """Test parse_offset with None input"""
-        from src.lambda_functions.artifacts_list import parse_offset
+        from app.jobs.artifacts_list import parse_offset
         
         result = parse_offset(None)
         assert result is None
     
     def test_parse_offset_with_empty_string(self):
         """Test parse_offset with empty string"""
-        from src.lambda_functions.artifacts_list import parse_offset
+        from app.jobs.artifacts_list import parse_offset
         
         result = parse_offset("")
         assert result is None
     
     def test_parse_offset_with_valid_base64(self):
         """Test parse_offset with valid base64 encoded JSON"""
-        from src.lambda_functions.artifacts_list import parse_offset
+        from app.jobs.artifacts_list import parse_offset
         
         # Create valid test data
         test_key = {"id": "test-123", "name": "test-artifact"}
@@ -40,21 +40,21 @@ class TestArtifactsListLambda:
     
     def test_parse_offset_with_invalid_base64(self):
         """Test parse_offset with invalid base64"""
-        from src.lambda_functions.artifacts_list import parse_offset
+        from app.jobs.artifacts_list import parse_offset
         
         result = parse_offset("invalid-base64!")
         assert result is None
     
     def test_encode_offset_with_none(self):
         """Test encode_offset with None input"""
-        from src.lambda_functions.artifacts_list import encode_offset
+        from app.jobs.artifacts_list import encode_offset
         
         result = encode_offset(None)
         assert result is None
     
     def test_encode_offset_with_valid_key(self):
         """Test encode_offset with valid DynamoDB key"""
-        from src.lambda_functions.artifacts_list import encode_offset
+        from app.jobs.artifacts_list import encode_offset
         
         test_key = {"id": "test-123", "name": "test-artifact"}
         result = encode_offset(test_key)
@@ -69,7 +69,7 @@ class TestArtifactsListLambda:
     
     def test_lambda_handler_basic_query(self):
         """Test lambda_handler with basic wildcard query"""
-        from src.lambda_functions.artifacts_list import lambda_handler
+        from app.jobs.artifacts_list import lambda_handler
 
         # Mock scan_artifacts response
         mock_artifacts = [
@@ -77,7 +77,7 @@ class TestArtifactsListLambda:
             Mock(name="another-artifact", id="456", artifact_type="dataset")
         ]
 
-        from src.models.Artifact_Model import Artifact_Model
+        from app.models.Artifact_Model import Artifact_Model
         with patch.object(Artifact_Model, 'scan_artifacts') as mock_scan:
             mock_scan.return_value = {
                 'items': mock_artifacts,
@@ -109,11 +109,11 @@ class TestArtifactsListLambda:
     
     def test_lambda_handler_with_name_filter(self):
         """Test lambda_handler with specific name filter"""
-        from src.lambda_functions.artifacts_list import lambda_handler
+        from app.jobs.artifacts_list import lambda_handler
 
         mock_artifacts = [Mock(name="bert-base", id="123", artifact_type="model")]
 
-        from src.models.Artifact_Model import Artifact_Model
+        from app.models.Artifact_Model import Artifact_Model
         with patch.object(Artifact_Model, 'scan_artifacts') as mock_scan:
             mock_scan.return_value = {
                 'items': mock_artifacts,
@@ -138,11 +138,11 @@ class TestArtifactsListLambda:
     
     def test_lambda_handler_with_type_filter(self):
         """Test lambda_handler with type filter"""
-        from src.lambda_functions.artifacts_list import lambda_handler
+        from app.jobs.artifacts_list import lambda_handler
 
         mock_artifacts = [Mock(name="test-model", id="123", artifact_type="model")]
 
-        from src.models.Artifact_Model import Artifact_Model
+        from app.models.Artifact_Model import Artifact_Model
         with patch.object(Artifact_Model, 'scan_artifacts') as mock_scan:
             mock_scan.return_value = {
                 'items': mock_artifacts,
@@ -167,13 +167,13 @@ class TestArtifactsListLambda:
     
     def test_lambda_handler_with_pagination(self):
         """Test lambda_handler with pagination"""
-        from src.lambda_functions.artifacts_list import lambda_handler
+        from app.jobs.artifacts_list import lambda_handler
 
         # Mock response with pagination
         mock_artifacts = [Mock(name=f"artifact-{i}", id=str(i), artifact_type="model") for i in range(100)]
         next_key = {"id": "last-item-id"}
 
-        from src.models.Artifact_Model import Artifact_Model
+        from app.models.Artifact_Model import Artifact_Model
         with patch.object(Artifact_Model, 'scan_artifacts') as mock_scan:
             mock_scan.return_value = {
                 'items': mock_artifacts,
@@ -197,12 +197,12 @@ class TestArtifactsListLambda:
     
     def test_lambda_handler_multiple_queries_with_deduplication(self):
         """Test lambda_handler with multiple queries and deduplication"""
-        from src.lambda_functions.artifacts_list import lambda_handler
+        from app.jobs.artifacts_list import lambda_handler
 
         # Mock that returns same artifact for different queries
         duplicate_artifact = Mock(name="shared-artifact", id="123", artifact_type="model")
 
-        from src.models.Artifact_Model import Artifact_Model
+        from app.models.Artifact_Model import Artifact_Model
         with patch.object(Artifact_Model, 'scan_artifacts') as mock_scan:
             mock_scan.side_effect = [
                 {'items': [duplicate_artifact], 'last_evaluated_key': None},

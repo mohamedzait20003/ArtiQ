@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 import pytest
 from botocore.exceptions import ClientError
 
-from src.models.Model import Model
+from app.models.Model import Model
 
 
 class DummyModel(Model):
@@ -30,11 +30,11 @@ def test_upload_download_delete_s3_success_and_failure(monkeypatch):
     # Mock successful put_object
     mock_s3 = Mock()
     mock_s3.put_object.return_value = {}
-    # Patch both the aws module client and the Model module-local reference to be safe
-    mod_aws = importlib.import_module("src.aws")
-    mod_model = importlib.import_module("src.models.Model")
-    monkeypatch.setattr(mod_aws, "s3_client", mock_s3, raising=False)
-    monkeypatch.setattr(mod_model, "s3_client", mock_s3, raising=False)
+    # Patch the AWS services module
+    mod_aws_services = importlib.import_module("lib.aws")
+    
+    # Mock get_s3() to return our mock client
+    monkeypatch.setattr(mod_aws_services, "get_s3", lambda: mock_s3)
 
     key = inst._upload_to_s3("file", b"data")
     assert key is not None
@@ -153,10 +153,11 @@ def test_get_file_and_url_and_validation(monkeypatch):
     inst.file_s3_key = "k1"
     mock_s3 = Mock()
     mock_s3.generate_presigned_url.return_value = "https://signed"
-    mod_aws = importlib.import_module("src.aws")
-    mod_model = importlib.import_module("src.models.Model")
-    monkeypatch.setattr(mod_aws, "s3_client", mock_s3, raising=False)
-    monkeypatch.setattr(mod_model, "s3_client", mock_s3, raising=False)
+    mod_aws_services = importlib.import_module("lib.aws")
+    
+    # Mock get_s3() to return our mock client
+    monkeypatch.setattr(mod_aws_services, "get_s3", lambda: mock_s3)
+    
     url = inst.get_file_url("file", expires_in=10)
     assert url == "https://signed"
 

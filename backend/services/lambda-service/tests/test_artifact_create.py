@@ -5,17 +5,17 @@ from unittest.mock import Mock, patch
 import pytest
 
 # Ensure src is importable
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../app')))
 
 
 class TestArtifactCreateLambda:
     """Unit tests for artifact_create lambda function"""
     
-    @patch('src.lambda_functions.artifact_create.Artifact_Model')
-    @patch('src.lambda_functions.artifact_create.uuid.uuid4')
+    @patch('app.jobs.artifact_create.Artifact_Model')
+    @patch('app.jobs.artifact_create.uuid.uuid4')
     def test_lambda_handler_success(self, mock_uuid, mock_artifact_model):
         """Test successful artifact creation"""
-        from src.lambda_functions.artifact_create import lambda_handler
+        from app.jobs.artifact_create import lambda_handler
         
         # Mock UUID - need to mock str(uuid.uuid4())
         mock_uuid_obj = Mock()
@@ -42,11 +42,11 @@ class TestArtifactCreateLambda:
         assert result['metadata']['id'] == 'test-id-123'  # Fixed to match the UUID.hex value
         assert result['data']['url'] == 'https://huggingface.co/bert-base-uncased'
     
-    @patch('src.lambda_functions.artifact_create.Artifact_Model')
-    @patch('src.lambda_functions.artifact_create.uuid.uuid4')
+    @patch('app.jobs.artifact_create.Artifact_Model')
+    @patch('app.jobs.artifact_create.uuid.uuid4')
     def test_lambda_handler_save_failure(self, mock_uuid, mock_artifact_model):
         """Test artifact creation with save failure"""
-        from src.lambda_functions.artifact_create import lambda_handler
+        from app.jobs.artifact_create import lambda_handler
         
         # Mock UUID
         mock_uuid_obj = Mock()

@@ -14,6 +14,6 @@ sys.path.insert(0, lambda_service_path)
 def test_client():
     """Create a test client for the FastAPI application"""
     from fastapi.testclient import TestClient
-    from src.main import app
+    from app.main import app
     
     return TestClient(app)

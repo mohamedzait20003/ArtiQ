@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import pytest
 from fastapi.testclient import TestClient
 
-from src.main import app, artifact_controller
+from app.main import app, artifact_controller
 
 
 client = TestClient(app)
