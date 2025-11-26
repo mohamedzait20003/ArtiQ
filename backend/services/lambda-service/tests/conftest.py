@@ -43,11 +43,9 @@ def aws_resources():
         dynamodb.create_table(
             TableName='Artifacts',
             KeySchema=[
-                {'AttributeName': 'type', 'KeyType': 'HASH'},
-                {'AttributeName': 'id', 'KeyType': 'RANGE'}
+                {'AttributeName': 'id', 'KeyType': 'HASH'}
             ],
             AttributeDefinitions=[
-                {'AttributeName': 'type', 'AttributeType': 'S'},
                 {'AttributeName': 'id', 'AttributeType': 'S'}
             ],
             BillingMode='PAY_PER_REQUEST'
@@ -97,6 +95,10 @@ def aws_resources():
         )
         s3.create_bucket(
             Bucket='test-artifacts-bucket',
+            CreateBucketConfiguration={'LocationConstraint': 'us-east-2'}
+        )
+        s3.create_bucket(
+            Bucket='artifacts-bucket',
             CreateBucketConfiguration={'LocationConstraint': 'us-east-2'}
         )
 
