@@ -7,7 +7,7 @@ def lambda_handler(event, context):
     """
     AWS Lambda handler for GET /artifacts/{artifact_type}/{id}
     Retrieves a specific artifact by type and ID (BASELINE)
-    
+
     Returns:
         Artifact object with metadata and data
     Raises:
@@ -18,25 +18,25 @@ def lambda_handler(event, context):
         # Extract parameters from event
         artifact_type = event.get('artifact_type')
         artifact_id = event.get('id')
-        
+
         # Validate artifact_type
         if not artifact_type:
             raise ValueError("Artifact type is required")
-        
+
         valid_types = {'model', 'dataset', 'code'}
         if artifact_type not in valid_types:
             raise ValueError(f"Invalid artifact type: {artifact_type}. Must be one of {valid_types}")
-        
+
         # Validate artifact_id format (pattern: ^[a-zA-Z0-9\-]+$)
         if not artifact_id:
             raise ValueError("Artifact ID is required")
-        
+
         if not re.match(r'^[a-zA-Z0-9\-]+$', artifact_id):
             raise ValueError(f"Invalid artifact ID format: {artifact_id}. Must match pattern: ^[a-zA-Z0-9\\-]+$")
-        
+
         # Retrieve artifact from database
         artifact = Artifact_Model.get({'id': artifact_id}, load_s3_data=False)
-        
+
         if not artifact:
             # Return 404 status code
             error_response = {
@@ -44,7 +44,7 @@ def lambda_handler(event, context):
                 'errorMessage': f"Artifact with ID {artifact_id} not found"
             }
             raise Exception(json.dumps(error_response))
-        
+
         # Verify artifact type matches
         if artifact.artifact_type != artifact_type:
             error_response = {
@@ -52,7 +52,7 @@ def lambda_handler(event, context):
                 'errorMessage': f"Artifact type mismatch: expected {artifact_type}, got {artifact.artifact_type}"
             }
             raise Exception(json.dumps(error_response))
-        
+
         # Build response matching Artifact schema
         response_data = {
             'metadata': {
@@ -64,9 +64,9 @@ def lambda_handler(event, context):
                 'url': artifact.source_url
             }
         }
-        
+
         return response_data
-        
+
     except ValueError as e:
         # Return 400 status code for validation errors
         error_response = {
@@ -85,4 +85,3 @@ def lambda_handler(event, context):
             'errorMessage': f"Error retrieving artifact: {str(e)}"
         }
         raise Exception(json.dumps(error_response))
-

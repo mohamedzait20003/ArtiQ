@@ -1,6 +1,10 @@
 import sys
 import os
 import pytest
+from fastapi.testclient import TestClient
+
+from app.main import app
+
 
 # Add lambda-service directory to Python path FIRST
 # This must happen before any imports
@@ -21,6 +25,13 @@ os.environ['PYTHONPATH'] = (
     LAMBDA_SERVICE_PATH + os.pathsep + current_pythonpath
 )
 
+# Set fake AWS credentials to prevent boto3 from failing
+os.environ['AWS_ACCESS_KEY_ID'] = 'testing'
+os.environ['AWS_SECRET_ACCESS_KEY'] = 'testing'
+os.environ['AWS_SECURITY_TOKEN'] = 'testing'
+os.environ['AWS_SESSION_TOKEN'] = 'testing'
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+
 
 def pytest_configure(config):
     """
@@ -38,9 +49,4 @@ def pytest_configure(config):
 @pytest.fixture(scope="session")
 def test_client():
     """Create a test client for the FastAPI application"""
-    from fastapi.testclient import TestClient
-    from app.main import app
-
     return TestClient(app)
-
-

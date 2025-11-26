@@ -1,6 +1,6 @@
 import sys
 import os
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 # Ensure src is importable
 sys.path.insert(
@@ -11,19 +11,25 @@ sys.path.insert(
 class TestRegistryResetLambda:
     """Unit tests for registry_reset lambda function"""
 
-    @patch('app.jobs.registry_reset.s3_client')
-    @patch('app.jobs.registry_reset.dynamodb')
-    def test_lambda_handler_success(self, mock_dynamodb, mock_s3_client):
+    @patch('app.models.Auth_Model.Auth_Model.table')
+    @patch('app.models.Session_Model.Session_Model.table')
+    @patch('app.models.Artifact_Model.Artifact_Model.scan_artifacts')
+    def test_lambda_handler_success(
+            self, mock_scan, mock_session_table, mock_auth_table):
         """Test successful registry reset"""
         from app.jobs.registry_reset import lambda_handler
 
-        # Mock DynamoDB table
-        mock_table = Mock()
-        mock_dynamodb.Table.return_value = mock_table
-        mock_table.scan.return_value = {'Items': []}
+        # Mock empty artifact scan
+        mock_scan.return_value = {
+            'items': [],
+            'last_evaluated_key': None
+        }
 
-        # Mock S3
-        mock_s3_client.list_objects_v2.return_value = {'Contents': []}
+        # Mock empty session table scan
+        mock_session_table.return_value.scan.return_value = {'Items': []}
+
+        # Mock empty auth table scan
+        mock_auth_table.return_value.scan.return_value = {'Items': []}
 
         event = {
             'X-Authorization': 'test-token',
@@ -33,17 +39,16 @@ class TestRegistryResetLambda:
         result = lambda_handler(event, None)
 
         assert result['statusCode'] == 200
-        assert 'Registry is reset.' in result['body']  # Match actual message
+        # Match actual message
+        assert 'Registry is reset.' in result['body']
 
-    @patch('app.jobs.registry_reset.dynamodb')
-    def test_lambda_handler_dynamo_error(self, mock_dynamodb):
+    @patch('app.models.Artifact_Model.Artifact_Model.scan_artifacts')
+    def test_lambda_handler_dynamo_error(self, mock_scan):
         """Test registry reset with DynamoDB error"""
         from app.jobs.registry_reset import lambda_handler
 
-        # Mock DynamoDB table to raise exception during scan
-        mock_table = Mock()
-        mock_table.scan.side_effect = Exception("DynamoDB scan error")
-        mock_dynamodb.Table.return_value = mock_table
+        # Mock scan to raise exception
+        mock_scan.side_effect = Exception("DynamoDB scan error")
 
         event = {
             'X-Authorization': 'test-token',
