@@ -1,9 +1,16 @@
+import sys
+import os
 import json
 from unittest.mock import Mock
 
-from fastapi.testclient import TestClient
+# Ensure lambda-service is importable
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+)
 
-from app.main import app, artifact_controller
+from fastapi.testclient import TestClient  # noqa: E402
+
+from app.main import app, artifact_controller  # noqa: E402
 
 
 client = TestClient(app)
@@ -18,7 +25,12 @@ def make_payload(obj):
 def test_artifacts_list_success_with_offset():
     resp_body = {
         "artifacts": [
-            {"metadata": {"name": "a", "id": "1", "type": "model"}, "data": {"url": "u"}}
+            {
+                "metadata": {
+                    "name": "a", "id": "1", "type": "model"
+                },
+                "data": {"url": "u"}
+            }
         ],
         "offset": "opaque-offset"
     }
@@ -44,7 +56,8 @@ def test_artifacts_list_statuscode_non_200_without_error_message():
 
     resp = client.post("/artifacts", json=[{"name": "*"}])
     assert resp.status_code == 500
-    # The controller wraps exceptions and includes context; assert the known suffix
+    # The controller wraps exceptions and includes context;
+    # assert the known suffix
     assert "Lambda function execution failed" in resp.json()["detail"]
 
 
@@ -59,13 +72,16 @@ def test_artifact_create_success_and_status_201():
         "Payload": make_payload(created)
     }
 
-    resp = client.post("/artifact/model", json={"url": "https://example.com/new"})
+    resp = client.post(
+        "/artifact/model", json={"url": "https://example.com/new"}
+    )
     assert resp.status_code == 201
     assert resp.json()["metadata"]["id"] == "new-id"
 
 
 def test_artifact_create_json_error_propagates():
-    # Simulate Lambda returning an error status; controller raises then is wrapped
+    # Simulate Lambda returning an error status;
+    # controller raises then is wrapped
     error = {"statusCode": 400, "errorMessage": "Bad create"}
     artifact_controller.lambda_client = Mock()
     artifact_controller.lambda_client.invoke.return_value = {

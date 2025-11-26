@@ -1,10 +1,18 @@
+import sys
+import os
 import importlib
 from unittest.mock import Mock
 
 import pytest
-from botocore.exceptions import ClientError
 
-from app.models.Model import Model
+# Ensure lambda-service is importable
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+)
+
+from botocore.exceptions import ClientError  # noqa: E402
+
+from app.models.Model import Model  # noqa: E402
 
 
 class DummyModel(Model):

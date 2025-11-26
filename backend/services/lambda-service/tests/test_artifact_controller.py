@@ -1,10 +1,16 @@
+import sys
+import os
 import json
 from unittest.mock import Mock
 
-import pytest
-from fastapi.testclient import TestClient
+# Ensure lambda-service is importable
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+)
 
-from app.main import app, artifact_controller
+from fastapi.testclient import TestClient  # noqa: E402
+
+from app.main import app, artifact_controller  # noqa: E402
 
 
 client = TestClient(app)
@@ -35,11 +41,16 @@ def test_artifact_retrieve_success():
     # Assert
     assert resp.status_code == 200
     body = resp.json()
-    assert body["metadata"]["id"] == "id-123" or body.get("metadata", {}).get("id") == "id-123"
+    expected_id = "id-123"
+    assert (
+        body["metadata"]["id"] == expected_id
+        or body.get("metadata", {}).get("id") == expected_id
+    )
 
 
 def test_artifact_retrieve_lambda_json_error_propagates_status():
-    # Arrange: lambda returns an errorMessage which is JSON-encoded with statusCode
+    # Arrange: lambda returns an errorMessage which is JSON-encoded
+    # with statusCode
     error = {"statusCode": 404, "errorMessage": "Not found"}
     artifact_controller.lambda_client = Mock()
     artifact_controller.lambda_client.invoke.return_value = {
@@ -108,8 +119,8 @@ def test_artifact_retrieve_non_json_error_message_returns_500():
 
 
 def test_artifact_retrieve_statuscode_non_200_without_error_message():
-    # Lambda returns non-200 StatusCode and no errorMessage -> controller should
-    # return the same status code with generic detail
+    # Lambda returns non-200 StatusCode and no errorMessage
+    # -> controller should return the same status code with generic detail
     artifact_controller.lambda_client = Mock()
     artifact_controller.lambda_client.invoke.return_value = {
         "StatusCode": 502,
