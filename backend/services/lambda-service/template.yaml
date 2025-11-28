@@ -9,6 +9,18 @@ Globals:
     Runtime: python3.11
 
 Resources:
+  # Lambda Layer for DocumentDB TLS Certificate
+  DocumentDBCertLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: documentdb-cert
+      Description: DocumentDB TLS certificate
+      ContentUri: ./layers/documentdb-cert/
+      CompatibleRuntimes:
+        - python3.11
+    Metadata:
+      BuildMethod: makefile
+
   # Main FastAPI Lambda (handles all requests)
   ModelRegistryAPI:
     Type: AWS::Serverless::Function
@@ -19,6 +31,10 @@ Resources:
       Environment:
         Variables:
           ARTIFACTS_BUCKET: !Ref ArtifactsBucket
+          DOCUMENTDB_CONNECTION_STRING: mongodb://team25:YOUR_PASSWORD@docdb-ece30861-project.cluster-c5io6aokka3p.us-east-2.docdb.amazonaws.com:27017/?tls=true&tlsCAFile=/opt/global-bundle.pem&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false
+          DOCUMENTDB_DATABASE: trustworthy_registry
+      Layers:
+        - !Ref DocumentDBCertLayer
       Policies:
         - DynamoDBCrudPolicy:
             TableName: Users

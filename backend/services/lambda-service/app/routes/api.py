@@ -3,8 +3,8 @@ API Routes Definition
 Laravel-style route registration with Node.js-style middleware
 """
 
+from include import Route
 from fastapi import APIRouter, Depends
-from app.lib.route import Route
 from app.controllers.auth_controller import AuthController
 from app.controllers.artifact_controller import ArtifactController
 from app.controllers.system_controller import SystemController

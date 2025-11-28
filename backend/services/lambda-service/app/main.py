@@ -2,7 +2,7 @@ import os
 from mangum import Mangum
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.lib.aws import AWSServices
+from include import AWSServices
 from app.bootstrap import bootstrap_services
 from app.routes import register_api_routes
 
