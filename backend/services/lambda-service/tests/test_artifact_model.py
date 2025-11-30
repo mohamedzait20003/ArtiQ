@@ -15,83 +15,93 @@ def test_primary_key_and_init():
 
 
 def test_scan_artifacts_no_filters(monkeypatch):
-    mock_table = Mock()
-    # return two items and a LastEvaluatedKey
-    mock_table.scan.return_value = {
-        "Items": [
-            {
-                "id": "1",
-                "name": "one",
-                "artifact_type": "model",
-                "source_url": "u1"
-            },
-            {
-                "id": "2",
-                "name": "two",
-                "artifact_type": "dataset",
-                "source_url": "u2"
-            },
-        ],
-        "LastEvaluatedKey": {"id": "2"},
-    }
+    mock_collection = Mock()
+    mock_cursor = [
+        {
+            "id": "1",
+            "name": "one",
+            "artifact_type": "model",
+            "source_url": "u1"
+        },
+        {
+            "id": "2",
+            "name": "two",
+            "artifact_type": "dataset",
+            "source_url": "u2"
+        },
+    ]
+    
+    # Mock find().limit() to return cursor
+    mock_find = Mock()
+    mock_find.limit.return_value = mock_cursor
+    mock_collection.find.return_value = mock_find
 
     # patch collection() to return our mock
     monkeypatch.setattr(
-        Artifact_Model, "collection", classmethod(lambda cls: mock_table)
+        Artifact_Model, "collection", classmethod(lambda cls: mock_collection)
     )
 
     res = Artifact_Model.scan_artifacts()
 
     assert isinstance(res, dict)
     assert len(res["items"]) == 2
-    assert res["last_evaluated_key"] == {"id": "2"}
+    assert res["last_evaluated_key"] is None
     # ensure returned items are Artifact_Model instances
     assert all(isinstance(x, Artifact_Model) for x in res["items"])
 
 
 def test_scan_with_limit_and_exclusive_start_key(monkeypatch):
-    mock_table = Mock()
-    mock_table.scan.return_value = {"Items": [], "LastEvaluatedKey": None}
+    mock_collection = Mock()
+    mock_cursor = []
+    
+    # Mock find().limit() to return cursor
+    mock_find = Mock()
+    mock_find.limit.return_value = mock_cursor
+    mock_collection.find.return_value = mock_find
+    
     monkeypatch.setattr(
-        Artifact_Model, "collection", classmethod(lambda cls: mock_table)
+        Artifact_Model, "collection", classmethod(lambda cls: mock_collection)
     )
 
     res = Artifact_Model.scan_artifacts(
         limit=5, exclusive_start_key={"id": "10"}
     )
 
-    # verify scan called with Limit and ExclusiveStartKey
-    called_kwargs = mock_table.scan.call_args[1]
-    assert called_kwargs["Limit"] == 5
-    assert called_kwargs["ExclusiveStartKey"] == {"id": "10"}
+    # verify find was called and limit was applied
+    mock_collection.find.assert_called_once()
+    mock_find.limit.assert_called_once_with(5)
     assert res["items"] == []
 
 
 def test_scan_with_name_and_types_filter(monkeypatch):
-    mock_table = Mock()
-    mock_table.scan.return_value = {
-        "Items": [
-            {
-                "id": "1",
-                "name": "foo",
-                "artifact_type": "model",
-                "source_url": "u"
-            }
-        ],
-        "LastEvaluatedKey": None
-    }
+    mock_collection = Mock()
+    mock_cursor = [
+        {
+            "id": "1",
+            "name": "foo",
+            "artifact_type": "model",
+            "source_url": "u"
+        }
+    ]
+    
+    # Mock find().limit() to return cursor
+    mock_find = Mock()
+    mock_find.limit.return_value = mock_cursor
+    mock_collection.find.return_value = mock_find
+    
     monkeypatch.setattr(
-        Artifact_Model, "collection", classmethod(lambda cls: mock_table)
+        Artifact_Model, "collection", classmethod(lambda cls: mock_collection)
     )
 
     res = Artifact_Model.scan_artifacts(
         name_filter="foo", types_filter=["model", "badtype"]
     )
 
-    # scan should be called with a FilterExpression arg
-    # (we don't assert expression contents)
-    called_kwargs = mock_table.scan.call_args[1]
-    assert "FilterExpression" in called_kwargs
+    # find should be called with a query filter
+    mock_collection.find.assert_called_once()
+    call_args = mock_collection.find.call_args[0][0]
+    assert 'name' in call_args
+    assert call_args['name'] == 'foo'
     assert len(res["items"]) == 1
 
 

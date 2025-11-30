@@ -55,18 +55,22 @@ def test_save_put_item_and_s3_handling(monkeypatch):
         DummyModel, "_upload_to_s3", lambda self, f, d: "k123"
     )
 
-    mock_table = Mock()
-    mock_table.put_item.return_value = {}
+    mock_collection = Mock()
+    mock_collection.replace_one.return_value = Mock()
     # Patch collection() to return our mock
     monkeypatch.setattr(
-        DummyModel, "collection", classmethod(lambda cls: mock_table)
+        DummyModel, "collection", classmethod(lambda cls: mock_collection)
     )
 
     assert inst.save() is True
 
-    called_item = mock_table.put_item.call_args[1]["Item"]
-    assert "file_s3_key" in called_item
-    assert "file" not in called_item
+    # Verify replace_one was called
+    assert mock_collection.replace_one.called
+    call_args = mock_collection.replace_one.call_args
+    # Second argument is the document being saved
+    saved_doc = call_args[0][1]
+    assert "file_s3_key" in saved_doc
+    assert "file" not in saved_doc
 
     # If upload fails (returns None) save should return False
     monkeypatch.setattr(
@@ -74,15 +78,15 @@ def test_save_put_item_and_s3_handling(monkeypatch):
     )
     assert inst.save() is False
 
-    # If put_item raises ClientError, save should return False
+    # If replace_one raises Exception, save should return False
     monkeypatch.setattr(
         DummyModel, "_upload_to_s3", lambda self, f, d: "k123"
     )
 
     def raise_err(*args, **kwargs):
-        raise make_client_error()
+        raise Exception("MongoDB error")
 
-    mock_table.put_item.side_effect = raise_err
+    mock_collection.replace_one.side_effect = raise_err
     assert inst.save() is False
 
 
@@ -90,10 +94,10 @@ def test_get_load_s3_data(monkeypatch):
     # Setup item returned from MongoDB
     item = {"id": "1", "file_s3_key": "k123"}
 
-    mock_table = Mock()
-    mock_table.get_item.return_value = {"Item": item}
+    mock_collection = Mock()
+    mock_collection.find_one.return_value = item
     monkeypatch.setattr(
-        DummyModel, "collection", classmethod(lambda cls: mock_table)
+        DummyModel, "collection", classmethod(lambda cls: mock_collection)
     )
 
     # Patch _download_from_s3 to return bytes when loading
@@ -106,14 +110,14 @@ def test_get_load_s3_data(monkeypatch):
     assert inst.file == b"blob"
 
     # If no item present, get returns None
-    mock_table.get_item.return_value = {}
+    mock_collection.find_one.return_value = None
     assert DummyModel.get({"id": "missing"}) is None
 
-    # If table.get_item raises ClientError, get returns None
+    # If collection.find_one raises Exception, get returns None
     def raise_err(*a, **k):
-        raise make_client_error()
+        raise Exception("MongoDB error")
 
-    mock_table.get_item.side_effect = raise_err
+    mock_collection.find_one.side_effect = raise_err
     assert DummyModel.get({"id": "1"}) is None
 
 
@@ -165,18 +169,20 @@ def test_delete_calls_s3_and_table(monkeypatch):
 
     monkeypatch.setattr(DummyModel, "_delete_from_s3", fake_delete)
 
-    mock_table = Mock()
-    mock_table.delete_item.return_value = {}
+    mock_collection = Mock()
+    mock_result = Mock()
+    mock_result.deleted_count = 1
+    mock_collection.delete_one.return_value = mock_result
     monkeypatch.setattr(
-        DummyModel, "collection", classmethod(lambda cls: mock_table)
+        DummyModel, "collection", classmethod(lambda cls: mock_collection)
     )
 
     assert inst.delete() is True
     assert called['k'] == "k1"
 
-    # If delete_item raises error, delete should return False
+    # If delete_one raises error, delete should return False
     def raise_err(*a, **k):
-        raise make_client_error()
+        raise Exception("MongoDB error")
 
-    mock_table.delete_item.side_effect = raise_err
+    mock_collection.delete_one.side_effect = raise_err
     assert inst.delete() is False
