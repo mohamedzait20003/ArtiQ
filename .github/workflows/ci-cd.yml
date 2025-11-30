@@ -156,7 +156,7 @@ jobs:
     name: Deploy Lambda Service with API Gateway
     runs-on: ubuntu-latest
     needs: lambda-service
-    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/NEWBR') && github.event_name == 'push'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/NEWBR' || github.ref == 'refs/heads/MONGODB-MIGRATION') && github.event_name == 'push'
     
     steps:
     - uses: actions/checkout@v3
