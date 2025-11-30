@@ -8,28 +8,27 @@ Globals:
     MemorySize: 512
     Runtime: python3.11
 
+Parameters:
+  MongoDBUri:
+    Type: String
+    Description: MongoDB Atlas connection string
+    NoEcho: true
+    Default: ''
+
 Resources:
   # Main FastAPI Lambda (handles all requests)
   ModelRegistryAPI:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: python3.11
     Properties:
-      FunctionName: ece461-model-registry-api
       CodeUri: .
       Handler: app.main.handler
       Environment:
         Variables:
+          MONGODB_URI: !Ref MongoDBUri
           ARTIFACTS_BUCKET: !Ref ArtifactsBucket
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName: Users
-        - DynamoDBCrudPolicy:
-            TableName: !Ref ArtifactsTable
-        - DynamoDBCrudPolicy:
-            TableName: Roles
-        - DynamoDBCrudPolicy:
-            TableName: Permissions
-        - DynamoDBCrudPolicy:
-            TableName: Sessions
         - S3CrudPolicy:
             BucketName: !Ref ArtifactsBucket
       Events:
@@ -38,19 +37,6 @@ Resources:
           Properties:
             Path: /{proxy+}
             Method: ANY
-
-  # DynamoDB Table for Artifacts
-  ArtifactsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: Artifacts
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: id
-          AttributeType: S
-      KeySchema:
-        - AttributeName: id
-          KeyType: HASH
 
   # S3 Bucket for Artifact Content Storage
   ArtifactsBucket:
@@ -69,12 +55,6 @@ Outputs:
   ApiUrl:
     Description: "API Gateway endpoint URL"
     Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/"
-  
-  ArtifactsTableName:
-    Description: "DynamoDB table name for artifacts"
-    Value: !Ref ArtifactsTable
-    Export:
-      Name: !Sub "${AWS::StackName}-ArtifactsTable"
   
   ArtifactsBucketName:
     Description: "S3 bucket name for artifact content"

@@ -2,7 +2,7 @@ import uuid
 from typing import Optional
 from abc import ABC, abstractmethod
 from botocore.exceptions import ClientError
-from app.lib.aws import get_s3, get_dynamodb
+from include import get_s3, get_collection
 
 
 class Model(ABC):
@@ -16,8 +16,9 @@ class Model(ABC):
             setattr(self, k, v)
 
     @classmethod
-    def table(cls):
-        return get_dynamodb().Table(cls.table_name)
+    def collection(cls):
+        """Get DocumentDB/MongoDB collection"""
+        return get_collection(cls.table_name)
 
     def _upload_to_s3(self, field_name: str,
                       file_data: bytes) -> Optional[str]:
@@ -69,9 +70,10 @@ class Model(ABC):
             return False
 
     def save(self):
-        """Save model to DynamoDB, uploading binary fields to S3"""
+        """Save model to database, uploading binary fields to S3"""
         item = self.__dict__.copy()
 
+        # Handle S3 fields
         for field_name in self.s3_fields:
             if field_name in item and item[field_name] is not None:
                 file_data = item[field_name]
@@ -89,24 +91,38 @@ class Model(ABC):
                     del item[field_name]
 
         try:
-            self.table().put_item(Item=item)
+            # MongoDB upsert operation
+            collection = self.collection()
+            filter_query = {k: item[k] for k in self.primary_key()}
+            collection.replace_one(
+                filter_query,
+                item,
+                upsert=True
+            )
             return True
-        except ClientError as e:
+        except Exception as e:
             print(f"Error saving item: {e}")
             return False
 
     @classmethod
     def get(cls, key: dict, load_s3_data: bool = False):
         """
-        Get item from DynamoDB
+        Get item from database
+
         Args:
             key: Primary key to retrieve the item
             load_s3_data: If True, download S3 files into memory
         """
         try:
-            response = cls.table().get_item(Key=key)
-            item = response.get("Item")
+            # MongoDB findOne operation
+            collection = cls.collection()
+            item = collection.find_one(key)
+            
             if item:
+                # Remove MongoDB _id if present
+                if '_id' in item:
+                    del item['_id']
+                
                 instance = cls(**item)
 
                 if load_s3_data:
@@ -120,7 +136,7 @@ class Model(ABC):
 
                 return instance
             return None
-        except ClientError as e:
+        except Exception as e:
             print(f"Error getting item: {e}")
             return None
 
@@ -177,7 +193,8 @@ class Model(ABC):
             return None
 
     def delete(self):
-        """Delete item from DynamoDB and associated S3 files"""
+        """Delete item from database and associated S3 files"""
+        # Delete S3 files first
         for field_name in self.s3_fields:
             s3_key_field = f"{field_name}_s3_key"
             if hasattr(self, s3_key_field):
@@ -185,10 +202,13 @@ class Model(ABC):
                 self._delete_from_s3(s3_key)
 
         key = {k: getattr(self, k) for k in self.primary_key()}
+        
         try:
-            self.table().delete_item(Key=key)
-            return True
-        except ClientError as e:
+            # MongoDB deleteOne operation
+            collection = self.collection()
+            result = collection.delete_one(key)
+            return result.deleted_count > 0
+        except Exception as e:
             print(f"Error deleting item: {e}")
             return False
 
@@ -196,7 +216,7 @@ class Model(ABC):
     @abstractmethod
     def primary_key(cls):
         """
-        Define the primary key attributes for DynamoDB operations
+        Define the primary key attributes for database operations
 
         This method must be implemented by all subclasses
 

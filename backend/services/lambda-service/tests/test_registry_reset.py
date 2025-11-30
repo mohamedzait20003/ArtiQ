@@ -4,8 +4,8 @@ from unittest.mock import patch
 class TestRegistryResetLambda:
     """Unit tests for registry_reset lambda function"""
 
-    @patch('app.models.Auth_Model.Auth_Model.table')
-    @patch('app.models.Session_Model.Session_Model.table')
+    @patch('app.models.Auth_Model.Auth_Model.collection')
+    @patch('app.models.Session_Model.Session_Model.collection')
     @patch('app.models.Artifact_Model.Artifact_Model.scan_artifacts')
     def test_lambda_handler_success(
             self, mock_scan, mock_session_table, mock_auth_table):
@@ -36,12 +36,12 @@ class TestRegistryResetLambda:
         assert 'Registry is reset.' in result['body']
 
     @patch('app.models.Artifact_Model.Artifact_Model.scan_artifacts')
-    def test_lambda_handler_dynamo_error(self, mock_scan):
-        """Test registry reset with DynamoDB error"""
+    def test_lambda_handler_database_error(self, mock_scan):
+        """Test registry reset with MongoDB error"""
         from app.jobs.registry_reset import lambda_handler
 
         # Mock scan to raise exception
-        mock_scan.side_effect = Exception("DynamoDB scan error")
+        mock_scan.side_effect = Exception("MongoDB query error")
 
         event = {
             'X-Authorization': 'test-token',
@@ -52,4 +52,4 @@ class TestRegistryResetLambda:
 
         assert result['statusCode'] == 500
         assert 'error' in result['body']
-        assert 'DynamoDB scan error' in result['body']
+        assert 'MongoDB query error' in result['body']

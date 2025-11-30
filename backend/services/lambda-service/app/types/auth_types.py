@@ -21,7 +21,7 @@ class AuthenticationRequest(BaseModel):
 
 class AuthenticationToken(BaseModel):
     """Response model for successful authentication"""
-    token: str
+    value: str
 
 
 class LoginRequest(BaseModel):

@@ -3,8 +3,7 @@ Application Bootstrap
 Registers all services as singletons in the container
 """
 
-from app.lib.container import Container
-from app.lib.aws import AWSServices
+from include import Container, AWSServices
 from app.controllers.auth_controller import AuthController
 from app.controllers.artifact_controller import ArtifactController
 from app.controllers.system_controller import SystemController

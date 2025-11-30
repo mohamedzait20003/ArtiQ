@@ -1,18 +1,26 @@
 import time
 import hashlib
 from .Model import Model
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+from include import belongs_to
+
+if TYPE_CHECKING:
+    from .Auth_Model import Auth_Model
 
 
 class Session_Model(Model):
     """
     Session Model for managing user sessions with TTL
+    One-to-one relationship: Each user has exactly one active session
 
-    DynamoDB Schema:
+    Database Schema:
     - ID (Primary Key): Unique session identifier
-    - UserID: Foreign key reference to Users table
+    - UserID: Foreign key reference to Users table (unique constraint)
     - Token: Hashed session token for authentication
     - TTL: Time-to-live timestamp for automatic session expiration
+
+    Relationships:
+    - user(): Belongs to one Auth_Model
     """
 
     table_name: str = "Sessions"
@@ -46,7 +54,7 @@ class Session_Model(Model):
 
     @classmethod
     def primary_key(cls):
-        """Define the primary key for DynamoDB operations"""
+        """Define the primary key for database operations"""
         return ["ID"]
 
     @staticmethod
@@ -59,18 +67,6 @@ class Session_Model(Model):
             Unix timestamp for expiration
         """
         return int(time.time()) + (hours * 60 * 60)
-
-    def save(self):
-        """Save session to DynamoDB, hashing the token before storage"""
-        # Hash the token if it's not already hashed
-        if self.Token and not self._is_hashed(self.Token):
-            self.Token = self._hash_token(self.Token)
-
-        # Ensure TTL is set
-        if not self.TTL:
-            self.TTL = self._calculate_ttl()
-
-        return super().save()
 
     @staticmethod
     def _hash_token(token: str) -> str:
@@ -85,30 +81,32 @@ class Session_Model(Model):
         return is_correct_length and is_hex
 
     @classmethod
-    def get_by_user_id(cls, user_id: str) -> list['Session_Model']:
+    def get_by_user_id(cls, user_id: str) -> Optional['Session_Model']:
         """
-        Get all active sessions for a user
+        Get the active session for a user (one-to-one relationship)
 
         Args:
             user_id: The user ID to search for
 
         Returns:
-            List of Session_Model instances
-
-        Note: Requires a GSI on UserID attribute
+            Session_Model instance or None
         """
         try:
-            response = cls.table().query(
-                IndexName='UserIDIndex',
-                KeyConditionExpression='UserID = :user_id',
-                ExpressionAttributeValues={':user_id': user_id}
-            )
-
-            items = response.get('Items', [])
-            return [cls(**item) for item in items]
+            # MongoDB query - get only active session
+            collection = cls.collection()
+            current_time = int(time.time())
+            doc = collection.find_one({
+                'UserID': user_id,
+                'TTL': {'$gt': current_time}
+            })
+            if doc:
+                if '_id' in doc:
+                    del doc['_id']
+                return cls(**doc)
+            return None
         except Exception as e:
-            print(f"Error querying sessions by user ID: {e}")
-            return []
+            print(f"Error querying session by user ID: {e}")
+            return None
 
     @classmethod
     def verify_session(
@@ -136,3 +134,43 @@ class Session_Model(Model):
         except Exception as e:
             print(f"Error verifying session: {e}")
             return None
+
+    def user(self) -> Optional['Auth_Model']:
+        """
+        Eloquent-style relationship: Get the user for this session
+        Inverse one-to-one relationship using BelongsTo
+
+        Returns:
+            Auth_Model instance or None
+        """
+        from .Auth_Model import Auth_Model
+        return belongs_to(
+            Auth_Model,
+            foreign_key='UserID',
+            local_key='ID'
+        )(self)
+
+    def save(self):
+        """
+        Save session, enforcing one-to-one constraint per user
+        Deletes any existing session for the user before saving
+        """
+        # Hash the token if not already hashed
+        if self.Token and not self._is_hashed(self.Token):
+            self.Token = self._hash_token(self.Token)
+
+        # Ensure TTL is set
+        if not self.TTL:
+            self.TTL = self._calculate_ttl()
+
+        # Enforce one-to-one: Delete existing sessions for this user
+        try:
+            collection = self.collection()
+            collection.delete_many({
+                'UserID': self.UserID,
+                'ID': {'$ne': self.ID}
+            })
+        except Exception as e:
+            print(f"Warning: Could not delete old sessions: {e}")
+
+        return super(Session_Model, self).save()

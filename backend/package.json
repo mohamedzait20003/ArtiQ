@@ -1,0 +1,38 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Backend services for ECE 30816 Project",
+  "scripts": {
+    "migrate": "python scripts/migrate.py lambda-service",
+    "migrate:lambda": "python scripts/migrate.py lambda-service",
+    "migrate:fargate": "python scripts/migrate.py fargate-service",
+    "migrate:rollback": "python scripts/migrate.py lambda-service --rollback",
+    "migrate:status": "python scripts/migrate.py lambda-service --status",
+    "seed": "python scripts/seed.py lambda-service",
+    "seed:lambda": "python scripts/seed.py lambda-service",
+    "seed:fargate": "python scripts/seed.py fargate-service",
+    "seed:force": "python scripts/seed.py lambda-service --force",
+    "db:fresh": "python scripts/db.py lambda-service fresh",
+    "db:reset": "python scripts/db.py lambda-service reset",
+    "lambda:dev": "cd services/lambda-service && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "lambda:test": "cd services/lambda-service && pytest",
+    "lambda:test:coverage": "cd services/lambda-service && pytest --cov=app --cov-report=html",
+    "lambda:build": "cd services/lambda-service && sam build",
+    "lambda:deploy": "cd services/lambda-service && sam deploy",
+    "lambda:local": "cd services/lambda-service && sam local start-api",
+    "fargate:dev": "cd services/fargate-service && uvicorn src.main:app --reload --host 0.0.0.0 --port 8001"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "keywords": [
+    "fastapi",
+    "aws",
+    "lambda",
+    "fargate",
+    "documentdb"
+  ],
+  "author": "Team 25",
+  "license": "ISC"
+}

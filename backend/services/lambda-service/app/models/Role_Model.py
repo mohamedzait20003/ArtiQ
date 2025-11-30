@@ -1,16 +1,23 @@
 from .Model import Model
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
+from include import has_many
+
+if TYPE_CHECKING:
+    from .Auth_Model import Auth_Model
 
 
 class Role_Model(Model):
     """
     Role Model for defining user roles with permissions
 
-    DynamoDB Schema:
+    Database Schema:
     - RoleID (Primary Key): Unique identifier for the role
     - Name: Role name (e.g., "Admin", "User", "Viewer")
     - Description: Human-readable description of the role
     - PermissionIDs: List of permission IDs assigned to this role
+
+    Relationships:
+    - users(): Has many Auth_Model (one-to-many)
     """
 
     table_name: str = "Roles"
@@ -43,7 +50,7 @@ class Role_Model(Model):
 
     @classmethod
     def primary_key(cls):
-        """Define the primary key for DynamoDB operations"""
+        """Define the primary key for database operations"""
         return ["RoleID"]
 
     def add_permission(self, permission_id: str) -> bool:
@@ -86,19 +93,15 @@ class Role_Model(Model):
 
         Returns:
             Role_Model instance if found, None otherwise
-
-        Note: Requires GSI on Name attribute
         """
         try:
-            response = cls.table().query(
-                IndexName='NameIndex',
-                KeyConditionExpression='Name = :name',
-                ExpressionAttributeValues={':name': name}
-            )
-
-            items = response.get('Items', [])
-            if items:
-                return cls(**items[0])
+            # MongoDB query
+            collection = cls.collection()
+            doc = collection.find_one({'Name': name})
+            if doc:
+                if '_id' in doc:
+                    del doc['_id']
+                return cls(**doc)
             return None
         except Exception as e:
             print(f"Error getting role by name: {e}")
@@ -113,9 +116,30 @@ class Role_Model(Model):
             List of Role_Model instances
         """
         try:
-            response = cls.table().scan()
-            items = response.get('Items', [])
-            return [cls(**item) for item in items]
+            # MongoDB query
+            collection = cls.collection()
+            cursor = collection.find({})
+            items = []
+            for doc in cursor:
+                if '_id' in doc:
+                    del doc['_id']
+                items.append(cls(**doc))
+            return items
         except Exception as e:
             print(f"Error listing roles: {e}")
             return []
+
+    def users(self) -> List['Auth_Model']:
+        """
+        Eloquent-style relationship: Get all users with this role
+        One-to-many relationship using HasMany
+
+        Returns:
+            List of Auth_Model instances
+        """
+        from .Auth_Model import Auth_Model
+        return has_many(
+            Auth_Model,
+            foreign_key='RoleID',
+            local_key='RoleID'
+        )(self)
