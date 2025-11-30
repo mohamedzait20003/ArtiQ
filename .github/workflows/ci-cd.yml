@@ -185,13 +185,18 @@ jobs:
     - name: Check and delete failed stack
       run: |
         STACK_STATUS=$(aws cloudformation describe-stacks --stack-name ece461-model-registry-stack --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
-        if [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ]; then
-          echo "Stack is in ROLLBACK_COMPLETE state. Deleting..."
+        echo "Current stack status: $STACK_STATUS"
+        
+        if [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ] || [ "$STACK_STATUS" = "CREATE_FAILED" ] || [ "$STACK_STATUS" = "DELETE_FAILED" ]; then
+          echo "Stack is in failed state ($STACK_STATUS). Deleting..."
           aws cloudformation delete-stack --stack-name ece461-model-registry-stack --region us-east-2
+          echo "Waiting for stack deletion to complete..."
           aws cloudformation wait stack-delete-complete --stack-name ece461-model-registry-stack --region us-east-2
           echo "Stack deleted successfully."
+        elif [ "$STACK_STATUS" != "DOES_NOT_EXIST" ]; then
+          echo "Stack exists with status: $STACK_STATUS. Will attempt update."
         else
-          echo "Stack status: $STACK_STATUS"
+          echo "No existing stack found. Will create new stack."
         fi
       continue-on-error: true
     
