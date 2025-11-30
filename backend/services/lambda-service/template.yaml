@@ -16,17 +16,6 @@ Parameters:
     Default: ''
 
 Resources:
-  # Secrets Manager Secret for MongoDB URI
-  MongoDBSecret:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Name: ece461-mongodb-uri
-      Description: MongoDB Atlas connection string for ECE461 project
-      SecretString: !Sub |
-        {
-          "uri": "${MongoDBUri}"
-        }
-
   # Main FastAPI Lambda (handles all requests)
   ModelRegistryAPI:
     Type: AWS::Serverless::Function
@@ -36,13 +25,11 @@ Resources:
       Handler: app.main.handler
       Environment:
         Variables:
-          MONGODB_SECRET_NAME: !Ref MongoDBSecret
+          MONGODB_URI: !Ref MongoDBUri
           ARTIFACTS_BUCKET: !Ref ArtifactsBucket
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref ArtifactsBucket
-        - AWSSecretsManagerGetSecretValuePolicy:
-            SecretArn: !Ref MongoDBSecret
       Events:
         ApiEvent:
           Type: HttpApi
