@@ -180,7 +180,13 @@ jobs:
     - name: Build Lambda function
       run: |
         cd backend/services/lambda-service
+        # Copy shared lib directory into lambda-service for packaging
+        # Remove any existing lib symlink/directory first
+        rm -rf ./lib
+        cp -r ../../lib ./lib
         sam build --use-container
+        # Clean up the copied lib after build (SAM already packaged it)
+        rm -rf ./lib
     
     - name: Clean up orphaned Lambda resources
       run: |

@@ -19,6 +19,8 @@ Resources:
   # Main FastAPI Lambda (handles all requests)
   ModelRegistryAPI:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: python3.11
     Properties:
       CodeUri: .
       Handler: app.main.handler
