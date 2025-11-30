@@ -65,10 +65,10 @@ class AuthController:
             # Call the handler function directly
             result = authenticate_job(event, None)
 
-            # Return bearer token as string
+            # Return bearer token as JSON object
             print("PUT /authenticate RETURNING: 200 - success")
             token = result.get('token', '')
-            return f"bearer {token}"
+            return {"token": f"bearer {token}"}
 
         except HTTPException:
             raise
