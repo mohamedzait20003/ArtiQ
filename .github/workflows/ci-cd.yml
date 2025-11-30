@@ -187,7 +187,26 @@ jobs:
         STACK_STATUS=$(aws cloudformation describe-stacks --stack-name ece461-model-registry-stack --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
         echo "Current stack status: $STACK_STATUS"
         
-        if [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ] || [ "$STACK_STATUS" = "CREATE_FAILED" ] || [ "$STACK_STATUS" = "DELETE_FAILED" ]; then
+        if [ "$STACK_STATUS" = "DELETE_FAILED" ]; then
+          echo "Stack is in DELETE_FAILED state. Attempting to skip deletion of failed resources..."
+          # Get resources that failed to delete
+          FAILED_RESOURCES=$(aws cloudformation describe-stack-resources --stack-name ece461-model-registry-stack --query "StackResources[?ResourceStatus=='DELETE_FAILED'].LogicalResourceId" --output text)
+          echo "Failed resources: $FAILED_RESOURCES"
+          
+          # Try to delete with retain resources option
+          aws cloudformation delete-stack --stack-name ece461-model-registry-stack --region us-east-2 --retain-resources $FAILED_RESOURCES || true
+          sleep 10
+          
+          # Check if deletion succeeded
+          NEW_STATUS=$(aws cloudformation describe-stacks --stack-name ece461-model-registry-stack --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+          if [ "$NEW_STATUS" = "DOES_NOT_EXIST" ]; then
+            echo "Stack deleted successfully."
+          else
+            echo "WARNING: Stack still exists. Manual intervention required via AWS Console."
+            echo "Please delete the stack manually: https://us-east-2.console.aws.amazon.com/cloudformation"
+            exit 1
+          fi
+        elif [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ] || [ "$STACK_STATUS" = "CREATE_FAILED" ]; then
           echo "Stack is in failed state ($STACK_STATUS). Deleting..."
           aws cloudformation delete-stack --stack-name ece461-model-registry-stack --region us-east-2
           echo "Waiting for stack deletion to complete..."
@@ -198,7 +217,7 @@ jobs:
         else
           echo "No existing stack found. Will create new stack."
         fi
-      continue-on-error: true
+      continue-on-error: false
     
     - name: Deploy Lambda with API Gateway
       env:
