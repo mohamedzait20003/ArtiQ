@@ -226,6 +226,18 @@ jobs:
         fi
       continue-on-error: false
     
+    - name: Create SAM managed S3 bucket if needed
+      run: |
+        BUCKET_NAME="aws-sam-cli-managed-default-samclisourcebucket-zvcnsi0ylnwj"
+        if aws s3 ls "s3://${BUCKET_NAME}" 2>/dev/null; then
+          echo "S3 bucket ${BUCKET_NAME} already exists"
+        else
+          echo "Creating S3 bucket ${BUCKET_NAME}..."
+          aws s3 mb "s3://${BUCKET_NAME}" --region us-east-2
+          echo "S3 bucket created successfully"
+        fi
+      continue-on-error: true
+    
     - name: Deploy Lambda with API Gateway
       env:
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
