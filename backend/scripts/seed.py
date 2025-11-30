@@ -18,6 +18,11 @@ import sys
 import traceback
 from pathlib import Path
 from typing import Optional
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+backend_root = Path(__file__).parent.parent
+load_dotenv(backend_root / '.env')
 
 
 def get_service_path(service_name: str) -> Path:
@@ -37,9 +42,11 @@ def run_seeders(
     seeder_name: Optional[str] = None
 ):
     """Run seeders for a specific service"""
+    backend_root = Path(__file__).parent.parent
     service_path = get_service_path(service_name)
 
-    # Add service to path
+    # Add backend root and service to path
+    sys.path.insert(0, str(backend_root))
     sys.path.insert(0, str(service_path))
 
     # Import service-specific seeder functions

@@ -121,7 +121,7 @@ def main():
         )
         print(msg)
         sys.exit(1)
-    
+
     service_name = sys.argv[1]
     rollback = '--rollback' in sys.argv
     status = '--status' in sys.argv

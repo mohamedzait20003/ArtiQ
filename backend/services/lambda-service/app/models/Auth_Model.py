@@ -1,4 +1,4 @@
-import hashlib
+import bcrypt
 from .Model import Model
 from typing import Optional, TYPE_CHECKING
 from include import (
@@ -77,15 +77,28 @@ class Auth_Model(Model):
 
     @staticmethod
     def _hash_password(password: str) -> str:
-        """Hash a password using SHA-256"""
-        return hashlib.sha256(password.encode()).hexdigest()
+        """Hash a password using bcrypt"""
+        return bcrypt.hashpw(
+            password.encode('utf-8'),
+            bcrypt.gensalt()
+        ).decode('utf-8')
+
+    @staticmethod
+    def _verify_password(password: str, hashed: str) -> bool:
+        """Verify a password against a bcrypt hash"""
+        try:
+            return bcrypt.checkpw(
+                password.encode('utf-8'),
+                hashed.encode('utf-8')
+            )
+        except Exception:
+            return False
 
     @staticmethod
     def _is_hashed(password: str) -> bool:
-        """Check if password is already hashed (64 char hex string)"""
-        is_correct_length = len(password) == 64
-        is_hex = all(c in '0123456789abcdef' for c in password.lower())
-        return is_correct_length and is_hex
+        """Check if password is already hashed (bcrypt format)"""
+        # Bcrypt hashes start with $2a$, $2b$, or $2y$
+        return password.startswith(('$2a$', '$2b$', '$2y$'))
 
     def assign_role(self, role_id: str) -> bool:
         """
@@ -180,7 +193,8 @@ class Auth_Model(Model):
                     del item['_id']
 
                 user = cls(**item)
-                if user.Password == cls._hash_password(password):
+                # Use bcrypt to verify password
+                if cls._verify_password(password, user.Password):
                     return user
 
             return None
