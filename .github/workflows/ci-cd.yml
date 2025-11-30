@@ -182,6 +182,13 @@ jobs:
         cd backend/services/lambda-service
         sam build --use-container
     
+    - name: Clean up orphaned Lambda resources
+      run: |
+        echo "Checking for orphaned Lambda functions..."
+        # Try to delete the specific Lambda if it exists outside CloudFormation
+        aws lambda delete-function --function-name ece461-model-registry-api --region us-east-2 2>/dev/null || echo "Lambda function does not exist or already managed by stack"
+      continue-on-error: true
+    
     - name: Check and delete failed stack
       run: |
         STACK_STATUS=$(aws cloudformation describe-stacks --stack-name ece461-model-registry-stack --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")

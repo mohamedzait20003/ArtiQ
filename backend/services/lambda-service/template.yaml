@@ -20,7 +20,6 @@ Resources:
   ModelRegistryAPI:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: ece461-model-registry-api
       CodeUri: .
       Handler: app.main.handler
       Environment:
