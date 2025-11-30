@@ -9,6 +9,7 @@ from app.controllers.auth_controller import AuthController
 from app.controllers.artifact_controller import ArtifactController
 from app.controllers.system_controller import SystemController
 from app.controllers.admin_controller import AdminController
+from app.types.auth_types import AuthenticationToken
 from app.middlewares.auth_middleware import (
     auth_optional,
     auth_required,
@@ -64,7 +65,7 @@ def register_api_routes(app) -> None:
         '/authenticate',
         auth.authenticate,
         tags=['auth'],
-        response_model=str,
+        response_model=AuthenticationToken,
         status_code=200,
         responses={
             200: {"description": "Return an AuthenticationToken"},
