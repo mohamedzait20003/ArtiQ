@@ -42,6 +42,7 @@ jobs:
         cd backend/services/lambda-service
         # Set PYTHONPATH to current directory and run tests
         export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+        export MONGODB_URI="mongodb://mock:27017/"
         python -m pytest -v --tb=short tests
     
     - name: Lint with flake8

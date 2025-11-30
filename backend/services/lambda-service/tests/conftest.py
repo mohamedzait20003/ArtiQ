@@ -13,6 +13,8 @@ os.environ['AWS_SECRET_ACCESS_KEY'] = 'testing'
 os.environ['AWS_SECURITY_TOKEN'] = 'testing'
 os.environ['AWS_SESSION_TOKEN'] = 'testing'
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-2'
+# Set mock MongoDB URI to prevent real connection attempts
+os.environ.setdefault('MONGODB_URI', 'mongodb://mock:27017/')
 
 # Add lambda-service directory to Python path
 LAMBDA_SERVICE_PATH = os.path.dirname(

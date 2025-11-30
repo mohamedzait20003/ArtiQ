@@ -40,7 +40,7 @@ class AWSServices:
         if cls._region is None:
             cls._region = region or os.environ.get('AWS_REGION', 'us-east-2')
             os.environ.setdefault('AWS_REGION', cls._region)
-        
+
         # Initialize DocumentDB if not already initialized
         if cls._documentdb_client is None:
             cls._init_documentdb()
@@ -52,7 +52,7 @@ class AWSServices:
             os.environ.get('MONGODB_URI') or
             'mongodb://localhost:27017/'
         )
-        
+
         database_name = cls._database_name
 
         # Create MongoDB client
@@ -65,13 +65,14 @@ class AWSServices:
             connectTimeoutMS=10000,
             socketTimeoutMS=10000
         )
-        
-        # Test connection
-        cls._documentdb_client.admin.command('ping')
-        
+
+        # Test connection (skip for mock URIs used in testing)
+        if 'mock' not in connection_string:
+            cls._documentdb_client.admin.command('ping')
+
         # Get database
         cls._documentdb_database = cls._documentdb_client[database_name]
-        
+
         print(f"✓ Connected to MongoDB: {database_name}")
 
     @classmethod
