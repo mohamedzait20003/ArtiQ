@@ -87,7 +87,7 @@ def test_save_put_item_and_s3_handling(monkeypatch):
 
 
 def test_get_load_s3_data(monkeypatch):
-    # Setup item returned from DynamoDB
+    # Setup item returned from MongoDB
     item = {"id": "1", "file_s3_key": "k123"}
 
     mock_table = Mock()

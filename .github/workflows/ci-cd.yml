@@ -27,16 +27,15 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-lambda-${{ hashFiles('backend/services/lambda-service/requirements.txt') }}
+        key: ${{ runner.os }}-pip-backend-${{ hashFiles('backend/requirements.txt') }}
         restore-keys: |
-          ${{ runner.os }}-pip-lambda-
+          ${{ runner.os }}-pip-backend-
     
     - name: Install dependencies
       run: |
-        cd backend/services/lambda-service
+        cd backend
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest
     
     - name: Run tests
       run: |
@@ -68,13 +67,13 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-fargate-${{ hashFiles('backend/services/fargate-service/requirements.txt') }}
+        key: ${{ runner.os }}-pip-backend-${{ hashFiles('backend/requirements.txt') }}
         restore-keys: |
-          ${{ runner.os }}-pip-fargate-
+          ${{ runner.os }}-pip-backend-
     
     - name: Install dependencies
       run: |
-        cd backend/services/fargate-service
+        cd backend
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     

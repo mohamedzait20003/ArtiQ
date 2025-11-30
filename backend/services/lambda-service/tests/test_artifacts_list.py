@@ -48,7 +48,7 @@ class TestArtifactsListLambda:
         assert result is None
 
     def test_encode_offset_with_valid_key(self):
-        """Test encode_offset with valid DynamoDB key"""
+        """Test encode_offset with valid MongoDB document"""
         from app.jobs.artifacts_list import encode_offset
 
         test_key = {"id": "test-123", "name": "test-artifact"}

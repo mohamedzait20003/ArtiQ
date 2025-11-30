@@ -1,5 +1,20 @@
+# Core dependencies
 fastapi[standard]==0.119.1
+pydantic==2.9.0
+python-dotenv==1.0.0
+
+# AWS dependencies
 boto3==1.40.56
 mangum==0.19.0
+
+# Database dependencies
+pymongo==4.6.1
+pymongo[srv]==4.6.1
+
+# Security
+bcrypt==4.1.2
+
+# Testing dependencies
 pytest==7.4.3
-python-dotenv==1.0.0
+mongomock==4.1.2
+moto[s3]==5.0.0
