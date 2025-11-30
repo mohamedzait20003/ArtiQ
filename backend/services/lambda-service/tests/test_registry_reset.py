@@ -4,8 +4,8 @@ from unittest.mock import patch
 class TestRegistryResetLambda:
     """Unit tests for registry_reset lambda function"""
 
-    @patch('app.models.Auth_Model.Auth_Model.table')
-    @patch('app.models.Session_Model.Session_Model.table')
+    @patch('app.models.Auth_Model.Auth_Model.collection')
+    @patch('app.models.Session_Model.Session_Model.collection')
     @patch('app.models.Artifact_Model.Artifact_Model.scan_artifacts')
     def test_lambda_handler_success(
             self, mock_scan, mock_session_table, mock_auth_table):

@@ -35,9 +35,9 @@ def test_scan_artifacts_no_filters(monkeypatch):
         "LastEvaluatedKey": {"id": "2"},
     }
 
-    # patch table() to return our mock
+    # patch collection() to return our mock
     monkeypatch.setattr(
-        Artifact_Model, "table", classmethod(lambda cls: mock_table)
+        Artifact_Model, "collection", classmethod(lambda cls: mock_table)
     )
 
     res = Artifact_Model.scan_artifacts()
@@ -53,7 +53,7 @@ def test_scan_with_limit_and_exclusive_start_key(monkeypatch):
     mock_table = Mock()
     mock_table.scan.return_value = {"Items": [], "LastEvaluatedKey": None}
     monkeypatch.setattr(
-        Artifact_Model, "table", classmethod(lambda cls: mock_table)
+        Artifact_Model, "collection", classmethod(lambda cls: mock_table)
     )
 
     res = Artifact_Model.scan_artifacts(
@@ -81,7 +81,7 @@ def test_scan_with_name_and_types_filter(monkeypatch):
         "LastEvaluatedKey": None
     }
     monkeypatch.setattr(
-        Artifact_Model, "table", classmethod(lambda cls: mock_table)
+        Artifact_Model, "collection", classmethod(lambda cls: mock_table)
     )
 
     res = Artifact_Model.scan_artifacts(
@@ -103,7 +103,7 @@ def test_scan_handles_exception(monkeypatch):
 
     mock_table.scan.side_effect = raise_err
     monkeypatch.setattr(
-        Artifact_Model, "table", classmethod(lambda cls: mock_table)
+        Artifact_Model, "collection", classmethod(lambda cls: mock_table)
     )
 
     res = Artifact_Model.scan_artifacts()

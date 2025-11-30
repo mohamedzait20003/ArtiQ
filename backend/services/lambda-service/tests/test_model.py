@@ -57,9 +57,9 @@ def test_save_put_item_and_s3_handling(monkeypatch):
 
     mock_table = Mock()
     mock_table.put_item.return_value = {}
-    # Patch table() to return our mock
+    # Patch collection() to return our mock
     monkeypatch.setattr(
-        DummyModel, "table", classmethod(lambda cls: mock_table)
+        DummyModel, "collection", classmethod(lambda cls: mock_table)
     )
 
     assert inst.save() is True
@@ -93,7 +93,7 @@ def test_get_load_s3_data(monkeypatch):
     mock_table = Mock()
     mock_table.get_item.return_value = {"Item": item}
     monkeypatch.setattr(
-        DummyModel, "table", classmethod(lambda cls: mock_table)
+        DummyModel, "collection", classmethod(lambda cls: mock_table)
     )
 
     # Patch _download_from_s3 to return bytes when loading
@@ -168,7 +168,7 @@ def test_delete_calls_s3_and_table(monkeypatch):
     mock_table = Mock()
     mock_table.delete_item.return_value = {}
     monkeypatch.setattr(
-        DummyModel, "table", classmethod(lambda cls: mock_table)
+        DummyModel, "collection", classmethod(lambda cls: mock_table)
     )
 
     assert inst.delete() is True
