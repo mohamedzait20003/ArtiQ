@@ -1,4 +1,12 @@
-"""
+Run cd backend/services/lambda-service
+  
+	Managed S3 bucket: aws-sam-cli-managed-default-samclisourcebucket-zvcnsi0ylnwj
+	Auto resolution of buckets can be turned off by setting resolve_s3=False
+	To use a specific S3 bucket, set --s3-bucket=<bucket_name>
+	Above settings can be stored in samconfig.toml
+	Uploading to ece461-model-registry/b1497b2edbd289f4f5bea0bb3cd30b76  49082 / 49082  (100.00%)
+Error: Unable to upload artifact ModelRegistryAPI referenced by CodeUri parameter of ModelRegistryAPI resource.
+S3 Bucket does not exist."""
 AWS Service Provider
 Singleton AWS service instances for DocumentDB and S3
 """
