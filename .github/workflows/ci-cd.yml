@@ -191,21 +191,21 @@ jobs:
     
     - name: Check and delete failed stack
       run: |
-        STACK_STATUS=$(aws cloudformation describe-stacks --stack-name ece461-model-registry-stack --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+        STACK_STATUS=$(aws cloudformation describe-stacks --stack-name ece461-model-registry-mongodb --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
         echo "Current stack status: $STACK_STATUS"
         
         if [ "$STACK_STATUS" = "DELETE_FAILED" ]; then
           echo "Stack is in DELETE_FAILED state. Attempting to skip deletion of failed resources..."
           # Get resources that failed to delete
-          FAILED_RESOURCES=$(aws cloudformation describe-stack-resources --stack-name ece461-model-registry-stack --query "StackResources[?ResourceStatus=='DELETE_FAILED'].LogicalResourceId" --output text)
+          FAILED_RESOURCES=$(aws cloudformation describe-stack-resources --stack-name ece461-model-registry-mongodb --query "StackResources[?ResourceStatus=='DELETE_FAILED'].LogicalResourceId" --output text)
           echo "Failed resources: $FAILED_RESOURCES"
           
           # Try to delete with retain resources option
-          aws cloudformation delete-stack --stack-name ece461-model-registry-stack --region us-east-2 --retain-resources $FAILED_RESOURCES || true
+          aws cloudformation delete-stack --stack-name ece461-model-registry-mongodb --region us-east-2 --retain-resources $FAILED_RESOURCES || true
           sleep 10
           
           # Check if deletion succeeded
-          NEW_STATUS=$(aws cloudformation describe-stacks --stack-name ece461-model-registry-stack --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+          NEW_STATUS=$(aws cloudformation describe-stacks --stack-name ece461-model-registry-mongodb --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
           if [ "$NEW_STATUS" = "DOES_NOT_EXIST" ]; then
             echo "Stack deleted successfully."
           else
@@ -215,9 +215,9 @@ jobs:
           fi
         elif [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ] || [ "$STACK_STATUS" = "CREATE_FAILED" ]; then
           echo "Stack is in failed state ($STACK_STATUS). Deleting..."
-          aws cloudformation delete-stack --stack-name ece461-model-registry-stack --region us-east-2
+          aws cloudformation delete-stack --stack-name ece461-model-registry-mongodb --region us-east-2
           echo "Waiting for stack deletion to complete..."
-          aws cloudformation wait stack-delete-complete --stack-name ece461-model-registry-stack --region us-east-2
+          aws cloudformation wait stack-delete-complete --stack-name ece461-model-registry-mongodb --region us-east-2
           echo "Stack deleted successfully."
         elif [ "$STACK_STATUS" != "DOES_NOT_EXIST" ]; then
           echo "Stack exists with status: $STACK_STATUS. Will attempt update."
@@ -243,4 +243,4 @@ jobs:
       run: |
         cd backend/services/lambda-service
         echo "API Gateway URL:"
-        aws cloudformation describe-stacks --stack-name ece461-model-registry-stack --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" --output text
+        aws cloudformation describe-stacks --stack-name ece461-model-registry-mongodb --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" --output text

@@ -3,9 +3,9 @@ version = 0.1
 [default]
 [default.deploy]
 [default.deploy.parameters]
-stack_name = "ece461-model-registry-stack"
+stack_name = "ece461-model-registry"
 s3_bucket = ""
-s3_prefix = "ece461-model-registry-stack"
+s3_prefix = "ece461-model-registrys3"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 image_repositories = []
