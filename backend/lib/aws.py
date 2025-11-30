@@ -4,6 +4,7 @@ Singleton AWS service instances for DocumentDB and S3
 """
 
 import os
+import json
 import boto3
 from typing import Optional
 from pymongo import MongoClient
@@ -46,16 +47,38 @@ class AWSServices:
             cls._init_documentdb()
 
     @classmethod
+    def _get_mongodb_uri_from_secret(cls):
+        """Retrieve MongoDB URI from AWS Secrets Manager"""
+        secret_name = os.environ.get('MONGODB_SECRET_NAME')
+        
+        # If no secret name, fall back to direct env var (for local dev)
+        if not secret_name:
+            return os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/')
+        
+        try:
+            session = boto3.session.Session()
+            client = session.client(
+                service_name='secretsmanager',
+                region_name=cls._region or 'us-east-2'
+            )
+            
+            get_secret_value_response = client.get_secret_value(
+                SecretId=secret_name
+            )
+            
+            secret = json.loads(get_secret_value_response['SecretString'])
+            return secret.get('uri', 'mongodb://localhost:27017/')
+        except Exception as e:
+            print(f"Error retrieving secret: {e}")
+            # Fall back to environment variable
+            return os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/')
+
+    @classmethod
     def _init_documentdb(cls):
         """Initialize DocumentDB/MongoDB connection"""
-        connection_string = (
-            os.environ.get('MONGODB_URI') or
-            'mongodb://localhost:27017/'
-        )
-
-        database_name = cls._database_name
-
-        # Create MongoDB client
+        connection_string = cls._get_mongodb_uri_from_secret()
+        
+        database_name = cls._database_name        # Create MongoDB client
         cls._documentdb_client = MongoClient(
             connection_string,
             retryWrites=False,

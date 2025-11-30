@@ -8,18 +8,24 @@ Globals:
     MemorySize: 512
     Runtime: python3.11
 
+Parameters:
+  MongoDBUri:
+    Type: String
+    Description: MongoDB Atlas connection string
+    NoEcho: true
+    Default: ''
+
 Resources:
-  # Lambda Layer for DocumentDB TLS Certificate
-  DocumentDBCertLayer:
-    Type: AWS::Serverless::LayerVersion
+  # Secrets Manager Secret for MongoDB URI
+  MongoDBSecret:
+    Type: AWS::SecretsManager::Secret
     Properties:
-      LayerName: documentdb-cert
-      Description: DocumentDB TLS certificate
-      ContentUri: ./layers/documentdb-cert/
-      CompatibleRuntimes:
-        - python3.11
-    Metadata:
-      BuildMethod: makefile
+      Name: ece461-mongodb-uri
+      Description: MongoDB Atlas connection string for ECE461 project
+      SecretString: !Sub |
+        {
+          "uri": "${MongoDBUri}"
+        }
 
   # Main FastAPI Lambda (handles all requests)
   ModelRegistryAPI:
@@ -30,43 +36,19 @@ Resources:
       Handler: app.main.handler
       Environment:
         Variables:
+          MONGODB_SECRET_NAME: !Ref MongoDBSecret
           ARTIFACTS_BUCKET: !Ref ArtifactsBucket
-          DOCUMENTDB_CONNECTION_STRING: mongodb://team25:YOUR_PASSWORD@docdb-ece30861-project.cluster-c5io6aokka3p.us-east-2.docdb.amazonaws.com:27017/?tls=true&tlsCAFile=/opt/global-bundle.pem&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false
-          DOCUMENTDB_DATABASE: trustworthy_registry
-      Layers:
-        - !Ref DocumentDBCertLayer
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName: Users
-        - DynamoDBCrudPolicy:
-            TableName: !Ref ArtifactsTable
-        - DynamoDBCrudPolicy:
-            TableName: Roles
-        - DynamoDBCrudPolicy:
-            TableName: Permissions
-        - DynamoDBCrudPolicy:
-            TableName: Sessions
         - S3CrudPolicy:
             BucketName: !Ref ArtifactsBucket
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref MongoDBSecret
       Events:
         ApiEvent:
           Type: HttpApi
           Properties:
             Path: /{proxy+}
             Method: ANY
-
-  # DynamoDB Table for Artifacts
-  ArtifactsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: Artifacts
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: id
-          AttributeType: S
-      KeySchema:
-        - AttributeName: id
-          KeyType: HASH
 
   # S3 Bucket for Artifact Content Storage
   ArtifactsBucket:
@@ -85,12 +67,6 @@ Outputs:
   ApiUrl:
     Description: "API Gateway endpoint URL"
     Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/"
-  
-  ArtifactsTableName:
-    Description: "DynamoDB table name for artifacts"
-    Value: !Ref ArtifactsTable
-    Export:
-      Name: !Sub "${AWS::StackName}-ArtifactsTable"
   
   ArtifactsBucketName:
     Description: "S3 bucket name for artifact content"
