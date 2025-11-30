@@ -236,7 +236,6 @@ jobs:
           --no-fail-on-empty-changeset \
           --capabilities CAPABILITY_IAM \
           --region us-east-2 \
-          --resolve-s3 \
           --parameter-overrides MongoDBUri="${MONGODB_URI}"
     
     - name: Get API Gateway URL
