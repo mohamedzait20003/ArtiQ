@@ -4,12 +4,12 @@ version = 0.1
 [default.deploy]
 [default.deploy.parameters]
 stack_name = "ece461-model-registry"
-s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-zvcnsi0ylnwj"
+s3_bucket = ""
 s3_prefix = "ece461-model-registry"
 confirm_changeset = false
 capabilities = "CAPABILITY_IAM"
 image_repositories = []
-resolve_s3 = false
+resolve_s3 = true
 disable_rollback = true
 
 [default.global.parameters]
