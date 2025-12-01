@@ -21,7 +21,12 @@ def _invoke_bedrock(prompt: str) -> str:
         raise ValueError("BEDROCK_MODEL_ID environment variable must be set for Bedrock provider")
 
     client = boto3.client("bedrock-runtime")
-    payload = json.dumps({"input": prompt}).encode("utf-8")
+    # OpenAI format for Bedrock GPT models
+    payload = json.dumps({
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 2000,
+        "temperature": 0.1
+    }).encode("utf-8")
     resp = client.invoke_model(modelId=model_id, body=payload, contentType="application/json")
     body_bytes = resp["body"].read()
 
@@ -34,6 +39,14 @@ def _invoke_bedrock(prompt: str) -> str:
         except Exception:
             return str(body_bytes)
 
+    # Try OpenAI chat format first (choices[0].message.content)
+    if "choices" in data and isinstance(data["choices"], list) and data["choices"]:
+        choice = data["choices"][0]
+        if isinstance(choice, dict) and "message" in choice:
+            msg = choice["message"]
+            if isinstance(msg, dict) and "content" in msg:
+                return msg["content"]
+    
     # Heuristic extraction of text from common keys
     for candidate in ("output", "outputs", "results", "result", "completion", "completions", "text"):
         if candidate in data:
