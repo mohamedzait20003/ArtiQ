@@ -37,49 +37,40 @@ def lambda_handler(event, context):
         artifact = Artifact_Model.get({'id': artifact_id}, load_s3_data=False)
 
         if not artifact:
-            error_response = {
-                'statusCode': 404,
-                'errorMessage': f"Artifact with ID {artifact_id} not found"
-            }
-            raise Exception(json.dumps(error_response))
+            return (
+                {'errorMessage': f"Artifact with ID {artifact_id} not found"},
+                404
+            )
 
         # Verify artifact type matches
         if artifact.artifact_type != artifact_type:
-            error_response = {
-                'statusCode': 400,
-                'errorMessage': f"Artifact type mismatch: expected {artifact_type}, got {artifact.artifact_type}"
-            }
-            raise Exception(json.dumps(error_response))
+            return (
+                {'errorMessage': f"Artifact type mismatch: expected {artifact_type}, got {artifact.artifact_type}"},
+                400
+            )
 
         # Delete artifact (this will also delete S3 files)
         delete_success = artifact.delete()
 
         if not delete_success:
-            error_response = {
-                'statusCode': 500,
-                'errorMessage': "Failed to delete artifact from database and S3"
-            }
-            raise Exception(json.dumps(error_response))
+            return (
+                {'errorMessage': "Failed to delete artifact from database and S3"},
+                500
+            )
 
         # Return success (spec says 200 with no specific body, but we'll return a message)
-        return {"message": "Artifact is deleted."}
+        return ({"message": "Artifact is deleted."}, 200)
 
     except ValueError as e:
-        # Return 400 status code for validation errors
-        error_response = {
-            'statusCode': 400,
-            'errorMessage': f"There is missing field(s) in the artifact_type or artifact_id or invalid: {str(e)}"
-        }
-        raise Exception(json.dumps(error_response))
+        # Return 400 response for validation errors
+        return (
+            {'errorMessage': f"There is missing field(s) in the artifact_type or artifact_id or invalid: {str(e)}"},
+            400
+        )
     except Exception as e:
-        # If it's already a JSON error response, re-raise it
-        error_str = str(e)
-        if error_str.startswith('{') and 'statusCode' in error_str:
-            raise
-        # Otherwise, wrap it as a 500 error
-        error_response = {
-            'statusCode': 500,
-            'errorMessage': f"Error deleting artifact: {str(e)}"
-        }
-        raise Exception(json.dumps(error_response))
+        # Return 500 response for unexpected errors
+        return (
+            {'errorMessage': f"Error deleting artifact: {str(e)}"},
+            500
+        )
 

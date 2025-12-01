@@ -25,8 +25,10 @@ class TestArtifactRetrieveLambda:
 
         event = {"artifact_type": "model", "id": "abc-123"}
 
-        result = lambda_handler(event, None)
+        result, status_code = lambda_handler(event, None)
 
+        # Check status code
+        assert status_code == 200
         # Basic shape checks
         assert result["metadata"]["id"] == "abc-123"
         assert result["metadata"]["name"] == "test-model"
@@ -50,11 +52,10 @@ class TestArtifactRetrieveLambda:
 
         event = {"artifact_type": "model", "id": "missing-id"}
 
-        with pytest.raises(Exception) as excinfo:
-            lambda_handler(event, None)
+        result, status_code = lambda_handler(event, None)
 
-        err = json.loads(str(excinfo.value))
-        assert err["statusCode"] == 404
+        assert status_code == 404
+        assert "errorMessage" in result
 
     def test_retrieve_missing_fields_400(self):
         """
@@ -66,11 +67,10 @@ class TestArtifactRetrieveLambda:
 
         event = {"id": "abc-123"}  # artifact_type missing
 
-        with pytest.raises(Exception) as excinfo:
-            lambda_handler(event, None)
+        result, status_code = lambda_handler(event, None)
 
-        err = json.loads(str(excinfo.value))
-        assert err["statusCode"] == 400
+        assert status_code == 400
+        assert "errorMessage" in result
 
     def test_retrieve_invalid_type_value_400(self):
         """Providing an invalid artifact_type should return 400"""
@@ -79,22 +79,20 @@ class TestArtifactRetrieveLambda:
 
         event = {"artifact_type": "badtype", "id": "abc-123"}
 
-        with pytest.raises(Exception) as excinfo:
-            lambda_handler(event, None)
+        result, status_code = lambda_handler(event, None)
 
-        err = json.loads(str(excinfo.value))
-        assert err["statusCode"] == 400
+        assert status_code == 400
+        assert "errorMessage" in result
 
     def test_retrieve_invalid_id_format_400(self):
         from app.jobs.artifact_retrieve import lambda_handler
 
         event = {"artifact_type": "model", "id": "bad id"}
 
-        with pytest.raises(Exception) as excinfo:
-            lambda_handler(event, None)
+        result, status_code = lambda_handler(event, None)
 
-        err = json.loads(str(excinfo.value))
-        assert err["statusCode"] == 400
+        assert status_code == 400
+        assert "errorMessage" in result
 
     @patch("app.jobs.artifact_retrieve.Artifact_Model")
     def test_retrieve_type_mismatch_400(self, mock_artifact_model):
@@ -110,8 +108,7 @@ class TestArtifactRetrieveLambda:
 
         event = {"artifact_type": "model", "id": "abc"}
 
-        with pytest.raises(Exception) as excinfo:
-            lambda_handler(event, None)
+        result, status_code = lambda_handler(event, None)
 
-        err = json.loads(str(excinfo.value))
-        assert err["statusCode"] == 400
+        assert status_code == 400
+        assert "errorMessage" in result

@@ -109,11 +109,17 @@ def lambda_handler(event, context):
         print(f"Found {len(unique_results)} unique artifacts after processing {len(artifact_queries)} queries")
         print(f"Next offset: {next_offset}")
         
-        return {
-            'artifacts': unique_results,
-            'offset': next_offset
-        }
+        return (
+            {
+                'artifacts': unique_results,
+                'offset': next_offset
+            },
+            200
+        )
         
     except Exception as e:
         print(f"Error in artifacts_list lambda: {str(e)}")
-        raise Exception(f"Error listing artifacts: {str(e)}")
+        return (
+            {'errorMessage': f"Error listing artifacts: {str(e)}"},
+            500
+        )

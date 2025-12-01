@@ -51,7 +51,15 @@ class ArtifactController:
             }
 
             # Call the handler function directly
-            result = artifacts_list_job(event, None)
+            result, status_code = artifacts_list_job(event, None)
+
+            # Check if response is an error
+            if status_code != 200:
+                error_message = result.get('errorMessage', 'Unknown error')
+                print(f"POST /artifacts RETURNING: {status_code} - {error_message}")
+                raise HTTPException(
+                    status_code=status_code,
+                    detail=error_message)
 
             print("POST /artifacts RETURNING: 200 - success")
 
@@ -65,6 +73,8 @@ class ArtifactController:
                 headers=headers
             )
 
+        except HTTPException:
+            raise
         except Exception as e:
             print(f"POST /artifacts RETURNING: 500 - "
                   f"Exception: {str(e)}")
@@ -88,12 +98,22 @@ class ArtifactController:
             }
 
             # Call the handler function directly
-            result = artifact_create_job(event, None)
+            result, status_code = artifact_create_job(event, None)
+
+            # Check if response is an error
+            if status_code != 201:
+                error_message = result.get('errorMessage', 'Unknown error')
+                print(f"POST /artifact/{artifact_type} RETURNING: {status_code} - {error_message}")
+                raise HTTPException(
+                    status_code=status_code,
+                    detail=error_message)
 
             print(f"POST /artifact/{artifact_type} "
                   f"RETURNING: 201 - success")
             return result
 
+        except HTTPException:
+            raise
         except Exception as e:
             print(f"POST /artifact/{artifact_type} RETURNING: 500 - "
                   f"Exception: {str(e)}")
@@ -109,28 +129,28 @@ class ArtifactController:
     ):
         """Interact with the artifact with this id (BASELINE)"""
         print(f"GET /artifacts/{artifact_type}/{id} called")
-        try:
-            # Prepare event for handler function
-            event = {
-                'artifact_type': artifact_type,
-                'id': id
-            }
+        
+        # Prepare event for handler function
+        event = {
+            'artifact_type': artifact_type,
+            'id': id
+        }
 
-            # Call the handler function directly
-            result = artifact_retrieve_job(event, None)
+        # Call the handler function directly
+        result, status_code = artifact_retrieve_job(event, None)
 
-            print(f"GET /artifacts/{artifact_type}/{id} "
-                  f"RETURNING: 200 - success")
-            return result
-
-        except HTTPException:
-            raise
-        except Exception as e:
+        # Check if response is an error
+        if status_code != 200:
+            error_message = result.get('errorMessage', 'Unknown error')
             print(f"GET /artifacts/{artifact_type}/{id} RETURNING: "
-                  f"500 - Exception: {str(e)}")
+                  f"{status_code} - {error_message}")
             raise HTTPException(
-                status_code=500,
-                detail=f"Error invoking artifact_retrieve: {str(e)}")
+                status_code=status_code,
+                detail=error_message)
+
+        print(f"GET /artifacts/{artifact_type}/{id} "
+              f"RETURNING: 200 - success")
+        return result
 
     async def artifact_update(
         self,
@@ -150,7 +170,16 @@ class ArtifactController:
             }
 
             # Call the handler function directly
-            result = artifact_update_job(event, None)
+            result, status_code = artifact_update_job(event, None)
+
+            # Check if response is an error
+            if status_code != 200:
+                error_message = result.get('errorMessage', 'Unknown error')
+                print(f"PUT /artifacts/{artifact_type}/{id} RETURNING: "
+                      f"{status_code} - {error_message}")
+                raise HTTPException(
+                    status_code=status_code,
+                    detail=error_message)
 
             print(f"PUT /artifacts/{artifact_type}/{id} "
                   f"RETURNING: 200 - success")
@@ -181,7 +210,16 @@ class ArtifactController:
             }
 
             # Call the handler function directly
-            result = artifact_delete_job(event, None)
+            result, status_code = artifact_delete_job(event, None)
+
+            # Check if response is an error
+            if status_code != 200:
+                error_message = result.get('errorMessage', 'Unknown error')
+                print(f"DELETE /artifacts/{artifact_type}/{id} "
+                      f"RETURNING: {status_code} - {error_message}")
+                raise HTTPException(
+                    status_code=status_code,
+                    detail=error_message)
 
             print(f"DELETE /artifacts/{artifact_type}/{id} "
                   f"RETURNING: 200 - success")

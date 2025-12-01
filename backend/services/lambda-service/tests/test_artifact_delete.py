@@ -25,9 +25,10 @@ class TestArtifactDeleteLambda:
 
         event = {"artifact_type": "model", "id": "abc-123"}
 
-        result = lambda_handler(event, None)
+        result, status_code = lambda_handler(event, None)
 
         # The lambda returns a simple message dict on success
+        assert status_code == 200
         assert isinstance(result, dict)
         assert "message" in result and "deleted" in result["message"].lower()
 
@@ -44,24 +45,22 @@ class TestArtifactDeleteLambda:
 
         event = {"artifact_type": "model", "id": "does-not-exist"}
 
-        with pytest.raises(Exception) as excinfo:
-            lambda_handler(event, None)
+        result, status_code = lambda_handler(event, None)
 
-        err = json.loads(str(excinfo.value))
-        assert err["statusCode"] == 404
+        assert status_code == 404
+        assert "errorMessage" in result
 
     def test_delete_missing_fields_400(self):
-        """Missing id or artifact_type should raise a 400."""
+        """Missing id or artifact_type should return a 400."""
 
         from app.jobs.artifact_delete import lambda_handler
 
         event = {"id": "abc-123"}  # artifact_type intentionally omitted
 
-        with pytest.raises(Exception) as excinfo:
-            lambda_handler(event, None)
+        result, status_code = lambda_handler(event, None)
 
-        err = json.loads(str(excinfo.value))
-        assert err["statusCode"] == 400
+        assert status_code == 400
+        assert "errorMessage" in result
 
     @patch("app.jobs.artifact_delete.Artifact_Model")
     def test_delete_invalid_type_value_400(self, mock_artifact_model):
@@ -71,24 +70,22 @@ class TestArtifactDeleteLambda:
 
         event = {"artifact_type": "invalid", "id": "abc123"}
 
-        with pytest.raises(Exception) as excinfo:
-            lambda_handler(event, None)
+        result, status_code = lambda_handler(event, None)
 
-        err = json.loads(str(excinfo.value))
-        assert err["statusCode"] == 400
+        assert status_code == 400
+        assert "errorMessage" in result
 
     def test_delete_invalid_id_format_400(self):
-        """IDs with invalid characters should raise 400"""
+        """IDs with invalid characters should return 400"""
 
         from app.jobs.artifact_delete import lambda_handler
 
         event = {"artifact_type": "model", "id": "bad id!"}
 
-        with pytest.raises(Exception) as excinfo:
-            lambda_handler(event, None)
+        result, status_code = lambda_handler(event, None)
 
-        err = json.loads(str(excinfo.value))
-        assert err["statusCode"] == 400
+        assert status_code == 400
+        assert "errorMessage" in result
 
     @patch("app.jobs.artifact_delete.Artifact_Model")
     def test_delete_type_mismatch_400(self, mock_artifact_model):
@@ -105,15 +102,14 @@ class TestArtifactDeleteLambda:
 
         event = {"artifact_type": "model", "id": "abc"}
 
-        with pytest.raises(Exception) as excinfo:
-            lambda_handler(event, None)
+        result, status_code = lambda_handler(event, None)
 
-        err = json.loads(str(excinfo.value))
-        assert err["statusCode"] == 400
+        assert status_code == 400
+        assert "errorMessage" in result
 
     @patch("app.jobs.artifact_delete.Artifact_Model")
     def test_delete_failure_returns_500(self, mock_artifact_model):
-        """If artifact.delete() returns False, lambda should raise 500"""
+        """If artifact.delete() returns False, lambda should return 500"""
 
         from app.jobs.artifact_delete import lambda_handler
 
@@ -126,8 +122,7 @@ class TestArtifactDeleteLambda:
 
         event = {"artifact_type": "model", "id": "abc"}
 
-        with pytest.raises(Exception) as excinfo:
-            lambda_handler(event, None)
+        result, status_code = lambda_handler(event, None)
 
-        err = json.loads(str(excinfo.value))
-        assert err["statusCode"] == 500
+        assert status_code == 500
+        assert "errorMessage" in result
