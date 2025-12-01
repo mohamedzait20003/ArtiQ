@@ -27,29 +27,30 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-lambda-${{ hashFiles('backend/services/lambda-service/requirements.txt') }}
+        key: ${{ runner.os }}-pip-backend-${{ hashFiles('backend/requirements.txt') }}
         restore-keys: |
-          ${{ runner.os }}-pip-lambda-
+          ${{ runner.os }}-pip-backend-
     
     - name: Install dependencies
       run: |
-        cd backend/services/lambda-service
+        cd backend
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest
     
     - name: Run tests
       run: |
         cd backend/services/lambda-service
-        # Run the full split test suite (avoid the single skipped combined file)
+        # Set PYTHONPATH to current directory and run tests
+        export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+        export MONGODB_URI="mongodb://mock:27017/"
         python -m pytest -v --tb=short tests
     
     - name: Lint with flake8
       run: |
         cd backend/services/lambda-service
         pip install flake8
-        flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 app --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
   fargate-service:
     name: Fargate Service CI/CD
@@ -67,13 +68,13 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-fargate-${{ hashFiles('backend/services/fargate-service/requirements.txt') }}
+        key: ${{ runner.os }}-pip-backend-${{ hashFiles('backend/requirements.txt') }}
         restore-keys: |
-          ${{ runner.os }}-pip-fargate-
+          ${{ runner.os }}-pip-backend-
     
     - name: Install dependencies
       run: |
-        cd backend/services/fargate-service
+        cd backend
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
@@ -154,7 +155,7 @@ jobs:
     name: Deploy Lambda Service with API Gateway
     runs-on: ubuntu-latest
     needs: lambda-service
-    if: github.event_name == 'pull_request'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/MONGODB-MIGRATION') && github.event_name == 'push'
     
     steps:
     - uses: actions/checkout@v3
@@ -178,22 +179,73 @@ jobs:
     - name: Build Lambda function
       run: |
         cd backend/services/lambda-service
+        # Copy shared lib directory into lambda-service for packaging
+        # Remove any existing lib symlink/directory first
+        rm -rf ./lib
+        cp -r ../../lib ./lib
         sam build --use-container
+        # Clean up the copied lib after build (SAM already packaged it)
+        rm -rf ./lib
+    
+    - name: Clean up orphaned Lambda resources
+      run: |
+        echo "Checking for orphaned Lambda functions..."
+        # Try to delete the specific Lambda if it exists outside CloudFormation
+        aws lambda delete-function --function-name ece461-model-registry-api --region us-east-2 2>/dev/null || echo "Lambda function does not exist or already managed by stack"
+      continue-on-error: true
     
     - name: Check and delete failed stack
       run: |
-        STACK_STATUS=$(aws cloudformation describe-stacks --stack-name ece461-model-registry-stack --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
-        if [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ]; then
-          echo "Stack is in ROLLBACK_COMPLETE state. Deleting..."
-          aws cloudformation delete-stack --stack-name ece461-model-registry-stack --region us-east-2
-          aws cloudformation wait stack-delete-complete --stack-name ece461-model-registry-stack --region us-east-2
+        STACK_STATUS=$(aws cloudformation describe-stacks --stack-name ece461-model-registry-mongodb --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+        echo "Current stack status: $STACK_STATUS"
+        
+        if [ "$STACK_STATUS" = "DELETE_FAILED" ]; then
+          echo "Stack is in DELETE_FAILED state. Attempting to skip deletion of failed resources..."
+          # Get resources that failed to delete
+          FAILED_RESOURCES=$(aws cloudformation describe-stack-resources --stack-name ece461-model-registry-mongodb --query "StackResources[?ResourceStatus=='DELETE_FAILED'].LogicalResourceId" --output text)
+          echo "Failed resources: $FAILED_RESOURCES"
+          
+          # Try to delete with retain resources option
+          aws cloudformation delete-stack --stack-name ece461-model-registry-mongodb --region us-east-2 --retain-resources $FAILED_RESOURCES || true
+          sleep 10
+          
+          # Check if deletion succeeded
+          NEW_STATUS=$(aws cloudformation describe-stacks --stack-name ece461-model-registry-mongodb --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+          if [ "$NEW_STATUS" = "DOES_NOT_EXIST" ]; then
+            echo "Stack deleted successfully."
+          else
+            echo "WARNING: Stack still exists. Manual intervention required via AWS Console."
+            echo "Please delete the stack manually: https://us-east-2.console.aws.amazon.com/cloudformation"
+            exit 1
+          fi
+        elif [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ] || [ "$STACK_STATUS" = "CREATE_FAILED" ]; then
+          echo "Stack is in failed state ($STACK_STATUS). Deleting..."
+          aws cloudformation delete-stack --stack-name ece461-model-registry-mongodb --region us-east-2
+          echo "Waiting for stack deletion to complete..."
+          aws cloudformation wait stack-delete-complete --stack-name ece461-model-registry-mongodb --region us-east-2
           echo "Stack deleted successfully."
+        elif [ "$STACK_STATUS" != "DOES_NOT_EXIST" ]; then
+          echo "Stack exists with status: $STACK_STATUS. Will attempt update."
         else
-          echo "Stack status: $STACK_STATUS"
+          echo "No existing stack found. Will create new stack."
+        fi
+      continue-on-error: false
+    
+    - name: Create SAM managed S3 bucket if needed
+      run: |
+        BUCKET_NAME="aws-sam-cli-managed-default-samclisourcebucket-zvcnsi0ylnwj"
+        if aws s3 ls "s3://${BUCKET_NAME}" 2>/dev/null; then
+          echo "S3 bucket ${BUCKET_NAME} already exists"
+        else
+          echo "Creating S3 bucket ${BUCKET_NAME}..."
+          aws s3 mb "s3://${BUCKET_NAME}" --region us-east-2
+          echo "S3 bucket created successfully"
         fi
       continue-on-error: true
     
     - name: Deploy Lambda with API Gateway
+      env:
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
       run: |
         cd backend/services/lambda-service
         sam deploy \
@@ -201,10 +253,11 @@ jobs:
           --no-fail-on-empty-changeset \
           --capabilities CAPABILITY_IAM \
           --region us-east-2 \
-          --resolve-s3
+          --resolve-s3 \
+          --parameter-overrides MongoDBUri="${MONGODB_URI}"
     
     - name: Get API Gateway URL
       run: |
         cd backend/services/lambda-service
         echo "API Gateway URL:"
-        aws cloudformation describe-stacks --stack-name ece461-model-registry-stack --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" --output text
+        aws cloudformation describe-stacks --stack-name ece461-model-registry --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" --output text

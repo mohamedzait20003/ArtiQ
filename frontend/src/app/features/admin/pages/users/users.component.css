@@ -1,0 +1,3 @@
+/* Users page styles */
+:host { display:block; }
+.table th { text-align: left; }

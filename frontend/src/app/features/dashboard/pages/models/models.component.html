@@ -1,0 +1,126 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Header -->
+  <div class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">AI Models</h1>
+          <p class="mt-2 text-gray-600">Discover and explore state-of-the-art AI models</p>
+        </div>
+        <button class="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg font-semibold transition shadow-sm">
+          <span class="flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            <span>Upload Model</span>
+          </span>
+        </button>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="relative">
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          placeholder="Search models by name, description, or tags..."
+          class="w-full px-4 py-3 pl-12 pr-4 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+          />
+          <svg class="absolute left-4 top-3.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Category Filters -->
+      <div class="flex items-center space-x-2 mb-6 overflow-x-auto pb-2">
+        @for (category of categories; track category) {
+          <button
+            (click)="selectCategory(category)"
+        [ngClass]="selectedCategory === category 
+          ? 'bg-yellow-400 text-gray-900 font-semibold' 
+          : 'bg-white text-gray-700 hover:bg-gray-50'"
+            class="px-4 py-2 rounded-lg border border-gray-200 transition whitespace-nowrap"
+            >
+            {{ category }}
+          </button>
+        }
+      </div>
+
+      <!-- Results Count -->
+      <div class="mb-4">
+        <p class="text-gray-600">
+          Showing <span class="font-semibold">{{ filteredModels.length }}</span> models
+        </p>
+      </div>
+
+      <!-- Models Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @for (model of filteredModels; track model) {
+          <div
+            class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition cursor-pointer overflow-hidden group">
+            <!-- Model Header -->
+            <div class="p-6">
+              <div class="flex items-start justify-between mb-4">
+                <div class="w-12 h-12 bg-linear-to-br from-yellow-400 via-orange-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+                <button class="text-gray-400 hover:text-red-500 transition">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                  </svg>
+                </button>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 mb-1 group-hover:text-yellow-600 transition">{{ model.name }}</h3>
+              <p class="text-sm text-gray-600 mb-3">by {{ model.author }}</p>
+              <p class="text-gray-700 text-sm mb-4 line-clamp-2">{{ model.description }}</p>
+              <!-- Tags -->
+              <div class="flex flex-wrap gap-2 mb-4">
+                @for (tag of model.tags; track tag) {
+                  <span
+                    class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md">
+                    {{ tag }}
+                  </span>
+                }
+              </div>
+              <!-- Stats -->
+              <div class="flex items-center justify-between text-sm text-gray-600 pt-4 border-t border-gray-100">
+                <div class="flex items-center space-x-4">
+                  <span class="flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    <span>{{ model.downloads }}</span>
+                  </span>
+                  <span class="flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                    <span>{{ model.likes }}</span>
+                  </span>
+                </div>
+                <span class="text-xs">{{ model.updated }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Empty State -->
+      @if (filteredModels.length === 0) {
+        <div class="text-center py-16">
+          <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">No models found</h3>
+          <p class="text-gray-600">Try adjusting your search or filters</p>
+        </div>
+      }
+    </div>
+  </div>
