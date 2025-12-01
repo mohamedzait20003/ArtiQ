@@ -2,7 +2,7 @@ import sys, time, os, re
 import logging
 import json
 from ece461.logging_setup import setup as setup_logging
-from ece461.url_file_parser import parse_urls, ModelLinks
+from ece461.url_file_parser import parse_urls, parse_url_file, ModelLinks
 from ece461.metricCalcs import metrics as met
 from ece461.metricCalcs.net_score import calculate_net_score
 from typing import List

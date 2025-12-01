@@ -1,48 +1,63 @@
-import requests
+import os
 import json
 import logging
-import os
 
-GENAI_API_URL = "https://genai.rcac.purdue.edu/api/chat/completions"
+
+def _invoke_bedrock(prompt: str) -> str:
+    """Invoke AWS Bedrock runtime and return the textual output.
+
+    Requires:
+      - boto3 available in runtime
+      - BEDROCK_MODEL_ID environment variable set
+    """
+    try:
+        import boto3
+    except Exception:
+        logging.error("boto3 is required for Bedrock calls. Add boto3 to requirements.")
+        raise
+
+    model_id = os.getenv("BEDROCK_MODEL_ID")
+    if not model_id:
+        raise ValueError("BEDROCK_MODEL_ID environment variable must be set for Bedrock provider")
+
+    client = boto3.client("bedrock-runtime")
+    payload = json.dumps({"input": prompt}).encode("utf-8")
+    resp = client.invoke_model(modelId=model_id, body=payload, contentType="application/json")
+    body_bytes = resp["body"].read()
+
+    # Try to decode JSON, else return raw text
+    try:
+        data = json.loads(body_bytes)
+    except Exception:
+        try:
+            return body_bytes.decode("utf-8")
+        except Exception:
+            return str(body_bytes)
+
+    # Heuristic extraction of text from common keys
+    for candidate in ("output", "outputs", "results", "result", "completion", "completions", "text"):
+        if candidate in data:
+            val = data[candidate]
+            if isinstance(val, list) and val:
+                first = val[0]
+                if isinstance(first, dict) and "content" in first:
+                    return first["content"]
+                if isinstance(first, str):
+                    return first
+            if isinstance(val, dict) and "content" in val:
+                return val["content"]
+            if isinstance(val, str):
+                return val
+
+    # fallback: return JSON string
+    return json.dumps(data)
+
 
 def query_llm(prompt: str) -> str:
-    """
-    Queries the LLM API with the given message and returns the response.
-    
-    Args:
-        prompt (str): The message to send to the LLM API.
-    
-    Returns:
-        str: The content message from the LLM API response.
-    """
+    """Query AWS Bedrock for an LLM completion and return the textual result.
 
-    # Retrieve the API key from environment variables
-    jwt_token_or_api_key = os.getenv("GEN_AI_STUDIO_API_KEY")
-    if not jwt_token_or_api_key:
-        logging.error("GENAI_API_KEY environment variable not set.")
-        raise ValueError("GENAI_API_KEY environment variable not set.")
-
-    headers = {
-        "Authorization": f"Bearer {jwt_token_or_api_key}",
-        "Content-Type": "application/json"
-    }
-    body = {
-        "model": "gpt-oss:120b",
-        "temperature": 0.0,
-        "messages": [
-        {
-            "role": "user",
-            "content": prompt
-        }
-        ],
-        "stream": False
-    }
-    response = requests.post(GENAI_API_URL, headers=headers, json=body)
-    if response.status_code == 200:
-        logging.info("LLM API response received successfully")
-        data = response.json()
-        logging.debug(f"LLM API response data: {json.dumps(data, indent=2)}")
-        return data["choices"][0]["message"]["content"]
-    else:
-        logging.error(f"LLM API request failed with status code {response.status_code}: {response.text}")
-        raise Exception(f"Error: {response.status_code}, {response.text}")
+    This function only supports Bedrock. It will raise ValueError if
+    the `BEDROCK_MODEL_ID` environment variable is not set.
+    """
+    # Only Bedrock is supported
+    return _invoke_bedrock(prompt)
