@@ -25,7 +25,7 @@ LINK_TO_NAME = {
     "https://huggingface.co/datasets/ILSVRC/imagenet-1k": "imagenet-1k",
     "https://huggingface.co/datasets/HuggingFaceM4/FairFace": "fairface",
     "https://github.com/openai/whisper": "openai-whisper",
-    "https://github.com/huggingface/transformers-research-projects/tree/mai…": "transformers-research-projects-distillation",
+    "https://github.com/huggingface/transformers-research-projects/tree/main/distillation": "transformers-research-projects-distillation",
     "https://github.com/mv-lab/swin2sr": "mv-lab-swin2sr",
     "https://github.com/vikhyat/moondream": "moondream",
     "https://github.com/microsoft/git": "microsoft-git",
