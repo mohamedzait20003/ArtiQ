@@ -86,9 +86,10 @@ class TestArtifactsListLambda:
                 'auth_token': 'test-token'
             }
 
-            result = lambda_handler(event, None)
+            result, status_code = lambda_handler(event, None)
 
             # Verify response structure
+            assert status_code == 200
             assert 'artifacts' in result
             assert 'offset' in result
             assert len(result['artifacts']) == 2
@@ -123,8 +124,9 @@ class TestArtifactsListLambda:
                 'auth_token': 'test-token'
             }
 
-            result = lambda_handler(event, None)
+            result, status_code = lambda_handler(event, None)
 
+            assert status_code == 200
             assert len(result['artifacts']) == 1
             mock_scan.assert_called_once_with(
                 name_filter='bert-base',
@@ -154,8 +156,9 @@ class TestArtifactsListLambda:
                 'auth_token': 'test-token'
             }
 
-            result = lambda_handler(event, None)
+            result, status_code = lambda_handler(event, None)
 
+            assert status_code == 200
             assert len(result['artifacts']) == 1
             mock_scan.assert_called_once_with(
                 name_filter='*',  # The function passes '*' directly, not None
@@ -188,8 +191,9 @@ class TestArtifactsListLambda:
                 'auth_token': 'test-token'
             }
 
-            result = lambda_handler(event, None)
+            result, status_code = lambda_handler(event, None)
 
+            assert status_code == 200
             assert len(result['artifacts']) == 100
             assert result['offset'] is not None
 
@@ -224,8 +228,9 @@ class TestArtifactsListLambda:
                 'auth_token': 'test-token'
             }
 
-            result = lambda_handler(event, None)
+            result, status_code = lambda_handler(event, None)
 
             # Should deduplicate by ID
+            assert status_code == 200
             assert len(result['artifacts']) == 1
             assert mock_scan.call_count == 2

@@ -29,8 +29,9 @@ class TestArtifactCreateLambda:
             }
         }
 
-        result = lambda_handler(event, None)
+        result, status_code = lambda_handler(event, None)
 
+        assert status_code == 201
         assert 'metadata' in result
         assert 'data' in result
         assert result['metadata']['type'] == 'model'
@@ -62,7 +63,8 @@ class TestArtifactCreateLambda:
             }
         }
 
-        with pytest.raises(Exception) as excinfo:
-            lambda_handler(event, None)
+        result, status_code = lambda_handler(event, None)
 
-        assert "Failed to save artifact to database" in str(excinfo.value)
+        assert status_code == 500
+        assert "errorMessage" in result
+        assert "Failed to save artifact to database" in result["errorMessage"]

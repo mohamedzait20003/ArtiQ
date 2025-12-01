@@ -14,15 +14,18 @@ client = TestClient(app)
 @patch('app.controllers.artifact_controller.artifacts_list_job')
 def test_artifacts_list_success_with_offset(mock_list):
     """Test artifacts listing with pagination offset"""
-    mock_list.return_value = {
-        "artifacts": [
-            {
-                "metadata": {"name": "a", "id": "1", "type": "model"},
-                "data": {"url": "u"}
-            }
-        ],
-        "offset": "opaque-offset"
-    }
+    mock_list.return_value = (
+        {
+            "artifacts": [
+                {
+                    "metadata": {"name": "a", "id": "1", "type": "model"},
+                    "data": {"url": "u"}
+                }
+            ],
+            "offset": "opaque-offset"
+        },
+        200
+    )
 
     resp = client.post("/artifacts", json=[{"name": "*"}])
 
@@ -34,10 +37,13 @@ def test_artifacts_list_success_with_offset(mock_list):
 @patch('app.controllers.artifact_controller.artifact_create_job')
 def test_artifact_create_success_and_status_201(mock_create):
     """Test successful artifact creation through the API"""
-    mock_create.return_value = {
-        "metadata": {"name": "new", "id": "new-id", "type": "model"},
-        "data": {"url": "https://example.com/new"}
-    }
+    mock_create.return_value = (
+        {
+            "metadata": {"name": "new", "id": "new-id", "type": "model"},
+            "data": {"url": "https://example.com/new"}
+        },
+        201
+    )
 
     resp = client.post(
         "/artifact/model", json={"url": "https://example.com/new"}
