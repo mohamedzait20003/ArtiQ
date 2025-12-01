@@ -117,6 +117,14 @@ def register_api_routes(app) -> None:
         dependencies=[Depends(auth_optional)]  # Apply optional auth
     )
 
+    # Artifact by regex (MUST be before /artifact/{artifact_type})
+    Route.post(
+        '/artifact/byRegEx',
+        artifacts.artifact_by_regex_get,
+        tags=['artifacts'],
+        status_code=200
+    )
+
     # Create artifact
     Route.post(
         '/artifact/{artifact_type}',
@@ -153,6 +161,14 @@ def register_api_routes(app) -> None:
     # Additional Artifact Routes (Not Implemented)
     # ==========================================
 
+    # Artifact by name
+    Route.get(
+        '/artifact/byName/{name}',
+        artifacts.artifact_by_name_get,
+        tags=['artifacts'],
+        status_code=200
+    )
+
     # Model artifact rating
     Route.get(
         '/artifact/model/{id}/rate',
@@ -165,14 +181,6 @@ def register_api_routes(app) -> None:
     Route.get(
         '/artifact/{artifact_type}/{id}/cost',
         artifacts.artifact_cost,
-        tags=['artifacts'],
-        status_code=200
-    )
-
-    # Artifact by name
-    Route.get(
-        '/artifact/byName/{name}',
-        artifacts.artifact_by_name_get,
         tags=['artifacts'],
         status_code=200
     )
@@ -197,14 +205,6 @@ def register_api_routes(app) -> None:
     Route.post(
         '/artifact/model/{id}/license-check',
         artifacts.artifact_license_check,
-        tags=['artifacts'],
-        status_code=200
-    )
-
-    # Artifact by regex
-    Route.post(
-        '/artifact/byRegEx',
-        artifacts.artifact_by_regex_get,
         tags=['artifacts'],
         status_code=200
     )
