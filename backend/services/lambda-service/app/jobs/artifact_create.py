@@ -96,7 +96,10 @@ def lambda_handler(event, context):
             }
         }
 
-        return response_data
+        return (response_data, 201)
 
     except Exception as e:
-        raise Exception(f"Error creating artifact: {str(e)}")
+        return (
+            {'errorMessage': f"Error creating artifact: {str(e)}"},
+            500
+        )

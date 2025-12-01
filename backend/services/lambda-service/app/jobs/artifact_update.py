@@ -63,37 +63,33 @@ def lambda_handler(event, context):
         
         # Validate that metadata.id matches path id
         if request_id != artifact_id:
-            error_response = {
-                'statusCode': 400,
-                'errorMessage': f"The name and id must match. Path id: {artifact_id}, metadata id: {request_id}"
-            }
-            raise Exception(json.dumps(error_response))
+            return (
+                {'errorMessage': f"The name and id must match. Path id: {artifact_id}, metadata id: {request_id}"},
+                400
+            )
         
         # Retrieve existing artifact
         artifact = Artifact_Model.get({'id': artifact_id}, load_s3_data=False)
         
         if not artifact:
-            error_response = {
-                'statusCode': 404,
-                'errorMessage': f"Artifact with ID {artifact_id} not found"
-            }
-            raise Exception(json.dumps(error_response))
+            return (
+                {'errorMessage': f"Artifact with ID {artifact_id} not found"},
+                404
+            )
         
         # Verify artifact type matches
         if artifact.artifact_type != artifact_type:
-            error_response = {
-                'statusCode': 400,
-                'errorMessage': f"Artifact type mismatch: expected {artifact_type}, got {artifact.artifact_type}"
-            }
-            raise Exception(json.dumps(error_response))
+            return (
+                {'errorMessage': f"Artifact type mismatch: expected {artifact_type}, got {artifact.artifact_type}"},
+                400
+            )
         
         # Validate that metadata.name matches existing artifact name
         if request_name != artifact.name:
-            error_response = {
-                'statusCode': 400,
-                'errorMessage': f"The name and id must match. Existing name: {artifact.name}, request name: {request_name}"
-            }
-            raise Exception(json.dumps(error_response))
+            return (
+                {'errorMessage': f"The name and id must match. Existing name: {artifact.name}, request name: {request_name}"},
+                400
+            )
         
         # Update URL if provided (the spec says "The artifact source (from artifact_data) will replace the previous contents")
         if 'url' in data:
@@ -105,11 +101,10 @@ def lambda_handler(event, context):
         save_success = artifact.save()
         
         if not save_success:
-            error_response = {
-                'statusCode': 500,
-                'errorMessage': "Failed to update artifact in database"
-            }
-            raise Exception(json.dumps(error_response))
+            return (
+                {'errorMessage': "Failed to update artifact in database"},
+                500
+            )
         
         # Return updated artifact matching Artifact schema
         response_data = {
@@ -123,24 +118,18 @@ def lambda_handler(event, context):
             }
         }
         
-        return response_data
+        return (response_data, 200)
         
     except ValueError as e:
-        # Return 400 status code for validation errors
-        error_response = {
-            'statusCode': 400,
-            'errorMessage': f"There is missing field(s) in the artifact_type or artifact_id or it is formed improperly, or is invalid: {str(e)}"
-        }
-        raise Exception(json.dumps(error_response))
+        # Return 400 response for validation errors
+        return (
+            {'errorMessage': f"There is missing field(s) in the artifact_type or artifact_id or it is formed improperly, or is invalid: {str(e)}"},
+            400
+        )
     except Exception as e:
-        # If it's already a JSON error response, re-raise it
-        error_str = str(e)
-        if error_str.startswith('{') and 'statusCode' in error_str:
-            raise
-        # Otherwise, wrap it as a 500 error
-        error_response = {
-            'statusCode': 500,
-            'errorMessage': f"Error updating artifact: {str(e)}"
-        }
-        raise Exception(json.dumps(error_response))
+        # Return 500 response for unexpected errors
+        return (
+            {'errorMessage': f"Error updating artifact: {str(e)}"},
+            500
+        )
 
