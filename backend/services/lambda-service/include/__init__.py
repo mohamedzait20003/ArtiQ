@@ -17,6 +17,7 @@ if str(lambda_service_root) not in sys.path:
 
 from lib.route import Route  # noqa: E402
 from lib.container import Container, container  # noqa: E402
+from lib.Eloquent import Eloquent  # noqa: E402
 from lib.aws import (  # noqa: E402
     AWSServices,
     get_documentdb,
@@ -55,6 +56,7 @@ __all__ = [
     'Route',
     'Container',
     'container',
+    'Eloquent',
     'AWSServices',
     'get_documentdb',
     'get_collection',

@@ -5,6 +5,7 @@ Core utilities and routing infrastructure
 
 from .route import Route
 from .container import Container, container
+from .eloquent import Eloquent
 from .aws import (
     AWSServices,
     get_documentdb,
@@ -43,6 +44,7 @@ __all__ = [
     'Route',
     'Container',
     'container',
+    'Eloquent',
     'AWSServices',
     'get_documentdb',
     'get_collection',
