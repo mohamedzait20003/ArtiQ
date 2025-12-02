@@ -40,10 +40,15 @@ jobs:
     - name: Run tests
       run: |
         cd backend/services/lambda-service
+        # Copy shared lib directory into lambda-service for testing
+        rm -rf ./lib
+        cp -r ../../lib ./lib
         # Set PYTHONPATH to current directory and run tests
         export PYTHONPATH="${PYTHONPATH}:$(pwd)"
         export MONGODB_URI="mongodb://mock:27017/"
         python -m pytest -v --tb=short tests
+        # Clean up the copied lib after tests
+        rm -rf ./lib
     
     - name: Lint with flake8
       run: |

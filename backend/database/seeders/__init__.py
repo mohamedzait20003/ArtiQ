@@ -1,18 +1,11 @@
 """
 Database Seeders
-Register and run seeders for the lambda service
+Register and run seeders globally
 """
 
-import sys
-from pathlib import Path
-
-# Add lambda-service root to path
-lambda_service_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(lambda_service_root))
-
-from include import AWSServices  # noqa: E402
+from lib import AWSServices  # noqa: E402
 from database.seeders.roles_seeder import RolesSeeder  # noqa: E402
-from database.seeders.default_admin_seeder import (  # noqa: E402
+from database.seeders.admin_seeder import (  # noqa: E402
     DefaultAdminSeeder
 )
 

@@ -1,13 +1,13 @@
 """
 Database Migrations
-Define and run all database migrations for lambda-service
+Define and run all database migrations globally
 """
 
 from pathlib import Path
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-env_path = Path(__file__).parent.parent.parent.parent.parent / '.env'
+env_path = Path(__file__).parent.parent / '.env'
 if env_path.exists():
     load_dotenv(env_path)
     print(f"✓ Loaded environment from: {env_path}")

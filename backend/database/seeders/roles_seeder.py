@@ -4,7 +4,7 @@ Seeds the default roles for the system
 """
 
 import uuid
-from include import Seeder
+from lib import Seeder
 
 
 class RolesSeeder(Seeder):

@@ -5,7 +5,7 @@ Seeds the default admin user for authentication as specified in the API spec
 
 import uuid
 import bcrypt
-from include import Seeder
+from lib import Seeder
 
 
 class DefaultAdminSeeder(Seeder):
