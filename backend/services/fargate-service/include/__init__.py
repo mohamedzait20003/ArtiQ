@@ -24,7 +24,8 @@ from lib.aws import (  # noqa: E402
     get_collection,
     get_s3,
     get_lambda,
-    get_sqs
+    get_sqs,
+    get_sqs_queue_url
 )
 from lib.encryption import (  # noqa: E402
     encrypt,
@@ -69,6 +70,7 @@ __all__ = [
     'get_s3',
     'get_lambda',
     'get_sqs',
+    'get_sqs_queue_url',
     'encrypt',
     'decrypt',
     'encrypt_artifact_id',
