@@ -31,7 +31,16 @@ from lib.aws import (  # noqa: E402
     get_documentdb,
     get_collection,
     get_s3,
-    get_lambda
+    get_lambda,
+    get_sqs
+)
+from lib.encryption import (  # noqa: E402
+    encrypt,
+    decrypt,
+    encrypt_artifact_id,
+    decrypt_artifact_id,
+    get_encryption_key,
+    generate_encryption_key
 )
 from lib.relationships import (  # noqa: E402
     belongs_to,
@@ -76,6 +85,13 @@ __all__ = [
     'get_collection',
     'get_s3',
     'get_lambda',
+    'get_sqs',
+    'encrypt',
+    'decrypt',
+    'encrypt_artifact_id',
+    'decrypt_artifact_id',
+    'get_encryption_key',
+    'generate_encryption_key',
     'belongs_to',
     'has_one',
     'has_many',
