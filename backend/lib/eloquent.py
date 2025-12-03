@@ -140,6 +140,46 @@ class Eloquent(ABC):
             print(f"Error getting item: {e}")
             return None
 
+    @classmethod
+    def where(cls, query: dict, load_s3_data: bool = False):
+        """
+        Get multiple items from database matching query
+
+        Args:
+            query: MongoDB query filter
+            load_s3_data: If True, download S3 files into memory
+
+        Returns:
+            List of model instances
+        """
+        try:
+            collection = cls.collection()
+            cursor = collection.find(query)
+            results = []
+
+            for item in cursor:
+                # Remove MongoDB _id if present
+                if '_id' in item:
+                    del item['_id']
+
+                instance = cls(**item)
+
+                if load_s3_data:
+                    for field_name in cls.s3_fields:
+                        s3_key_field = f"{field_name}_s3_key"
+                        if hasattr(instance, s3_key_field):
+                            s3_key = getattr(instance, s3_key_field)
+                            file_data = instance._download_from_s3(s3_key)
+                            if file_data:
+                                setattr(instance, field_name, file_data)
+
+                results.append(instance)
+
+            return results
+        except Exception as e:
+            print(f"Error querying items: {e}")
+            return []
+
     def get_file(self, field_name: str) -> Optional[bytes]:
         """
         Download a specific file from S3
@@ -194,14 +234,17 @@ class Eloquent(ABC):
 
     def delete(self):
         """Delete item from database and associated S3 files"""
-        # Delete S3 files first
+        key = {k: getattr(self, k) for k in self.primary_key()}
+
+        # Handle CASCADE deletes for dependent records
+        self._cascade_delete()
+
+        # Delete S3 files
         for field_name in self.s3_fields:
             s3_key_field = f"{field_name}_s3_key"
             if hasattr(self, s3_key_field):
                 s3_key = getattr(self, s3_key_field)
                 self._delete_from_s3(s3_key)
-
-        key = {k: getattr(self, k) for k in self.primary_key()}
 
         try:
             # MongoDB deleteOne operation
@@ -211,6 +254,39 @@ class Eloquent(ABC):
         except Exception as e:
             print(f"Error deleting item: {e}")
             return False
+
+    def _cascade_delete(self):
+        """Handle CASCADE deletes for dependent records"""
+        # Get all relationship methods defined on this model
+        for attr_name in dir(self.__class__):
+            attr = getattr(self.__class__, attr_name)
+
+            # Check if it's a has_one or has_many relationship
+            if callable(attr) and hasattr(attr, '__self__'):
+                continue
+
+            # Try to get the relationship descriptor
+            try:
+                if attr_name.startswith('_'):
+                    continue
+
+                relationship = getattr(self, attr_name)
+
+                # Check if it's a relationship that should cascade
+                if callable(relationship):
+                    result = relationship()
+
+                    # Delete related records
+                    if result is not None:
+                        if isinstance(result, list):
+                            for related in result:
+                                if hasattr(related, 'delete'):
+                                    related.delete()
+                        elif hasattr(result, 'delete'):
+                            result.delete()
+            except Exception:
+                # Skip attributes that aren't relationships
+                continue
 
     @classmethod
     @abstractmethod

@@ -57,7 +57,10 @@ class ArtifactController:
             # Check if response is an error
             if status_code != 200:
                 error_message = result.get('errorMessage', 'Unknown error')
-                print(f"POST /artifacts RETURNING: {status_code} - {error_message}")
+                print(
+                    f"POST /artifacts RETURNING: {status_code} - "
+                    f"{error_message}"
+                )
                 raise HTTPException(
                     status_code=status_code,
                     detail=error_message)
@@ -104,7 +107,10 @@ class ArtifactController:
             # Check if response is an error
             if status_code != 201:
                 error_message = result.get('errorMessage', 'Unknown error')
-                print(f"POST /artifact/{artifact_type} RETURNING: {status_code} - {error_message}")
+                print(
+                    f"POST /artifact/{artifact_type} RETURNING: "
+                    f"{status_code} - {error_message}"
+                )
                 raise HTTPException(
                     status_code=status_code,
                     detail=error_message)

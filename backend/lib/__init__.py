@@ -19,7 +19,8 @@ from .aws import (
     get_documentdb,
     get_collection,
     get_s3,
-    get_lambda
+    get_lambda,
+    get_sqs
 )
 from .relationships import (
     belongs_to,
@@ -47,6 +48,14 @@ from .seeder import (
     run_seeder,
     seed_database
 )
+from .encryption import (
+    get_encryption_key,
+    generate_encryption_key,
+    encrypt,
+    decrypt,
+    encrypt_artifact_id,
+    decrypt_artifact_id
+)
 
 __all__ = [
     'Route',
@@ -64,6 +73,13 @@ __all__ = [
     'get_collection',
     'get_s3',
     'get_lambda',
+    'get_sqs',
+    'encrypt',
+    'decrypt',
+    'encrypt_artifact_id',
+    'decrypt_artifact_id',
+    'get_encryption_key',
+    'generate_encryption_key',
     'belongs_to',
     'has_one',
     'has_many',

@@ -20,6 +20,7 @@ class AWSServices:
     _documentdb_database = None
     _s3 = None
     _lambda_client = None
+    _sqs = None
     _region = None
     _database_name = "docdb-ece30861-project"
 
@@ -53,7 +54,7 @@ class AWSServices:
             'MONGODB_URI',
             'mongodb://localhost:27017/'
         )
-        
+
         database_name = cls._database_name        # Create MongoDB client
         cls._documentdb_client = MongoClient(
             connection_string,
@@ -126,15 +127,28 @@ class AWSServices:
         return cls._lambda_client
 
     @classmethod
+    def get_sqs(cls):
+        """
+        Get shared SQS client instance
+        Returns:
+            boto3 SQS client
+        """
+        if cls._sqs is None:
+            cls.initialize()
+            cls._sqs = boto3.client('sqs', region_name=cls._region)
+        return cls._sqs
+
+    @classmethod
     def reset(cls):
         """Reset all clients (useful for testing)"""
         if cls._documentdb_client:
             cls._documentdb_client.close()
-        
+
         cls._documentdb_client = None
         cls._documentdb_database = None
         cls._s3 = None
         cls._lambda_client = None
+        cls._sqs = None
         cls._region = None
 
 
@@ -157,3 +171,8 @@ def get_s3():
 def get_lambda():
     """Get Lambda client instance"""
     return AWSServices.get_lambda()
+
+
+def get_sqs():
+    """Get SQS client instance"""
+    return AWSServices.get_sqs()

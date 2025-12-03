@@ -68,7 +68,7 @@ def main():
         print("  python scripts/seed.py --force")
         print("  python scripts/seed.py --name UserSeeder")
         sys.exit(0)
-    
+
     force = '--force' in sys.argv
 
     # Get seeder name if specified

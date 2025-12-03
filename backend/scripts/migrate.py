@@ -20,6 +20,17 @@ import traceback
 from pathlib import Path
 from typing import Optional
 
+# Add backend root to path FIRST
+backend_root = Path(__file__).parent.parent
+sys.path.insert(0, str(backend_root))
+
+# Load environment variables
+from dotenv import load_dotenv  # noqa: E402
+env_path = backend_root / '.env'
+if env_path.exists():
+    load_dotenv(env_path)
+    print(f"✓ Loaded environment from: {env_path}")
+
 
 def run_migrations(
     rollback: bool = False,
@@ -27,7 +38,6 @@ def run_migrations(
     migration_name: Optional[str] = None
 ):
     """Run migrations globally"""
-    backend_root = Path(__file__).parent.parent
 
     # Add backend root to path
     sys.path.insert(0, str(backend_root))

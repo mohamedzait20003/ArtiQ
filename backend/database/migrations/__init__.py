@@ -24,6 +24,7 @@ from .create_roles_table import CreateRolesTable  # noqa: E402
 from .create_users_table import CreateUsersTable  # noqa: E402
 from .create_sessions_table import CreateSessionsTable  # noqa: E402
 from .create_artifacts_table import CreateArtifactsTable  # noqa: E402
+from .create_ratings_table import CreateRatingsTable  # noqa: E402
 
 
 # Migration registry (in order of execution)
@@ -32,6 +33,7 @@ MIGRATIONS = [
     ('2025_11_26_000002_create_users_table', CreateUsersTable),
     ('2025_11_26_000003_create_sessions_table', CreateSessionsTable),
     ('2025_11_26_000004_create_artifacts_table', CreateArtifactsTable),
+    ('2025_12_02_000005_create_ratings_table', CreateRatingsTable),
 ]
 
 
@@ -41,6 +43,7 @@ __all__ = [
     'CreateUsersTable',
     'CreateSessionsTable',
     'CreateArtifactsTable',
+    'CreateRatingsTable',
     'MIGRATIONS',
     'run_all_migrations',
     'rollback_last_migration',

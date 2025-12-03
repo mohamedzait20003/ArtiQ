@@ -1,5 +1,6 @@
 import uuid
 from app.models.Artifact_Model import Artifact_Model
+from app.utils.sqs_utils import send_artifact_to_sqs
 
 
 def lambda_handler(event, context):
@@ -43,6 +44,9 @@ def lambda_handler(event, context):
 
         if not save_success:
             raise Exception("Failed to save artifact to database")
+
+        # Send encrypted artifact ID to SQS for processing
+        send_artifact_to_sqs(artifact_id, artifact_type)
 
         response_data = {
             'metadata': {

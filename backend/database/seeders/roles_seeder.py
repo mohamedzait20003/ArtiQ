@@ -22,7 +22,7 @@ class RolesSeeder(Seeder):
         Create the default roles
         """
         print("Seeding default roles...")
- 
+
         roles = [
             {
                 "RoleID": str(uuid.uuid4()),

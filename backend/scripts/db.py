@@ -20,13 +20,23 @@ Examples:
 import sys
 import traceback
 from pathlib import Path
-from lib import get_documentdb
+
+# Add backend root to path FIRST
+backend_root = Path(__file__).parent.parent
+sys.path.insert(0, str(backend_root))
+
+# Load environment variables
+from dotenv import load_dotenv  # noqa: E402
+env_path = backend_root / '.env'
+if env_path.exists():
+    load_dotenv(env_path)
+    print(f"✓ Loaded environment from: {env_path}")
+
+from lib import get_documentdb  # noqa: E402
 
 
 def db_fresh():
     """Drop all collections, run migrations, run seeders"""
-    backend_root = Path(__file__).parent.parent
-    sys.path.insert(0, str(backend_root))
 
     try:
         print("→ Running db:fresh...")

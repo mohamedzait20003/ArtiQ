@@ -17,14 +17,14 @@ class CreateArtifactsTable(Migration):
         self.create_index('Artifacts', 'id', unique=True)
         self.create_index('Artifacts', 'name')
         self.create_index('Artifacts', 'artifact_type')
-        
+
         # Compound index for efficient filtering
         self.create_compound_index(
             'Artifacts',
             [('artifact_type', 1), ('name', 1)]
         )
-        
+
         print("  ✓ Created Artifacts collection with indexes")
-    
+
     def down(self):
         self.drop_collection('Artifacts')

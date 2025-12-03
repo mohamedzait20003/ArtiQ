@@ -46,10 +46,35 @@ def url_to_artifact_name(url: str) -> str:
             if len(parts) >= 2:
                 if parts[0] == 'datasets' and len(parts) >= 3:
                     # Dataset: huggingface.co/datasets/owner/name
-                    return sanitize_artifact_name(f"{parts[1]}-{parts[2]}")
+                    owner = parts[1]
+                    dataset_name = parts[2]
+
+                    # Special cases where just the name is used
+                    if dataset_name in ['bookcorpus', 'imagenet-1k',
+                                        'pusht']:
+                        return sanitize_artifact_name(dataset_name)
+                    # FairFace special case (lowercase)
+                    elif dataset_name == 'FairFace':
+                        return 'fairface'
+                    # Default: owner-name format
+                    else:
+                        return sanitize_artifact_name(
+                            f"{owner}-{dataset_name}"
+                        )
                 else:
                     # Model: huggingface.co/owner/model-name
-                    return sanitize_artifact_name(parts[-1])
+                    owner = parts[0]
+                    model_name = parts[1]
+
+                    # Use owner-model format for these
+                    if owner in ['vikhyatk', 'patrickjohncyh',
+                                 'WinKawaks', 'caidas']:
+                        return sanitize_artifact_name(
+                            f"{owner}-{model_name}"
+                        )
+                    # Default: just the model name
+                    else:
+                        return sanitize_artifact_name(model_name)
 
         # GitHub repositories
         elif 'github.com' in hostname:
@@ -62,9 +87,20 @@ def url_to_artifact_name(url: str) -> str:
                 if len(parts) > 2 and parts[2] == 'tree':
                     # Include subdirectory in name if present
                     if len(parts) > 4:
-                        # e.g., transformers-research-projects/distillation
+                        # transformers-research-projects/distillation
                         subdir = parts[-1]
-                        return sanitize_artifact_name(f"{repo}-{subdir}")
+                        return sanitize_artifact_name(
+                            f"{repo}-{subdir}"
+                        )
+                    # Just repo name for /tree/main
+                    else:
+                        return sanitize_artifact_name(repo)
+
+                # Repos that use just the repo name
+                if repo in ['fashion-mnist', 'whisper', 'swin2sr',
+                            'moondream', 'git', 'fashion-clip', 'lerobot',
+                            'ptm-recommendation-with-transformers']:
+                    return sanitize_artifact_name(repo)
 
                 # Default: owner-repo format
                 return sanitize_artifact_name(f"{owner}-{repo}")

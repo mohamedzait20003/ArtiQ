@@ -2,6 +2,7 @@ import os
 from .Model import Model
 from typing import Optional, Dict, Any
 from app.utils import url_to_artifact_name
+from include import has_one
 
 
 class Artifact_Model(Model):
@@ -71,13 +72,13 @@ class Artifact_Model(Model):
     ):
         """
         Scan artifacts table with optional filters
-        
+
         Args:
             name_filter: Filter by name
             types_filter: List of artifact types to include
             limit: Maximum number of items to return
             exclusive_start_key: Reserved for future pagination support
-            
+
         Returns:
             {
                 'items': [list of artifact instances],
@@ -88,11 +89,11 @@ class Artifact_Model(Model):
             # MongoDB query
             collection = cls.collection()
             query = {}
-            
+
             # Add name filter
             if name_filter and name_filter != "*":
                 query['name'] = name_filter
-            
+
             # Add type filter
             if types_filter and len(types_filter) > 0:
                 valid_types = {'model', 'dataset', 'code'}
@@ -101,10 +102,10 @@ class Artifact_Model(Model):
                 ]
                 if filtered_types:
                     query['artifact_type'] = {'$in': filtered_types}
-            
+
             # Apply limit
             query_limit = limit if limit else 100
-            
+
             # Execute query
             cursor = collection.find(query).limit(query_limit)
             items = []
@@ -113,12 +114,12 @@ class Artifact_Model(Model):
                 if '_id' in doc:
                     del doc['_id']
                 items.append(cls(**doc))
-            
+
             return {
                 'items': items,
                 'last_evaluated_key': None
             }
-            
+
         except Exception as e:
             print(f"Error scanning artifacts: {e}")
             return {
@@ -126,5 +127,14 @@ class Artifact_Model(Model):
                 'last_evaluated_key': None
             }
 
-    # TODO: Add methods based on OpenAPI spec requirements
+    def rating(self):
+        """
+        Get the rating for this artifact (one-to-one relationship)
 
+        Returns:
+            Rating_Model instance or None
+        """
+        from .Rating_Model import Rating_Model
+        return has_one(Rating_Model, 'artifact_id', 'id')(self)
+
+    # TODO: Add methods based on OpenAPI spec requirements
