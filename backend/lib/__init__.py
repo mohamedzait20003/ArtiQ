@@ -6,6 +6,14 @@ Core utilities and routing infrastructure
 from .route import Route
 from .container import Container, container
 from .eloquent import Eloquent
+from .pipeline import (
+    Pipeline,
+    Parallel,
+    ParallelGroup,
+    PipelineException,
+    pipeline,
+    parallel
+)
 from .aws import (
     AWSServices,
     get_documentdb,
@@ -45,6 +53,12 @@ __all__ = [
     'Container',
     'container',
     'Eloquent',
+    'Pipeline',
+    'Parallel',
+    'ParallelGroup',
+    'PipelineException',
+    'pipeline',
+    'parallel',
     'AWSServices',
     'get_documentdb',
     'get_collection',

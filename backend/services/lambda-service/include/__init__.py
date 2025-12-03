@@ -18,6 +18,14 @@ if str(lambda_service_root) not in sys.path:
 from lib.route import Route  # noqa: E402
 from lib.container import Container, container  # noqa: E402
 from lib.eloquent import Eloquent  # noqa: E402
+from lib.pipeline import (  # noqa: E402
+    Pipeline,
+    Parallel,
+    ParallelGroup,
+    PipelineException,
+    pipeline,
+    parallel
+)
 from lib.aws import (  # noqa: E402
     AWSServices,
     get_documentdb,
@@ -51,12 +59,23 @@ from lib.seeder import (  # noqa: E402
     run_seeder,
     seed_database
 )
+from lib.utilities import (  # noqa: E402
+    url_to_artifact_name,
+    sanitize_artifact_name,
+    extract_repo_info
+)
 
 __all__ = [
     'Route',
     'Container',
     'container',
     'Eloquent',
+    'Pipeline',
+    'Parallel',
+    'ParallelGroup',
+    'PipelineException',
+    'pipeline',
+    'parallel',
     'AWSServices',
     'get_documentdb',
     'get_collection',
@@ -81,5 +100,8 @@ __all__ = [
     'SeederRunner',
     'create_seeder_runner',
     'run_seeder',
-    'seed_database'
+    'seed_database',
+    'url_to_artifact_name',
+    'sanitize_artifact_name',
+    'extract_repo_info'
 ]

@@ -1,6 +1,7 @@
 import os
 from .Model import Model
 from typing import Optional, Dict, Any
+from app.utils import url_to_artifact_name
 
 
 class Artifact_Model(Model):
@@ -34,9 +35,9 @@ class Artifact_Model(Model):
     def __init__(
         self,
         id: str,
-        name: str,
         artifact_type: str,  # model, dataset, or code
         source_url: str,
+        name: Optional[str] = None,
         file_size: Optional[int] = None,
         license: Optional[str] = None,
         rating: Optional[Dict[str, Any]] = None,
@@ -46,13 +47,13 @@ class Artifact_Model(Model):
         Initialize Artifact instance
         """
         self.id = id
-        self.name = name
+        self.name = name if name else url_to_artifact_name(source_url)
         self.artifact_type = artifact_type
         self.source_url = source_url
         self.file_size = file_size
         self.license = license
         self.rating = rating or {}
-        
+
         super().__init__(**kwargs)
 
     @classmethod

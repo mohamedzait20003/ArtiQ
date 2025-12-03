@@ -151,7 +151,7 @@ def rollback_all_migrations():
     for migration_name, migration_class in reversed(MIGRATIONS):
         if runner.has_run(migration_name):
             runner.rollback(migration_class, migration_name)
-    
+
     print("=" * 60)
     print("✓ All migrations rolled back")
     print("=" * 60)

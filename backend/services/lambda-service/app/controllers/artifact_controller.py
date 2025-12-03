@@ -39,7 +39,7 @@ class ArtifactController:
         try:
             # Get user from request state (attached by middleware if present)
             current_user = getattr(request.state, 'user', None)
-            
+
             # Prepare event for handler function
             auth_token = (
                 current_user.session.Token if current_user else None
@@ -130,7 +130,7 @@ class ArtifactController:
     ):
         """Interact with the artifact with this id (BASELINE)"""
         print(f"GET /artifacts/{artifact_type}/{id} called")
-        
+
         # Prepare event for handler function
         event = {
             'artifact_type': artifact_type,
