@@ -3,6 +3,7 @@ from typing import Optional
 from abc import ABC, abstractmethod
 from botocore.exceptions import ClientError
 from lib.aws import get_s3, get_collection
+from lib.relationships import HasOne, HasMany
 
 
 class Eloquent(ABC):
@@ -257,35 +258,47 @@ class Eloquent(ABC):
 
     def _cascade_delete(self):
         """Handle CASCADE deletes for dependent records"""
-        # Get all relationship methods defined on this model
+        # Get all class-level attributes that are relationships
         for attr_name in dir(self.__class__):
-            attr = getattr(self.__class__, attr_name)
-
-            # Check if it's a has_one or has_many relationship
-            if callable(attr) and hasattr(attr, '__self__'):
+            # Skip private/magic methods
+            if attr_name.startswith('_'):
                 continue
 
-            # Try to get the relationship descriptor
             try:
-                if attr_name.startswith('_'):
+                # Get the class attribute (not instance attribute)
+                class_attr = getattr(self.__class__, attr_name, None)
+
+                # Check if it's a relationship instance
+                if not isinstance(class_attr, (HasOne, HasMany)):
                     continue
 
-                relationship = getattr(self, attr_name)
+                # Only cascade delete if on_delete is CASCADE
+                if not hasattr(class_attr, 'on_delete'):
+                    continue
 
-                # Check if it's a relationship that should cascade
-                if callable(relationship):
-                    result = relationship()
+                if class_attr.on_delete != 'CASCADE':
+                    continue
 
-                    # Delete related records
-                    if result is not None:
-                        if isinstance(result, list):
-                            for related in result:
-                                if hasattr(related, 'delete'):
-                                    related.delete()
-                        elif hasattr(result, 'delete'):
-                            result.delete()
-            except Exception:
-                # Skip attributes that aren't relationships
+                # Get the relationship method from the instance
+                relationship_method = getattr(self, attr_name, None)
+                if not callable(relationship_method):
+                    continue
+
+                # Execute the relationship to get related records
+                result = relationship_method()
+
+                # Delete related records
+                if result is not None:
+                    if isinstance(result, list):
+                        for related in result:
+                            if hasattr(related, 'delete'):
+                                related.delete()
+                    elif hasattr(result, 'delete'):
+                        result.delete()
+                        
+            except Exception as e:
+                # Skip attributes that cause errors
+                print(f"Warning: Failed to cascade delete {attr_name}: {e}")
                 continue
 
     @classmethod
