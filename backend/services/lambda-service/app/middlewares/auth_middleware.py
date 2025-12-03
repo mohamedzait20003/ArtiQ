@@ -5,8 +5,7 @@ Node.js-style middleware that runs before route handlers
 """
 
 from fastapi import Request, HTTPException
-from app.models.Session_Model import Session_Model
-from app.models.Auth_Model import Auth_Model
+from app.models import Session_Model, Auth_Model
 
 
 class AuthUser:

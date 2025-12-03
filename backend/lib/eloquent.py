@@ -295,7 +295,7 @@ class Eloquent(ABC):
                                 related.delete()
                     elif hasattr(result, 'delete'):
                         result.delete()
-                        
+
             except Exception as e:
                 # Skip attributes that cause errors
                 print(f"Warning: Failed to cascade delete {attr_name}: {e}")

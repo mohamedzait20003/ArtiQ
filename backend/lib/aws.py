@@ -21,6 +21,7 @@ class AWSServices:
     _s3 = None
     _lambda_client = None
     _sqs = None
+    _sqs_queue_url = None
     _region = None
     _database_name = "docdb-ece30861-project"
 
@@ -139,6 +140,19 @@ class AWSServices:
         return cls._sqs
 
     @classmethod
+    def get_sqs_queue_url(cls):
+        """
+        Get the artifact processing queue URL from environment
+        Returns:
+            SQS queue URL string or None if not configured
+        """
+        if cls._sqs_queue_url is None:
+            cls._sqs_queue_url = os.environ.get(
+                'ARTIFACT_PROCESSING_QUEUE_URL'
+            )
+        return cls._sqs_queue_url
+
+    @classmethod
     def reset(cls):
         """Reset all clients (useful for testing)"""
         if cls._documentdb_client:
@@ -149,6 +163,7 @@ class AWSServices:
         cls._s3 = None
         cls._lambda_client = None
         cls._sqs = None
+        cls._sqs_queue_url = None
         cls._region = None
 
 
@@ -176,3 +191,8 @@ def get_lambda():
 def get_sqs():
     """Get SQS client instance"""
     return AWSServices.get_sqs()
+
+
+def get_sqs_queue_url():
+    """Get SQS queue URL"""
+    return AWSServices.get_sqs_queue_url()

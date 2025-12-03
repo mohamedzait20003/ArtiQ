@@ -1,7 +1,7 @@
 import json
 import uuid
 import hashlib
-from app.models.Auth_Model import Auth_Model
+from app.models import Auth_Model
 
 
 def lambda_handler(event, context):

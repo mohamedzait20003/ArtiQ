@@ -3,11 +3,10 @@ SQS utility functions
 Functions for interacting with AWS SQS queues
 """
 
-import os
 import json
 import uuid
 from typing import Dict, Any
-from include import encrypt_artifact_id, get_sqs
+from include import encrypt_artifact_id, get_sqs, get_sqs_queue_url
 
 
 def send_to_sqs(
@@ -27,14 +26,12 @@ def send_to_sqs(
         True if message sent successfully, False otherwise
     """
     try:
-        from include import get_sqs
-
         # Get SQS client
         sqs = get_sqs()
 
         # Get queue URL from environment if not provided
         if not queue_url:
-            queue_url = os.environ.get('ARTIFACT_PROCESSING_QUEUE_URL')
+            queue_url = get_sqs_queue_url()
             if not queue_url:
                 print("⚠ Warning: No SQS queue URL configured")
                 return False
@@ -136,7 +133,7 @@ def receive_from_sqs(
 
         # Get queue URL from environment if not provided
         if not queue_url:
-            queue_url = os.environ.get('ARTIFACT_PROCESSING_QUEUE_URL')
+            queue_url = get_sqs_queue_url()
             if not queue_url:
                 print("⚠ Warning: No SQS queue URL configured")
                 return []
@@ -173,7 +170,7 @@ def delete_from_sqs(receipt_handle: str, queue_url: str = None) -> bool:
 
         # Get queue URL from environment if not provided
         if not queue_url:
-            queue_url = os.environ.get('ARTIFACT_PROCESSING_QUEUE_URL')
+            queue_url = get_sqs_queue_url()
             if not queue_url:
                 print("⚠ Warning: No SQS queue URL configured")
                 return False

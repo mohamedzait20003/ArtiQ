@@ -77,6 +77,8 @@ jobs:
       env:
         PYTHONPATH: ${{ github.workspace }}/backend/services/lambda-service
         MONGODB_URI: mongodb://mock:27017/
+        ARTIFACT_ENCRYPTION_KEY: ${{ secrets.ARTIFACT_ENCRYPTION_KEY }}
+        ARTIFACT_PROCESSING_QUEUE_URL: ${{ secrets.ARTIFACT_PROCESSING_QUEUE_URL }}
       run: |
         cd backend/services/lambda-service
         python -m pytest -v --tb=short tests
@@ -257,6 +259,8 @@ jobs:
     - name: Deploy Lambda with API Gateway
       env:
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        ARTIFACT_ENCRYPTION_KEY: ${{ secrets.ARTIFACT_ENCRYPTION_KEY }}
+        ARTIFACT_PROCESSING_QUEUE_URL: ${{ secrets.ARTIFACT_PROCESSING_QUEUE_URL }}
       run: |
         cd backend/services/lambda-service
         sam deploy \
@@ -265,7 +269,7 @@ jobs:
           --capabilities CAPABILITY_IAM \
           --region us-east-2 \
           --resolve-s3 \
-          --parameter-overrides MongoDBUri="${MONGODB_URI}"
+          --parameter-overrides MongoDBUri="${MONGODB_URI}" EncryptionKey="${ARTIFACT_ENCRYPTION_KEY}" QueueUrl="${ARTIFACT_PROCESSING_QUEUE_URL}"
     
     - name: Get API Gateway URL
       run: |

@@ -1,7 +1,5 @@
 import json
-from app.models.Artifact_Model import Artifact_Model
-from app.models.Session_Model import Session_Model
-from app.models.Auth_Model import Auth_Model
+from app.models import Artifact_Model, Session_Model, Auth_Model
 
 
 def lambda_handler(event, context):

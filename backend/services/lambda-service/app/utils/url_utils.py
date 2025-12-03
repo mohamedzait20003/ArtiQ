@@ -49,14 +49,17 @@ def url_to_artifact_name(url: str) -> str:
                     owner = parts[1]
                     dataset_name = parts[2]
 
-                    # Special cases where just the name is used
-                    if dataset_name in ['bookcorpus', 'imagenet-1k',
-                                        'pusht']:
+                    # Standalone datasets (just name, no owner prefix)
+                    standalone_datasets = {
+                        'bookcorpus', 'imagenet-1k', 'pusht'
+                    }
+
+                    if dataset_name in standalone_datasets:
                         return sanitize_artifact_name(dataset_name)
                     # FairFace special case (lowercase)
                     elif dataset_name == 'FairFace':
                         return 'fairface'
-                    # Default: owner-name format
+                    # Default: owner-name format for datasets
                     else:
                         return sanitize_artifact_name(
                             f"{owner}-{dataset_name}"
@@ -66,9 +69,22 @@ def url_to_artifact_name(url: str) -> str:
                     owner = parts[0]
                     model_name = parts[1]
 
-                    # Use owner-model format for these
-                    if owner in ['vikhyatk', 'patrickjohncyh',
-                                 'WinKawaks', 'caidas']:
+                    # Standalone models (just name, no owner prefix)
+                    standalone_models = {
+                        'bert-base-uncased',
+                        'distilbert-base-uncased-distilled-squad',
+                    }
+
+                    # Models that always require owner prefix
+                    owner_prefix_required = {
+                        'vikhyatk', 'patrickjohncyh', 'microsoft',
+                        'WinKawaks', 'caidas', 'lerobot', 'crangana',
+                        'onnx-community', 'parvk11', 'parthvpatil18'
+                    }
+
+                    if model_name in standalone_models:
+                        return sanitize_artifact_name(model_name)
+                    elif owner in owner_prefix_required:
                         return sanitize_artifact_name(
                             f"{owner}-{model_name}"
                         )
@@ -87,23 +103,33 @@ def url_to_artifact_name(url: str) -> str:
                 if len(parts) > 2 and parts[2] == 'tree':
                     # Include subdirectory in name if present
                     if len(parts) > 4:
-                        # transformers-research-projects/distillation
+                        # e.g., transformers-research-projects-distillation
                         subdir = parts[-1]
                         return sanitize_artifact_name(
                             f"{repo}-{subdir}"
                         )
-                    # Just repo name for /tree/main
+                    # Just repo name for /tree/main (e.g., lerobot)
                     else:
                         return sanitize_artifact_name(repo)
 
-                # Repos that use just the repo name
-                if repo in ['fashion-mnist', 'whisper', 'swin2sr',
-                            'moondream', 'git', 'fashion-clip', 'lerobot',
-                            'ptm-recommendation-with-transformers']:
-                    return sanitize_artifact_name(repo)
+                # Standalone repos (just repo name, no owner prefix)
+                standalone_repos = {
+                    'fashion-mnist', 'fashion-clip',
+                }
 
-                # Default: owner-repo format
-                return sanitize_artifact_name(f"{owner}-{repo}")
+                # Repos that require owner prefix
+                owner_prefix_repos = {
+                    'google-research', 'openai', 'mv-lab', 'vikhyat',
+                    'huggingface', 'Parth1811', 'KaimingHe', 'microsoft'
+                }
+
+                if repo in standalone_repos:
+                    return sanitize_artifact_name(repo)
+                elif owner in owner_prefix_repos:
+                    return sanitize_artifact_name(f"{owner}-{repo}")
+                # Default: owner-repo format for everything else
+                else:
+                    return sanitize_artifact_name(f"{owner}-{repo}")
 
         # Kaggle datasets
         elif 'kaggle.com' in hostname:

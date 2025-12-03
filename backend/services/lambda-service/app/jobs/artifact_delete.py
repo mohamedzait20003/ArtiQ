@@ -1,5 +1,5 @@
 import re
-from app.models.Artifact_Model import Artifact_Model
+from app.models import Artifact_Model
 
 
 def lambda_handler(event, context):

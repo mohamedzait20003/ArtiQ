@@ -1,6 +1,6 @@
 import uuid
-from app.models.Artifact_Model import Artifact_Model
-from app.utils.sqs_utils import send_artifact_to_sqs
+from app.models import Artifact_Model
+from app.utils import send_artifact_to_sqs, url_to_artifact_name
 
 
 def lambda_handler(event, context):
@@ -21,9 +21,13 @@ def lambda_handler(event, context):
         # Extract URL from artifact data
         url = artifact_data.get('url', '')
 
-        # Create artifact instance (name auto-generated from URL)
+        # Generate artifact name from URL
+        artifact_name = url_to_artifact_name(url)
+
+        # Create artifact instance
         artifact = Artifact_Model(
             id=artifact_id,
+            name=artifact_name,
             artifact_type=artifact_type,
             source_url=url,
             file_size=None,
