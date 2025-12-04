@@ -6,9 +6,9 @@ import os
 import sys
 import time
 import signal
-from include import get_sqs, get_sqs_queue_url, AWSServices  # noqa: E402
-from app.models.Artifact_Model import Artifact_Model  # noqa: E402
-from app.utils.sqs_utils import process_sqs_message  # noqa: E402
+from app.utils.sqs_utils import process_sqs_message
+from app.models.Artifact_Model import Artifact_Model
+from include import get_sqs, get_sqs_queue_url, AWSServices
 
 os.environ.setdefault("AWS_REGION", "us-east-2")
 AWSServices.initialize(region=os.environ.get("AWS_REGION"))
@@ -92,8 +92,6 @@ def poll_sqs_queue(sqs_client, queue_url: str):
         sqs_client: The SQS client instance
         queue_url: The SQS queue URL
     """
-    global shutdown_requested
-
     print(f"[FARGATE] Starting to poll queue: {queue_url}")
 
     while not shutdown_requested:

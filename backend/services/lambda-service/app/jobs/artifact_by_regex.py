@@ -13,7 +13,7 @@ def validate_regex_safety(pattern):
 
     Args:
         pattern: Regex pattern string
-  
+
     Raises:
         ValueError: If pattern contains known dangerous constructs
     """

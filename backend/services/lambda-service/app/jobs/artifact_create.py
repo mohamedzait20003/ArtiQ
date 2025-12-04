@@ -50,7 +50,8 @@ def lambda_handler(event, context):
             raise Exception("Failed to save artifact to database")
 
         # Send encrypted artifact ID to SQS for processing
-        send_artifact_to_sqs(artifact_id, artifact_type)
+        if artifact_type in ['model']:
+            send_artifact_to_sqs(artifact_id, artifact_type)
 
         response_data = {
             'metadata': {

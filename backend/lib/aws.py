@@ -22,6 +22,7 @@ class AWSServices:
     _lambda_client = None
     _sqs = None
     _sqs_queue_url = None
+    _bedrock = None
     _region = None
     _database_name = "docdb-ece30861-project"
 
@@ -153,6 +154,21 @@ class AWSServices:
         return cls._sqs_queue_url
 
     @classmethod
+    def get_bedrock(cls):
+        """
+        Get shared Bedrock Runtime client instance
+        Returns:
+            boto3 Bedrock Runtime client
+        """
+        if cls._bedrock is None:
+            cls.initialize()
+            cls._bedrock = boto3.client(
+                'bedrock-runtime',
+                region_name=cls._region
+            )
+        return cls._bedrock
+
+    @classmethod
     def reset(cls):
         """Reset all clients (useful for testing)"""
         if cls._documentdb_client:
@@ -164,6 +180,7 @@ class AWSServices:
         cls._lambda_client = None
         cls._sqs = None
         cls._sqs_queue_url = None
+        cls._bedrock = None
         cls._region = None
 
 
@@ -196,3 +213,8 @@ def get_sqs():
 def get_sqs_queue_url():
     """Get SQS queue URL"""
     return AWSServices.get_sqs_queue_url()
+
+
+def get_bedrock():
+    """Get Bedrock Runtime client instance"""
+    return AWSServices.get_bedrock()
