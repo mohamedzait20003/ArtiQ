@@ -11,6 +11,7 @@ from .artifact_create import lambda_handler as artifact_create_job
 from .artifact_retrieve import lambda_handler as artifact_retrieve_job
 from .artifact_update import lambda_handler as artifact_update_job
 from .artifact_delete import lambda_handler as artifact_delete_job
+from .artifact_by_regex import lambda_handler as artifact_by_regex_job
 from .registry_reset import lambda_handler as registry_reset_job
 
 __all__ = [
@@ -22,5 +23,6 @@ __all__ = [
     'artifact_retrieve_job',
     'artifact_update_job',
     'artifact_delete_job',
+    'artifact_by_regex_job',
     'registry_reset_job',
 ]

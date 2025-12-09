@@ -13,7 +13,8 @@ from app.jobs import (
     artifact_create_job,
     artifact_retrieve_job,
     artifact_update_job,
-    artifact_delete_job
+    artifact_delete_job,
+    artifact_by_regex_job
 )
 
 
@@ -311,7 +312,35 @@ class ArtifactController:
         """
         Get any artifacts fitting the regular expression (BASELINE)
         """
-        print("POST /artifact/byRegEx called")
-        # TODO: Implement logic
-        raise HTTPException(
-            status_code=501, detail="Not implemented")
+        print("[CONTROLLER] POST /artifact/byRegEx called")
+        print(f"[CONTROLLER] Regex pattern received: {regex_request.regex}")
+        try:
+            # Prepare event for handler function
+            event = {
+                'regex': regex_request.regex
+            }
+            print(f"[CONTROLLER] Event prepared: {event}")
+
+            # Call the handler function directly
+            result, status_code = artifact_by_regex_job(event, None)
+
+            # Check if response is an error
+            if status_code != 200:
+                error_message = result.get('errorMessage', 'Unknown error')
+                print(f"POST /artifact/byRegEx RETURNING: "
+                      f"{status_code} - {error_message}")
+                raise HTTPException(
+                    status_code=status_code,
+                    detail=error_message)
+
+            print("POST /artifact/byRegEx RETURNING: 200 - success")
+            return result
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"POST /artifact/byRegEx RETURNING: 500 - "
+                  f"Exception: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error invoking artifact_by_regex: {str(e)}")
