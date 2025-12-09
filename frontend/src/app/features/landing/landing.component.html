@@ -1,178 +1,638 @@
-<!-- Hero Section -->
-<div class="bg-linear-to-b from-yellow-50 to-white">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+<!-- Hero Section - Premium Design -->
+<div class="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+  <!-- Animated Background Elements -->
+  <div class="absolute inset-0 overflow-hidden">
+    <div class="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full opacity-20 blur-3xl animate-pulse"></div>
+    <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-full opacity-20 blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+    <div class="absolute top-1/2 right-1/4 w-96 h-96 bg-gradient-to-tl from-pink-500 to-rose-600 rounded-full opacity-10 blur-3xl animate-pulse" style="animation-delay: 2s;"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 md:py-48">
     <div class="text-center">
-      <!-- Badge -->
-      <div class="inline-flex items-center space-x-2 px-4 py-2 bg-yellow-100 rounded-full mb-6">
-        <span class="text-sm font-semibold text-yellow-800">🚀 New: 50,000+ models available</span>
+      <!-- Premium Badge -->
+      <div class="inline-flex items-center space-x-3 px-6 py-3 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-400/30 rounded-full mb-8 backdrop-blur-xl">
+        <span class="inline-block w-2.5 h-2.5 bg-indigo-400 rounded-full animate-pulse"></span>
+        <span class="text-sm font-semibold bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">
+          ✨ Enterprise-Grade AI Platform
+        </span>
       </div>
 
-      <!-- Main Heading -->
-      <h1 class="text-5xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 mb-6">
-        The AI community
-        <br />
-        <span class="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">
-          building the future
+      <!-- Main Heading with Gradient -->
+      <h1 class="text-6xl md:text-7xl lg:text-8xl font-extrabold leading-tight mb-8">
+        <span class="block text-white mb-3">Transform Your AI</span>
+        <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+          Development Journey
         </span>
       </h1>
 
       <!-- Subheading -->
-      <p class="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-        Build, train and deploy state of the art models powered by the open source machine learning ecosystem.
+      <p class="text-xl md:text-2xl text-slate-300 mb-12 max-w-3xl mx-auto leading-relaxed">
+        Access thousands of cutting-edge AI models, collaborate with global developers, and deploy production-ready solutions in minutes. Built by the community, for the community.
       </p>
 
-      <!-- CTA Buttons -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-        <a routerLink="/auth/login" class="px-8 py-4 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold rounded-lg transition shadow-lg hover:shadow-xl text-lg">
-          Get started for free
+      <!-- Premium CTA Buttons -->
+      <div class="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
+        <a routerLink="/auth/register" class="group px-10 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-full transition duration-300 shadow-2xl hover:shadow-indigo-500/50 text-lg transform hover:-translate-y-1">
+          <span class="flex items-center space-x-2">
+            <span>Start For Free</span>
+            <svg class="w-5 h-5 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+            </svg>
+          </span>
         </a>
-        <a href="#explore" class="px-8 py-4 bg-white hover:bg-gray-50 text-gray-900 font-semibold rounded-lg transition border-2 border-gray-200 text-lg">
-          Explore models
+        <a href="#explore" class="px-10 py-4 bg-slate-700/50 hover:bg-slate-700 text-white font-semibold rounded-full transition border-2 border-slate-600 hover:border-slate-500 text-lg backdrop-blur-sm">
+          Explore Platform
         </a>
       </div>
 
-      <!-- Stats -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto pt-8 border-t border-gray-200">
-        <div>
-          <div class="text-3xl font-bold text-gray-900">50K+</div>
-          <div class="text-sm text-gray-600">Models</div>
+      <!-- Trust Indicators -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-8 pb-12 border-b border-slate-700/50">
+        <div class="flex items-center space-x-2 text-slate-300">
+          <div class="flex space-x-1">
+            <span class="text-yellow-400">★</span>
+            <span class="text-yellow-400">★</span>
+            <span class="text-yellow-400">★</span>
+            <span class="text-yellow-400">★</span>
+            <span class="text-yellow-400">★</span>
+          </div>
+          <span class="text-sm font-medium">Trusted by 100K+ developers</span>
         </div>
-        <div>
-          <div class="text-3xl font-bold text-gray-900">25K+</div>
-          <div class="text-sm text-gray-600">Datasets</div>
+      </div>
+
+      <!-- Stats Grid - Premium Design -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto pt-12">
+        <!-- Stat 1 -->
+        <div class="group p-6 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 hover:border-indigo-500/50 transition backdrop-blur-sm hover:bg-gradient-to-br hover:from-indigo-500/20 hover:to-purple-500/20">
+          <div class="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent mb-2">50K+</div>
+          <div class="text-sm text-slate-400 font-medium">Pre-trained Models</div>
+          <div class="text-xs text-slate-500 mt-2">Updated Daily</div>
         </div>
-        <div>
-          <div class="text-3xl font-bold text-gray-900">100K+</div>
-          <div class="text-sm text-gray-600">Users</div>
+
+        <!-- Stat 2 -->
+        <div class="group p-6 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 hover:border-cyan-500/50 transition backdrop-blur-sm hover:bg-gradient-to-br hover:from-cyan-500/20 hover:to-blue-500/20">
+          <div class="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent mb-2">100K+</div>
+          <div class="text-sm text-slate-400 font-medium">Active Users</div>
+          <div class="text-xs text-slate-500 mt-2">Worldwide</div>
         </div>
-        <div>
-          <div class="text-3xl font-bold text-gray-900">10K+</div>
-          <div class="text-sm text-gray-600">Organizations</div>
+
+        <!-- Stat 3 -->
+        <div class="group p-6 rounded-xl bg-gradient-to-br from-pink-500/10 to-rose-500/10 border border-pink-500/20 hover:border-pink-500/50 transition backdrop-blur-sm hover:bg-gradient-to-br hover:from-pink-500/20 hover:to-rose-500/20">
+          <div class="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-pink-300 to-rose-300 bg-clip-text text-transparent mb-2">25K+</div>
+          <div class="text-sm text-slate-400 font-medium">Datasets</div>
+          <div class="text-xs text-slate-500 mt-2">Public & Private</div>
+        </div>
+
+        <!-- Stat 4 -->
+        <div class="group p-6 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 hover:border-emerald-500/50 transition backdrop-blur-sm hover:bg-gradient-to-br hover:from-emerald-500/20 hover:to-teal-500/20">
+          <div class="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent mb-2">99.9%</div>
+          <div class="text-sm text-slate-400 font-medium">Uptime SLA</div>
+          <div class="text-xs text-slate-500 mt-2">Enterprise Grade</div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Features Section -->
-<div id="explore" class="py-20 bg-white">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+<!-- Features Section - Enhanced Professional Design -->
+<div class="relative py-24 md:py-32 bg-gradient-to-b from-slate-800 to-slate-900 overflow-hidden">
+  <!-- Background Accent -->
+  <div class="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+  <div class="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-cyan-500/10 to-blue-500/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
+
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Section Header -->
     <div class="text-center mb-16">
-      <h2 class="text-4xl font-bold text-gray-900 mb-4">Everything you need to build AI</h2>
-      <p class="text-xl text-gray-600">Powerful tools and resources for your ML journey</p>
+      <h2 class="text-4xl md:text-5xl font-extrabold mb-4">
+        <span class="block text-white mb-2">Powerful Features</span>
+        <span class="bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+          for Every Use Case
+        </span>
+      </h2>
+      <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+        Everything you need to succeed with AI development, from discovery to deployment
+      </p>
     </div>
 
-    <div class="grid md:grid-cols-3 gap-8">
-      <!-- Feature 1 -->
-      <div class="p-8 rounded-xl border border-gray-200 hover:border-yellow-400 hover:shadow-lg transition">
-        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4">
-          <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
-          </svg>
+    <!-- Features Grid - Premium 3-Column Layout -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Feature 1: Host Models -->
+      <div class="group relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300"></div>
+        <div class="relative p-8 bg-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-700 hover:border-indigo-500/50 transition duration-300 h-full">
+          <!-- Icon -->
+          <div class="mb-6 inline-flex p-4 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-xl border border-indigo-500/30 group-hover:from-indigo-500/40 group-hover:to-purple-500/40 transition">
+            <svg class="w-8 h-8 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
+
+          <!-- Content -->
+          <h3 class="text-2xl font-bold text-white mb-3 group-hover:text-indigo-300 transition">
+            Host Models
+          </h3>
+          <p class="text-slate-400 leading-relaxed mb-6">
+            Upload and share your AI models with the global community. Support for PyTorch, TensorFlow, ONNX, and more formats.
+          </p>
+
+          <!-- Feature List -->
+          <ul class="space-y-3 text-sm text-slate-300">
+            <li class="flex items-start space-x-3">
+              <svg class="w-5 h-5 text-indigo-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <span>Multiple framework support</span>
+            </li>
+            <li class="flex items-start space-x-3">
+              <svg class="w-5 h-5 text-indigo-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <span>Automatic versioning</span>
+            </li>
+            <li class="flex items-start space-x-3">
+              <svg class="w-5 h-5 text-indigo-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <span>Detailed analytics</span>
+            </li>
+          </ul>
+
+          <!-- Arrow -->
+          <div class="mt-6 inline-flex items-center text-indigo-300 group-hover:text-indigo-200 text-sm font-semibold">
+            Learn more
+            <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
         </div>
-        <h3 class="text-xl font-bold text-gray-900 mb-2">Host Models</h3>
-        <p class="text-gray-600 mb-4">Upload and version your AI models with Git-based workflow. Share with the community or keep them private.</p>
-        <a routerLink="/auth/login" class="text-yellow-600 hover:text-yellow-700 font-semibold inline-flex items-center">
-          Get started →
-        </a>
       </div>
 
-      <!-- Feature 2 -->
-      <div class="p-8 rounded-xl border border-gray-200 hover:border-orange-400 hover:shadow-lg transition">
-        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
-          <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
-          </svg>
+      <!-- Feature 2: Manage Datasets -->
+      <div class="group relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300"></div>
+        <div class="relative p-8 bg-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-700 hover:border-cyan-500/50 transition duration-300 h-full">
+          <!-- Icon -->
+          <div class="mb-6 inline-flex p-4 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-xl border border-cyan-500/30 group-hover:from-cyan-500/40 group-hover:to-blue-500/40 transition">
+            <svg class="w-8 h-8 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+            </svg>
+          </div>
+
+          <!-- Content -->
+          <h3 class="text-2xl font-bold text-white mb-3 group-hover:text-cyan-300 transition">
+            Manage Datasets
+          </h3>
+          <p class="text-slate-400 leading-relaxed mb-6">
+            Organize and collaborate on datasets with fine-grained access controls. Built-in versioning and quality assurance tools.
+          </p>
+
+          <!-- Feature List -->
+          <ul class="space-y-3 text-sm text-slate-300">
+            <li class="flex items-start space-x-3">
+              <svg class="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <span>Real-time collaboration</span>
+            </li>
+            <li class="flex items-start space-x-3">
+              <svg class="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <span>Version control & history</span>
+            </li>
+            <li class="flex items-start space-x-3">
+              <svg class="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <span>Quality metrics & stats</span>
+            </li>
+          </ul>
+
+          <!-- Arrow -->
+          <div class="mt-6 inline-flex items-center text-cyan-300 group-hover:text-cyan-200 text-sm font-semibold">
+            Learn more
+            <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
         </div>
-        <h3 class="text-xl font-bold text-gray-900 mb-2">Manage Datasets</h3>
-        <p class="text-gray-600 mb-4">Store, version, and share your datasets. Access thousands of public datasets for your projects.</p>
-        <a routerLink="/auth/register" class="text-orange-600 hover:text-orange-700 font-semibold inline-flex items-center">
-          Explore datasets →
-        </a>
       </div>
 
-      <!-- Feature 3 -->
-      <div class="p-8 rounded-xl border border-gray-200 hover:border-pink-400 hover:shadow-lg transition">
-        <div class="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
-          <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-          </svg>
+      <!-- Feature 3: Deploy Spaces -->
+      <div class="group relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-pink-500/20 to-rose-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300"></div>
+        <div class="relative p-8 bg-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-700 hover:border-pink-500/50 transition duration-300 h-full">
+          <!-- Icon -->
+          <div class="mb-6 inline-flex p-4 bg-gradient-to-br from-pink-500/20 to-rose-500/20 rounded-xl border border-pink-500/30 group-hover:from-pink-500/40 group-hover:to-rose-500/40 transition">
+            <svg class="w-8 h-8 text-pink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+            </svg>
+          </div>
+
+          <!-- Content -->
+          <h3 class="text-2xl font-bold text-white mb-3 group-hover:text-pink-300 transition">
+            Deploy Spaces
+          </h3>
+          <p class="text-slate-400 leading-relaxed mb-6">
+            Create interactive demos with one click. Scale automatically and only pay for what you use with our serverless platform.
+          </p>
+
+          <!-- Feature List -->
+          <ul class="space-y-3 text-sm text-slate-300">
+            <li class="flex items-start space-x-3">
+              <svg class="w-5 h-5 text-pink-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <span>One-click deployment</span>
+            </li>
+            <li class="flex items-start space-x-3">
+              <svg class="w-5 h-5 text-pink-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <span>Auto-scaling infrastructure</span>
+            </li>
+            <li class="flex items-start space-x-3">
+              <svg class="w-5 h-5 text-pink-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+              <span>Pay-as-you-go pricing</span>
+            </li>
+          </ul>
+
+          <!-- Arrow -->
+          <div class="mt-6 inline-flex items-center text-pink-300 group-hover:text-pink-200 text-sm font-semibold">
+            Learn more
+            <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </div>
         </div>
-        <h3 class="text-xl font-bold text-gray-900 mb-2">Deploy Spaces</h3>
-        <p class="text-gray-600 mb-4">Deploy ML demos and applications. Share your work with the community in seconds.</p>
-        <a routerLink="/auth/register" class="text-pink-600 hover:text-pink-700 font-semibold inline-flex items-center">
-          Create space →
-        </a>
+      </div>
+    </div>
+
+    <!-- Additional Benefits Grid -->
+    <div class="mt-20 pt-20 border-t border-slate-700/50">
+      <div class="text-center mb-12">
+        <h3 class="text-2xl md:text-3xl font-bold text-white mb-3">Why Choose Us?</h3>
+        <p class="text-slate-400">Industry-leading tools trusted by the world's best AI teams</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Benefit 1 -->
+        <div class="p-6 bg-slate-800/50 rounded-xl border border-slate-700 hover:border-indigo-500/30 transition">
+          <div class="text-3xl mb-3">🚀</div>
+          <h4 class="font-semibold text-white mb-2">Lightning Fast</h4>
+          <p class="text-sm text-slate-400">Deploy in seconds, not weeks. GPU-accelerated inference.</p>
+        </div>
+
+        <!-- Benefit 2 -->
+        <div class="p-6 bg-slate-800/50 rounded-xl border border-slate-700 hover:border-cyan-500/30 transition">
+          <div class="text-3xl mb-3">🔒</div>
+          <h4 class="font-semibold text-white mb-2">Enterprise Secure</h4>
+          <p class="text-sm text-slate-400">SOC 2 certified with advanced encryption and audit logs.</p>
+        </div>
+
+        <!-- Benefit 3 -->
+        <div class="p-6 bg-slate-800/50 rounded-xl border border-slate-700 hover:border-pink-500/30 transition">
+          <div class="text-3xl mb-3">🌍</div>
+          <h4 class="font-semibold text-white mb-2">Global Community</h4>
+          <p class="text-sm text-slate-400">Connect with 100K+ developers and share knowledge.</p>
+        </div>
+
+        <!-- Benefit 4 -->
+        <div class="p-6 bg-slate-800/50 rounded-xl border border-slate-700 hover:border-emerald-500/30 transition">
+          <div class="text-3xl mb-3">💰</div>
+          <h4 class="font-semibold text-white mb-2">Affordable</h4>
+          <p class="text-sm text-slate-400">Flexible pricing from free to enterprise. No hidden costs.</p>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Trending Models Section -->
-<div class="py-20 bg-gray-50">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center mb-12">
-      <h2 class="text-3xl font-bold text-gray-900">Trending Models</h2>
-      <a href="#models" class="text-yellow-600 hover:text-yellow-700 font-semibold">View all →</a>
+<!-- Trending Models Section - Premium Redesign -->
+<div id="explore" class="relative py-24 md:py-32 bg-gradient-to-b from-slate-900 to-slate-800 overflow-hidden">
+  <!-- Background Accents -->
+  <div class="absolute top-1/4 right-0 w-96 h-96 bg-gradient-to-tl from-emerald-500/10 to-teal-500/10 rounded-full blur-3xl"></div>
+  <div class="absolute bottom-0 left-1/4 w-80 h-80 bg-gradient-to-tr from-violet-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
+
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Section Header -->
+    <div class="mb-16">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div class="mb-6 md:mb-0">
+          <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-3">
+            <span class="bg-gradient-to-r from-emerald-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent">
+              Trending Models
+            </span>
+          </h2>
+          <p class="text-slate-400 text-lg">Discover the most popular AI models loved by developers worldwide</p>
+        </div>
+        <a href="#" class="inline-flex items-center text-emerald-300 hover:text-emerald-200 font-semibold text-lg group">
+          Explore all models
+          <svg class="w-5 h-5 ml-2 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </a>
+      </div>
     </div>
 
-    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <!-- Model Card 1 -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition">
-        <div class="flex items-start justify-between mb-4">
-          <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg"></div>
-            <div>
-              <h3 class="font-semibold text-gray-900">GPT-Vision</h3>
-              <p class="text-sm text-gray-500">openai</p>
+    <!-- Models Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Model Card 1 - Vision Model -->
+      <div class="group relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300"></div>
+        <div class="relative p-6 bg-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-700 hover:border-blue-500/50 transition duration-300 h-full flex flex-col">
+          <!-- Header -->
+          <div class="flex items-start justify-between mb-6">
+            <div class="flex items-center space-x-4 flex-1">
+              <div class="w-14 h-14 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <h3 class="font-bold text-white text-lg group-hover:text-blue-300 transition">GPT-Vision</h3>
+                <p class="text-sm text-slate-400">by OpenAI</p>
+              </div>
+            </div>
+            <span class="px-3 py-1 bg-blue-500/20 text-blue-300 text-xs font-semibold rounded-full border border-blue-500/30">Vision</span>
+          </div>
+
+          <!-- Description -->
+          <p class="text-slate-300 text-sm leading-relaxed mb-6 flex-1">
+            State-of-the-art vision-language model for advanced image understanding and intelligent visual analysis.
+          </p>
+
+          <!-- Stats -->
+          <div class="grid grid-cols-2 gap-3 mb-6 pt-6 border-t border-slate-700">
+            <div class="text-center">
+              <div class="text-sm font-semibold text-emerald-300">125K</div>
+              <div class="text-xs text-slate-400">Downloads</div>
+            </div>
+            <div class="text-center">
+              <div class="text-sm font-semibold text-yellow-300">4.2K</div>
+              <div class="text-xs text-slate-400">Stars</div>
             </div>
           </div>
-          <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded">Computer Vision</span>
-        </div>
-        <p class="text-gray-600 text-sm mb-4">State-of-the-art vision-language model for image understanding and generation.</p>
-        <div class="flex items-center justify-between text-sm text-gray-500">
-          <span>⬇️ 125K downloads</span>
-          <span>⭐ 4.2K</span>
+
+          <!-- CTA -->
+          <button class="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition text-sm">
+            View Model
+          </button>
         </div>
       </div>
 
-      <!-- Model Card 2 -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition">
-        <div class="flex items-start justify-between mb-4">
-          <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg"></div>
-            <div>
-              <h3 class="font-semibold text-gray-900">LLaMA-3</h3>
-              <p class="text-sm text-gray-500">meta</p>
+      <!-- Model Card 2 - LLM -->
+      <div class="group relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300"></div>
+        <div class="relative p-6 bg-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-700 hover:border-emerald-500/50 transition duration-300 h-full flex flex-col">
+          <!-- Header -->
+          <div class="flex items-start justify-between mb-6">
+            <div class="flex items-center space-x-4 flex-1">
+              <div class="w-14 h-14 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <h3 class="font-bold text-white text-lg group-hover:text-emerald-300 transition">LLaMA-3</h3>
+                <p class="text-sm text-slate-400">by Meta</p>
+              </div>
+            </div>
+            <span class="px-3 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-semibold rounded-full border border-emerald-500/30">LLM</span>
+          </div>
+
+          <!-- Description -->
+          <p class="text-slate-300 text-sm leading-relaxed mb-6 flex-1">
+            Open-source large language model optimized for chat, instruction following, and multi-turn conversations.
+          </p>
+
+          <!-- Stats -->
+          <div class="grid grid-cols-2 gap-3 mb-6 pt-6 border-t border-slate-700">
+            <div class="text-center">
+              <div class="text-sm font-semibold text-emerald-300">890K</div>
+              <div class="text-xs text-slate-400">Downloads</div>
+            </div>
+            <div class="text-center">
+              <div class="text-sm font-semibold text-yellow-300">12.5K</div>
+              <div class="text-xs text-slate-400">Stars</div>
             </div>
           </div>
-          <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded">Text Generation</span>
-        </div>
-        <p class="text-gray-600 text-sm mb-4">Open-source large language model optimized for chat and instruction following.</p>
-        <div class="flex items-center justify-between text-sm text-gray-500">
-          <span>⬇️ 890K downloads</span>
-          <span>⭐ 12.5K</span>
+
+          <!-- CTA -->
+          <button class="w-full px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold rounded-lg transition text-sm">
+            View Model
+          </button>
         </div>
       </div>
 
-      <!-- Model Card 3 -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition">
-        <div class="flex items-start justify-between mb-4">
-          <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg"></div>
-            <div>
-              <h3 class="font-semibold text-gray-900">Whisper-v3</h3>
-              <p class="text-sm text-gray-500">openai</p>
+      <!-- Model Card 3 - Audio -->
+      <div class="group relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300"></div>
+        <div class="relative p-6 bg-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-700 hover:border-purple-500/50 transition duration-300 h-full flex flex-col">
+          <!-- Header -->
+          <div class="flex items-start justify-between mb-6">
+            <div class="flex items-center space-x-4 flex-1">
+              <div class="w-14 h-14 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <h3 class="font-bold text-white text-lg group-hover:text-purple-300 transition">Whisper-v3</h3>
+                <p class="text-sm text-slate-400">by OpenAI</p>
+              </div>
+            </div>
+            <span class="px-3 py-1 bg-purple-500/20 text-purple-300 text-xs font-semibold rounded-full border border-purple-500/30">Audio</span>
+          </div>
+
+          <!-- Description -->
+          <p class="text-slate-300 text-sm leading-relaxed mb-6 flex-1">
+            Robust multilingual speech recognition with automatic translation and punctuation for global applications.
+          </p>
+
+          <!-- Stats -->
+          <div class="grid grid-cols-2 gap-3 mb-6 pt-6 border-t border-slate-700">
+            <div class="text-center">
+              <div class="text-sm font-semibold text-emerald-300">560K</div>
+              <div class="text-xs text-slate-400">Downloads</div>
+            </div>
+            <div class="text-center">
+              <div class="text-sm font-semibold text-yellow-300">8.9K</div>
+              <div class="text-xs text-slate-400">Stars</div>
             </div>
           </div>
-          <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded">Audio</span>
-        </div>
-        <p class="text-gray-600 text-sm mb-4">Robust speech recognition model with multilingual support and translation.</p>
-        <div class="flex items-center justify-between text-sm text-gray-500">
-          <span>⬇️ 560K downloads</span>
-          <span>⭐ 8.9K</span>
+
+          <!-- CTA -->
+          <button class="w-full px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition text-sm">
+            View Model
+          </button>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Premium CTA Section -->
+<div class="relative py-24 md:py-32 bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 overflow-hidden">
+  <!-- Animated Background -->
+  <div class="absolute inset-0 overflow-hidden">
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full opacity-20 blur-3xl animate-pulse"></div>
+    <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-gradient-to-tl from-cyan-500 to-blue-600 rounded-full opacity-20 blur-3xl animate-pulse" style="animation-delay: 1.5s;"></div>
+  </div>
+
+  <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <!-- Heading -->
+    <h2 class="text-5xl md:text-6xl font-extrabold mb-6 leading-tight">
+      <span class="block text-white mb-3">Ready to Transform AI</span>
+      <span class="bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+        Your Next Project?
+      </span>
+    </h2>
+
+    <!-- Subheading -->
+    <p class="text-xl md:text-2xl text-slate-300 mb-12 leading-relaxed">
+      Join thousands of developers building the future of AI. Get started free today and access unlimited models, datasets, and deployment spaces.
+    </p>
+
+    <!-- CTA Buttons -->
+    <div class="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
+      <a routerLink="/auth/register" class="group px-10 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-full transition duration-300 shadow-2xl hover:shadow-indigo-500/50 text-lg transform hover:-translate-y-1">
+        <span class="flex items-center space-x-2">
+          <span>Create Free Account</span>
+          <svg class="w-5 h-5 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+          </svg>
+        </span>
+      </a>
+      <a href="#" class="px-10 py-4 bg-slate-700/50 hover:bg-slate-700 text-white font-semibold rounded-full transition border-2 border-slate-600 hover:border-slate-500 text-lg backdrop-blur-sm">
+        Book Demo
+      </a>
+    </div>
+
+    <!-- Trust Indicators -->
+    <div class="flex flex-col md:flex-row gap-8 justify-center items-center text-slate-300 text-sm md:text-base">
+      <div class="flex items-center space-x-2">
+        <span class="text-green-400 font-bold">✓</span>
+        <span>No credit card required</span>
+      </div>
+      <div class="hidden md:block text-slate-600">•</div>
+      <div class="flex items-center space-x-2">
+        <span class="text-green-400 font-bold">✓</span>
+        <span>Free tier: 100GB storage</span>
+      </div>
+      <div class="hidden md:block text-slate-600">•</div>
+      <div class="flex items-center space-x-2">
+        <span class="text-green-400 font-bold">✓</span>
+        <span>Instant deployment</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer - Premium Design -->
+<footer class="relative bg-gradient-to-br from-slate-950 to-slate-900 border-t border-slate-800">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <!-- Main Footer Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
+      <!-- Brand Section -->
+      <div class="lg:col-span-1">
+        <div class="flex items-center space-x-3 mb-6">
+          <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <span class="text-white font-bold text-lg">AI</span>
+          </div>
+          <span class="text-xl font-bold bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">ModelHub</span>
+        </div>
+        <p class="text-slate-400 text-sm leading-relaxed">
+          The world's leading platform for AI model sharing, collaboration, and deployment.
+        </p>
+      </div>
+
+      <!-- Product -->
+      <div>
+        <h4 class="font-semibold text-white mb-4">Product</h4>
+        <ul class="space-y-3">
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Models</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Datasets</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Spaces</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">API</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Enterprise</a></li>
+        </ul>
+      </div>
+
+      <!-- Resources -->
+      <div>
+        <h4 class="font-semibold text-white mb-4">Resources</h4>
+        <ul class="space-y-3">
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Documentation</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Blog</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Community</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Tutorials</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Pricing</a></li>
+        </ul>
+      </div>
+
+      <!-- Company -->
+      <div>
+        <h4 class="font-semibold text-white mb-4">Company</h4>
+        <ul class="space-y-3">
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">About Us</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Careers</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Contact</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Support</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Status</a></li>
+        </ul>
+      </div>
+
+      <!-- Legal -->
+      <div>
+        <h4 class="font-semibold text-white mb-4">Legal</h4>
+        <ul class="space-y-3">
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Privacy Policy</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Terms of Service</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Security</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">Compliance</a></li>
+          <li><a href="#" class="text-slate-400 hover:text-indigo-300 transition text-sm">GDPR</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="border-t border-slate-800 py-8">
+      <!-- Bottom Content -->
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <!-- Copyright -->
+        <p class="text-slate-400 text-sm mb-6 md:mb-0">
+          <span class="block md:inline">&copy; 2025 ModelHub. All rights reserved. Built with ❤️ by the AI community.</span>
+        </p>
+
+        <!-- Social Links -->
+        <div class="flex items-center space-x-6">
+          <a href="#" class="text-slate-400 hover:text-indigo-300 transition" aria-label="Twitter">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2s9 5 20 5a9.5 9.5 0 00-9-5.5c4.75 2.25 7-7 7-7z"></path>
+            </svg>
+          </a>
+          <a href="#" class="text-slate-400 hover:text-indigo-300 transition" aria-label="GitHub">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path>
+            </svg>
+          </a>
+          <a href="#" class="text-slate-400 hover:text-indigo-300 transition" aria-label="LinkedIn">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.475-2.236-1.986-2.236-1.081 0-1.722.731-2.004 1.438-.103.25-.129.599-.129.948v5.419h-3.554s.047-8.789 0-9.705h3.554v1.373c.43-.664 1.199-1.61 2.922-1.61 2.135 0 3.741 1.395 3.741 4.393v5.549zM5.337 9.433c-1.144 0-1.915-.758-1.915-1.704 0-.962.77-1.704 1.96-1.704 1.188 0 1.914.742 1.938 1.704 0 .946-.75 1.704-1.983 1.704zm1.946 11.019H3.39V9.748h3.893v10.704zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z"></path>
+            </svg>
+          </a>
+          <a href="#" class="text-slate-400 hover:text-indigo-300 transition" aria-label="Discord">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M20.317 4.3671a19.8062 19.8062 0 00-4.8850-1.5152.0741.0741 0 00-.0785.0371c-.211.3671-.444.8447-.607 1.2226a18.268 18.268 0 00-5.487 0 12.64 12.64 0 00-.617-1.2226.077.077 0 00-.079-.037 19.7818 19.7818 0 00-4.885 1.5152.0699.0699 0 00-.032.0277C1.533 8.93 .465 12.799.82 16.588a.0824.0824 0 00.033.057 19.7594 19.7594 0 005.993 3.03.0801.0801 0 00.087-.027c.461-.6.873-1.235 1.226-1.901a.0771.0771 0 00-.042-.108 13.07 13.07 0 01-1.871-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.294.0771.0771 0 01.08-.01c3.928 1.793 8.18 1.793 12.062 0a.077.077 0 01.083.011c.12.098.246.198.373.294a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.666.772 1.301 1.226 1.901a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.030.077.077 0 00.032-.057c.44-3.802-.244-7.11-.98-10.22a.0706.0706 0 00-.031-.027zM8.02 13.231c-.88 0-1.607-.793-1.607-1.773 0-.98.718-1.773 1.607-1.773.89 0 1.619.793 1.607 1.773 0 .98-.718 1.773-1.607 1.773zm7.952 0c-.88 0-1.607-.793-1.607-1.773 0-.98.719-1.773 1.607-1.773.89 0 1.619.793 1.607 1.773 0 .98-.718 1.773-1.607 1.773z"></path>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
