@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
   selector: 'app-models',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './models.component.html',
   styleUrls: ['./models.component.css']
 })
@@ -83,6 +84,10 @@ export class ModelsComponent {
   ];
 
   searchQuery = '';
+
+  trackByModel(_index: number, item: any) {
+    return item?.id ?? _index;
+  }
 
   selectCategory(category: string) {
     this.selectedCategory = category;

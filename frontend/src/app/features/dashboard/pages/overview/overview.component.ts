@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
@@ -9,6 +9,7 @@ import { Observable } from 'rxjs';
   selector: 'app-overview',
   standalone: true,
   imports: [CommonModule, RouterLink],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './overview.component.html',
   styleUrls: ['./overview.component.css']
 })
@@ -34,6 +35,14 @@ export class OverviewComponent {
     { label: 'Active Users', value: '45.2K', change: '+23%', trend: 'up' },
     { label: 'Downloads', value: '2.1M', change: '+15%', trend: 'up' }
   ];
+
+  trackByStat(_index: number, item: any) {
+    return item?.label ?? _index;
+  }
+
+  trackByRecentId(_index: number, item: any) {
+    return item?.id ?? _index;
+  }
 
   constructor(private store: Store) {
     this.user$ = this.store.select(selectUser);

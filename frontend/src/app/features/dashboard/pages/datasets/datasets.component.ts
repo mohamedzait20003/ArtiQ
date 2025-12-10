@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
   selector: 'app-datasets',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './datasets.component.html',
   styleUrls: ['./datasets.component.css']
 })
@@ -89,6 +90,10 @@ export class DatasetsComponent {
   ];
 
   searchQuery = '';
+
+  trackByDataset(_index: number, item: any) {
+    return item?.id ?? _index;
+  }
 
   selectCategory(category: string) {
     this.selectedCategory = category;
