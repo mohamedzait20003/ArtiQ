@@ -78,7 +78,6 @@ jobs:
         PYTHONPATH: ${{ github.workspace }}/backend/services/lambda-service
         MONGODB_URI: mongodb://mock:27017/
         ARTIFACT_ENCRYPTION_KEY: ${{ secrets.ARTIFACT_ENCRYPTION_KEY }}
-        ARTIFACT_PROCESSING_QUEUE_URL: ${{ secrets.ARTIFACT_PROCESSING_QUEUE_URL }}
       run: |
         cd backend/services/lambda-service
         python -m pytest -v --tb=short tests
@@ -278,7 +277,6 @@ jobs:
       env:
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
         ARTIFACT_ENCRYPTION_KEY: ${{ secrets.ARTIFACT_ENCRYPTION_KEY }}
-        ARTIFACT_PROCESSING_QUEUE_URL: ${{ secrets.ARTIFACT_PROCESSING_QUEUE_URL }}
         CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
         TASK_DEFINITION: ${{ secrets.TASK_DEFINITION }}
         CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
@@ -292,7 +290,7 @@ jobs:
           --capabilities CAPABILITY_IAM \
           --region us-east-2 \
           --resolve-s3 \
-          --parameter-overrides MongoDBUri="${MONGODB_URI}" EncryptionKey="${ARTIFACT_ENCRYPTION_KEY}" QueueUrl="${ARTIFACT_PROCESSING_QUEUE_URL}" ClusterName="${CLUSTER_NAME}" TaskDefinition="${TASK_DEFINITION}" ContainerName="${CONTAINER_NAME}" SubnetId="${SUBNET_ID}" SecurityGroup="${SECURITY_GROUP}"
+          --parameter-overrides MongoDBUri="${MONGODB_URI}" EncryptionKey="${ARTIFACT_ENCRYPTION_KEY}" ClusterName="${CLUSTER_NAME}" TaskDefinition="${TASK_DEFINITION}" ContainerName="${CONTAINER_NAME}" SubnetId="${SUBNET_ID}" SecurityGroup="${SECURITY_GROUP}"
     
     - name: Get API Gateway URL
       run: |
