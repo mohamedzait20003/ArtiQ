@@ -14,7 +14,8 @@ from app.jobs import (
     artifact_retrieve_job,
     artifact_update_job,
     artifact_delete_job,
-    artifact_by_regex_job
+    artifact_by_regex_job,
+    model_artifact_rate_job
 )
 
 
@@ -247,9 +248,59 @@ class ArtifactController:
     ):
         """Get ratings for this model artifact (BASELINE)"""
         print(f"GET /artifact/model/{id}/rate called")
-        # TODO: Implement logic
-        raise HTTPException(
-            status_code=501, detail="Not implemented")
+
+        try:
+            # Validate artifact_id format
+            if not id or not isinstance(id, str):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid artifact_id format"
+                )
+
+            # Prepare event for job
+            event = {
+                'artifact_id': id
+            }
+
+            # Invoke job
+            result, status_code = model_artifact_rate_job(event, None)
+
+            # Return based on status code
+            if status_code == 200:
+                return result
+            elif status_code == 400:
+                raise HTTPException(
+                    status_code=400,
+                    detail=result.get(
+                        'errorMessage',
+                        'Invalid artifact_id'
+                    )
+                )
+            elif status_code == 404:
+                raise HTTPException(
+                    status_code=404,
+                    detail=result.get(
+                        'errorMessage',
+                        'Artifact does not exist'
+                    )
+                )
+            else:
+                raise HTTPException(
+                    status_code=500,
+                    detail=result.get(
+                        'errorMessage',
+                        'Rating system encountered an error'
+                    )
+                )
+                
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"Error in model_artifact_rate controller: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error invoking model_artifact_rate: {str(e)}"
+            )
 
     async def artifact_cost(
         self,

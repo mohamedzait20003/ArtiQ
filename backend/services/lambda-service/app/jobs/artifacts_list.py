@@ -39,10 +39,9 @@ def lambda_handler(event, context):
         # Extract parameters from event
         artifact_queries = event.get('artifact_queries', [])
         offset = event.get('offset')
-        auth_token = event.get('auth_token')  # Auth token passed but ignored for now
-        
+
         print(f"Processing artifacts list request with {len(artifact_queries)} queries, offset: {offset}")
-        
+
         # Parse the offset to DynamoDB format
         exclusive_start_key = parse_offset(offset)
         print(f"Parsed exclusive_start_key: {exclusive_start_key}")

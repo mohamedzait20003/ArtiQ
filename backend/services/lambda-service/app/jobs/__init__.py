@@ -13,6 +13,7 @@ from .artifact_update import lambda_handler as artifact_update_job
 from .artifact_delete import lambda_handler as artifact_delete_job
 from .artifact_by_regex import lambda_handler as artifact_by_regex_job
 from .registry_reset import lambda_handler as registry_reset_job
+from .model_artifact_rate import lambda_handler as model_artifact_rate_job
 
 __all__ = [
     'authenticate_job',
@@ -25,4 +26,5 @@ __all__ = [
     'artifact_delete_job',
     'artifact_by_regex_job',
     'registry_reset_job',
+    'model_artifact_rate_job',
 ]
