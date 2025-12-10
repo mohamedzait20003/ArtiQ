@@ -20,7 +20,7 @@ from .aws import (
     get_collection,
     get_s3,
     get_lambda,
-    get_sqs
+    get_ecs
 )
 from .relationships import (
     belongs_to,
@@ -73,7 +73,7 @@ __all__ = [
     'get_collection',
     'get_s3',
     'get_lambda',
-    'get_sqs',
+    'get_ecs',
     'encrypt',
     'decrypt',
     'encrypt_artifact_id',

@@ -1,6 +1,6 @@
 import uuid
 from app.models import Artifact_Model
-from app.utils import send_artifact_to_sqs, url_to_artifact_name
+from app.utils import url_to_artifact_name, invoke_fargate_task
 
 
 def lambda_handler(event, context):
@@ -12,8 +12,6 @@ def lambda_handler(event, context):
         # Extract parameters from event
         artifact_type = event.get('artifact_type')
         artifact_data = event.get('artifact_data')
-
-        # TODO: Implement interaction with Artifact_Model and storage logic
 
         # Generate an artifact ID
         artifact_id = str(uuid.uuid4())
@@ -49,9 +47,9 @@ def lambda_handler(event, context):
         if not save_success:
             raise Exception("Failed to save artifact to database")
 
-        # Send encrypted artifact ID to SQS for processing
-        if artifact_type in ['model']:
-            send_artifact_to_sqs(artifact_id, artifact_type)
+        # Invoke Fargate task for model artifacts
+        if artifact_type == 'model':
+            invoke_fargate_task(artifact_id)
 
         response_data = {
             'metadata': {

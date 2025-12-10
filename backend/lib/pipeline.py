@@ -30,12 +30,13 @@ class ParallelGroup:
         self.tasks = tasks
         self.max_workers = max_workers
 
-    def execute(self, data: Any = None) -> List[Any]:
+    def execute(self, context: Any = None) -> List[Any]:
         """
         Execute all tasks in parallel
 
         Args:
-            data: Optional data to pass to all tasks as first argument
+            context: Context dict with initial value and previous results,
+                    or any other data to pass to all tasks
 
         Returns:
             List of results from all tasks
@@ -50,10 +51,7 @@ class ParallelGroup:
             # Submit all tasks
             futures: Dict[Future, int] = {}
             for idx, task in enumerate(self.tasks):
-                if data is not None:
-                    future = executor.submit(task, data)
-                else:
-                    future = executor.submit(task)
+                future = executor.submit(task, context)
                 futures[future] = idx
 
             # Collect results in order
@@ -190,82 +188,80 @@ class Pipeline:
     Pipeline Facade
     Provides a fluent interface for building and executing
     sequential and parallel task workflows
+    
+    Usage:
+        Pipeline(
+            func1,
+            func2,
+            parallel(func3, func4),
+            func5
+        ).start(initial_value)
+    
+    Each function receives a context dict with:
+        - 'initial': The initial value passed to start()
+        - 'results': List of all previous function results
+        - 'last': The most recent result (None for first function)
     """
 
-    def __init__(self):
-        """Initialize an empty pipeline"""
-        self.stages: List[Dict[str, Any]] = []
+    def __init__(self, *stages):
+        """Initialize pipeline with optional stages
+        
+        Args:
+            *stages: Functions or ParallelGroup objects to execute
+        """
+        self.stages: List[Any] = list(stages)
         self.data: Any = None
         self.results: List[Any] = []
         self._stop_on_error: bool = True
+        self._context: Dict[str, Any] = {}
 
-    def pipe(self, task: Callable, *args, **kwargs) -> 'Pipeline':
+    def pipe(self, task: Callable) -> 'Pipeline':
         """
         Add a sequential task to the pipeline
 
         Args:
-            task: Callable function to execute
-            *args: Positional arguments for the task
-            **kwargs: Keyword arguments for the task
+            task: Callable function to execute (receives context dict)
 
         Returns:
             Self for method chaining
         """
-        self.stages.append({
-            'type': 'sequential',
-            'task': task,
-            'args': args,
-            'kwargs': kwargs
-        })
+        self.stages.append(task)
         return self
 
-    def parallel(
+    def add_parallel(
         self,
-        tasks: List[Callable] = None,
+        *tasks: Callable,
         max_workers: Optional[int] = None
-    ) -> 'Parallel':
+    ) -> 'Pipeline':
         """
         Add parallel tasks to the pipeline
 
         Args:
-            tasks: Optional list of callables to execute in parallel
+            *tasks: Callables to execute in parallel
+                   (each receives context dict)
             max_workers: Maximum number of worker threads
 
         Returns:
-            Parallel object for adding tasks
+            Self for method chaining
 
         Example:
-            pipeline.parallel()\\
-                .add(task1, arg1)\\
-                .add(task2, arg2)\\
-                .add(task3, arg3)
+            Pipeline().add_parallel(task1, task2, task3)
         """
-        parallel = Parallel(max_workers=max_workers)
+        parallel_group = ParallelGroup(*tasks, max_workers=max_workers)
+        self.stages.append(parallel_group)
+        return self
 
-        if tasks:
-            for task in tasks:
-                parallel.add(task)
-
-        self.stages.append({
-            'type': 'parallel',
-            'executor': parallel
-        })
-
-        return parallel
-
-    def then(self, task: Callable, *args, **kwargs) -> 'Pipeline':
+    def then(self, task: Callable) -> 'Pipeline':
         """
         Alias for pipe() - adds a sequential task
 
         Args:
-            task: Callable function to execute
-            *args: Positional arguments for the task
-            **kwargs: Keyword arguments for the task
+            task: Callable function to execute (receives context dict)
 
         Returns:
             Self for method chaining
         """
-        return self.pipe(task, *args, **kwargs)
+        return self.pipe(task)
 
     def stop_on_error(self, stop: bool = True) -> 'Pipeline':
         """
@@ -309,33 +305,37 @@ class Pipeline:
         if initial_data is not None:
             self.data = initial_data
 
-        current_data = self.data
+        # Initialize context
+        self._context = {
+            'initial': self.data,
+            'results': [],
+            'last': None
+        }
         self.results = []
 
         for idx, stage in enumerate(self.stages):
             try:
-                if stage['type'] == 'sequential':
-                    task = stage['task']
-                    args = stage['args']
-                    kwargs = stage['kwargs']
-
-                    # Pass current data as first argument
-                    if current_data is not None:
-                        args = (current_data,) + args
-
-                    result = task(*args, **kwargs)
-                    current_data = result
-                    self.results.append(result)
-
-                elif stage['type'] == 'parallel':
-                    executor = stage['executor']
-                    results = executor.execute(current_data)
-                    current_data = results
+                if isinstance(stage, ParallelGroup):
+                    # Execute parallel group with context
+                    results = stage.execute(self._context)
+                    self._context['results'].append(results)
+                    self._context['last'] = results
                     self.results.append(results)
+
+                elif callable(stage):
+                    # Execute sequential function with context
+                    result = stage(self._context)
+                    self._context['results'].append(result)
+                    self._context['last'] = result
+                    self.results.append(result)
+                else:
+                    raise ValueError(
+                        f"Stage {idx} is not callable or ParallelGroup"
+                    )
 
             except Exception as e:
                 error_msg = (
-                    f"Stage {idx} ({stage['type']}) failed: {str(e)}\n"
+                    f"Stage {idx} failed: {str(e)}\n"
                     f"{traceback.format_exc()}"
                 )
                 if self._stop_on_error:
@@ -344,7 +344,19 @@ class Pipeline:
                     print(f"Warning: {error_msg}")
                     continue
 
-        return current_data
+        return self._context['last']
+
+    def start(self, initial_data: Any = None) -> Any:
+        """
+        Start pipeline execution with initial data
+
+        Args:
+            initial_data: Initial value to pass through pipeline
+
+        Returns:
+            Final result from the pipeline
+        """
+        return self.execute(initial_data)
 
     def run(self, initial_data: Any = None) -> Any:
         """

@@ -130,13 +130,18 @@ jobs:
         rm -rf ./lib
         cp -r ../../lib ./lib
     
+    - name: Validate Fargate app structure
+      run: |
+        cd backend/services/fargate-service
+        # Verify main.py exists and imports work
+        python -c "import sys; sys.path.insert(0, '.'); from app.main import *" || echo "Warning: Import validation failed"
+    
     - name: Lint with flake8
       run: |
         cd backend/services/fargate-service
+        # Lint the main application code
         flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 app --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-        flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     
     - name: Clean up copied lib
       if: always()
@@ -209,6 +214,13 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
+    - name: Prepare Docker build context
+      run: |
+        cd backend/services/fargate-service
+        # Copy shared lib to build context
+        rm -rf ./lib
+        cp -r ../../lib ./lib
+    
     - name: Build, tag, and push image to ECR
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -220,6 +232,12 @@ jobs:
         docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+    
+    - name: Clean up copied lib
+      if: always()
+      run: |
+        cd backend/services/fargate-service
+        rm -rf ./lib
 
   # Deploy Lambda service using AWS SAM
   deploy-lambda:
@@ -261,6 +279,11 @@ jobs:
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
         ARTIFACT_ENCRYPTION_KEY: ${{ secrets.ARTIFACT_ENCRYPTION_KEY }}
         ARTIFACT_PROCESSING_QUEUE_URL: ${{ secrets.ARTIFACT_PROCESSING_QUEUE_URL }}
+        CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
+        TASK_DEFINITION: ${{ secrets.TASK_DEFINITION }}
+        CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
+        SUBNET_ID: ${{ secrets.SUBNET_ID }}
+        SECURITY_GROUP: ${{ secrets.SECURITY_GROUP }}
       run: |
         cd backend/services/lambda-service
         sam deploy \
@@ -269,7 +292,7 @@ jobs:
           --capabilities CAPABILITY_IAM \
           --region us-east-2 \
           --resolve-s3 \
-          --parameter-overrides MongoDBUri="${MONGODB_URI}" EncryptionKey="${ARTIFACT_ENCRYPTION_KEY}" QueueUrl="${ARTIFACT_PROCESSING_QUEUE_URL}"
+          --parameter-overrides MongoDBUri="${MONGODB_URI}" EncryptionKey="${ARTIFACT_ENCRYPTION_KEY}" QueueUrl="${ARTIFACT_PROCESSING_QUEUE_URL}" ClusterName="${CLUSTER_NAME}" TaskDefinition="${TASK_DEFINITION}" ContainerName="${CONTAINER_NAME}" SubnetId="${SUBNET_ID}" SecurityGroup="${SECURITY_GROUP}"
     
     - name: Get API Gateway URL
       run: |

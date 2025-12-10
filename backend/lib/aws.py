@@ -20,9 +20,8 @@ class AWSServices:
     _documentdb_database = None
     _s3 = None
     _lambda_client = None
-    _sqs = None
-    _sqs_queue_url = None
     _bedrock = None
+    _ecs_client = None
     _region = None
     _database_name = "docdb-ece30861-project"
 
@@ -129,31 +128,6 @@ class AWSServices:
         return cls._lambda_client
 
     @classmethod
-    def get_sqs(cls):
-        """
-        Get shared SQS client instance
-        Returns:
-            boto3 SQS client
-        """
-        if cls._sqs is None:
-            cls.initialize()
-            cls._sqs = boto3.client('sqs', region_name=cls._region)
-        return cls._sqs
-
-    @classmethod
-    def get_sqs_queue_url(cls):
-        """
-        Get the artifact processing queue URL from environment
-        Returns:
-            SQS queue URL string or None if not configured
-        """
-        if cls._sqs_queue_url is None:
-            cls._sqs_queue_url = os.environ.get(
-                'ARTIFACT_PROCESSING_QUEUE_URL'
-            )
-        return cls._sqs_queue_url
-
-    @classmethod
     def get_bedrock(cls):
         """
         Get shared Bedrock Runtime client instance
@@ -169,6 +143,18 @@ class AWSServices:
         return cls._bedrock
 
     @classmethod
+    def get_ecs(cls):
+        """
+        Get shared ECS client instance
+        Returns:
+            boto3 ECS client
+        """
+        if cls._ecs_client is None:
+            cls.initialize()
+            cls._ecs_client = boto3.client('ecs', region_name=cls._region)
+        return cls._ecs_client
+
+    @classmethod
     def reset(cls):
         """Reset all clients (useful for testing)"""
         if cls._documentdb_client:
@@ -178,9 +164,8 @@ class AWSServices:
         cls._documentdb_database = None
         cls._s3 = None
         cls._lambda_client = None
-        cls._sqs = None
-        cls._sqs_queue_url = None
         cls._bedrock = None
+        cls._ecs_client = None
         cls._region = None
 
 
@@ -205,16 +190,11 @@ def get_lambda():
     return AWSServices.get_lambda()
 
 
-def get_sqs():
-    """Get SQS client instance"""
-    return AWSServices.get_sqs()
-
-
-def get_sqs_queue_url():
-    """Get SQS queue URL"""
-    return AWSServices.get_sqs_queue_url()
-
-
 def get_bedrock():
     """Get Bedrock Runtime client instance"""
     return AWSServices.get_bedrock()
+
+
+def get_ecs():
+    """Get ECS client instance"""
+    return AWSServices.get_ecs()

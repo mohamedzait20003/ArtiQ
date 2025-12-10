@@ -24,9 +24,8 @@ from lib.aws import (  # noqa: E402
     get_collection,
     get_s3,
     get_lambda,
-    get_sqs,
-    get_sqs_queue_url,
-    get_bedrock
+    get_bedrock,  # noqa: F401
+    get_ecs
 )
 from lib.encryption import (  # noqa: E402
     encrypt,
@@ -59,6 +58,14 @@ from lib.seeder import (  # noqa: E402
     create_seeder_runner,
     resolve_seeders
 )
+from lib.pipeline import (  # noqa: E402
+    Pipeline,
+    Parallel,
+    ParallelGroup,
+    PipelineException,
+    pipeline,
+    parallel
+)
 
 __all__ = [
     'Route',
@@ -72,6 +79,7 @@ __all__ = [
     'get_lambda',
     'get_sqs',
     'get_sqs_queue_url',
+    'get_ecs',
     'encrypt',
     'decrypt',
     'encrypt_artifact_id',
@@ -95,5 +103,11 @@ __all__ = [
     'SeederRunner',
     'create_seeder_runner',
     'resolve_seeders',
-    'get_bedrock'
+    'get_bedrock',
+    'Pipeline',
+    'Parallel',
+    'ParallelGroup',
+    'PipelineException',
+    'pipeline',
+    'parallel'
 ]
