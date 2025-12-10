@@ -15,7 +15,7 @@ if str(backend_root) not in sys.path:
 if str(fargate_service_root) not in sys.path:
     sys.path.insert(0, str(fargate_service_root))
 
-from lib.route import Route  # noqa: E402
+# Only import what Fargate service needs
 from lib.container import Container, container  # noqa: E402
 from lib.eloquent import Eloquent  # noqa: E402
 from lib.aws import (  # noqa: E402
@@ -46,18 +46,6 @@ from lib.relationships import (  # noqa: E402
     HasOneThrough,
     active_session_filter
 )
-from lib.migration import (  # noqa: E402
-    Migration,
-    MigrationRunner,
-    create_migration_runner,
-    resolve_migrations
-)
-from lib.seeder import (  # noqa: E402
-    Seeder,
-    SeederRunner,
-    create_seeder_runner,
-    resolve_seeders
-)
 from lib.pipeline import (  # noqa: E402
     Pipeline,
     Parallel,
@@ -68,7 +56,6 @@ from lib.pipeline import (  # noqa: E402
 )
 
 __all__ = [
-    'Route',
     'Container',
     'container',
     'Eloquent',
@@ -77,9 +64,8 @@ __all__ = [
     'get_collection',
     'get_s3',
     'get_lambda',
-    'get_sqs',
-    'get_sqs_queue_url',
     'get_ecs',
+    'get_bedrock',
     'encrypt',
     'decrypt',
     'encrypt_artifact_id',
@@ -95,15 +81,6 @@ __all__ = [
     'HasMany',
     'HasOneThrough',
     'active_session_filter',
-    'Migration',
-    'MigrationRunner',
-    'create_migration_runner',
-    'resolve_migrations',
-    'Seeder',
-    'SeederRunner',
-    'create_seeder_runner',
-    'resolve_seeders',
-    'get_bedrock',
     'Pipeline',
     'Parallel',
     'ParallelGroup',
