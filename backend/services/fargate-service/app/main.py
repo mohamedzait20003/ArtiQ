@@ -121,10 +121,10 @@ def handler(event, context=None):
             'success': False,
             'error': error_msg
         }
-    
+
     # Process the artifact (decryption happens inside)
     result = process_artifact(encrypted_artifact_id)
-    
+
     print(f"[FARGATE] Processing complete: {json.dumps(result)}")
     return result
 

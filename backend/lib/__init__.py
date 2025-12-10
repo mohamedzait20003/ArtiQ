@@ -3,7 +3,12 @@ Library Module
 Core utilities and routing infrastructure
 """
 
-from .route import Route
+# Lazy import Route to avoid FastAPI dependency in non-web contexts
+try:
+    from .route import Route
+except ImportError:
+    Route = None
+
 from .container import Container, container
 from .eloquent import Eloquent
 from .pipeline import (
