@@ -69,7 +69,10 @@ def invoke_fargate_task(artifact_id: str) -> Dict[str, Any]:
                 'containerOverrides': [
                     {
                         'name': container_name,
-                        'command': ['python', 'main.py', encrypted_artifact_id]
+                        'command': [
+                            'python', '-m', 'app.main',
+                            encrypted_artifact_id
+                        ]
                     }
                 ]
             }
