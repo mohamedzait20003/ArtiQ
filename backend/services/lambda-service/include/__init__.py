@@ -32,7 +32,8 @@ from lib.aws import (  # noqa: E402
     get_collection,
     get_s3,
     get_lambda,
-    get_bedrock
+    get_bedrock,
+    get_ecs
 )
 from lib.encryption import (  # noqa: E402
     encrypt,
@@ -87,6 +88,8 @@ __all__ = [
     'get_lambda',
     'get_sqs',
     'get_sqs_queue_url',
+    'get_bedrock',
+    'get_ecs',
     'encrypt',
     'decrypt',
     'encrypt_artifact_id',
@@ -112,6 +115,5 @@ __all__ = [
     'SeederRunner',
     'create_seeder_runner',
     'run_seeder',
-    'seed_database',
-    'get_bedrock'
+    'seed_database'
 ]
