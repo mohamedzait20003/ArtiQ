@@ -1,8 +1,10 @@
 import os
 from .Model import Model
 from include import has_one
-from typing import Optional
-from .Rating_Model import Rating_Model
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .Rating_Model import Rating_Model  # noqa: F401
 
 
 class Artifact_Model(Model):
@@ -127,64 +129,20 @@ class Artifact_Model(Model):
                 'last_evaluated_key': None
             }
 
-    # Define relationship at class level for automatic cascade
-    _rating_relationship = has_one(
-        Rating_Model,
-        'artifact_id',
-        'id',
-        on_delete='CASCADE'
-    )
-    
     def rating(self):
         """
         Get the rating for this artifact (one-to-one relationship)
+        Cascade delete: When artifact is deleted, rating is deleted
 
         Returns:
             Rating_Model instance or None
         """
-        return self._rating_relationship(self)
-
-    # Cascade delete handled automatically via _rating_relationship
-
-    def update_id(self, new_id: str):
-        """
-        Update artifact ID and cascade update related records
-        Cascading updates:
-        - Update artifact_id in Ratings collection (if exists)
-        Args:
-            new_id: New artifact ID
-        Returns:
-            bool: True if update successful, False otherwise
-        """
-        try:
-            old_id = self.id
-
-            # CASCADE UPDATE: Update artifact_id in Ratings collection
-            from .Rating_Model import Rating_Model
-            ratings = Rating_Model.where({'artifact_id': old_id})
-            for rating in ratings:
-                print(
-                    f"Cascading update: Updating rating {rating.id} for "
-                    f"artifact {old_id} to {new_id}"
-                )
-                # Delete old rating
-                rating.delete()
-                
-                # Create new rating with updated artifact_id and id
-                rating.id = f"rating_{new_id}"
-                rating.artifact_id = new_id
-                rating.save()
-
-            # Delete old record
-            collection = self.collection()
-            collection.delete_one({'id': old_id})
-
-            # Update ID and save as new record
-            self.id = new_id
-            return self.save()
-
-        except Exception as e:
-            print(f"Error during cascading update for artifact {old_id}: {e}")
-            return False
-
-    # TODO: Add methods based on OpenAPI spec requirements
+        from .Rating_Model import Rating_Model  # noqa: F811
+        # Create relationship with CASCADE to avoid circular import
+        _rating_relationship = has_one(
+            Rating_Model,
+            'artifact_id',
+            'id',
+            on_delete='CASCADE'
+        )
+        return _rating_relationship(self)

@@ -1,8 +1,10 @@
 import os
 from .Model import Model
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from include import has_one
-from .Rating_Model import Rating_Model
+
+if TYPE_CHECKING:
+    from .Rating_Model import Rating_Model  # noqa: F401
 
 
 class Artifact_Model(Model):
@@ -127,21 +129,22 @@ class Artifact_Model(Model):
                 'last_evaluated_key': None
             }
 
-    # Define relationship at class level for automatic cascade
-    _rating_relationship = has_one(
-        Rating_Model,
-        'artifact_id',
-        'id',
-        on_delete='CASCADE'
-    )
-    
     def rating(self):
         """
         Get the rating for this artifact (one-to-one relationship)
+        Cascade delete: When artifact is deleted, rating is deleted
 
         Returns:
             Rating_Model instance or None
         """
-        return self._rating_relationship(self)
+        from .Rating_Model import Rating_Model  # noqa: F811
+        # Create relationship with CASCADE to avoid circular import
+        _rating_relationship = has_one(
+            Rating_Model,
+            'artifact_id',
+            'id',
+            on_delete='CASCADE'
+        )
+        return _rating_relationship(self)
 
     # TODO: Add methods based on OpenAPI spec requirements
