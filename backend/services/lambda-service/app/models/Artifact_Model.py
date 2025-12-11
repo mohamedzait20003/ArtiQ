@@ -1,7 +1,7 @@
 import os
 from .Model import Model
 from include import has_one
-from typing import Optional, Dict, Any
+from typing import Optional
 from .Rating_Model import Rating_Model
 
 
@@ -20,8 +20,10 @@ class Artifact_Model(Model):
             - source_url (str): URL or location of the artifact.
             - file_size (Optional[int]): Size in bytes.
             - license (Optional[str]): License information.
-            - rating (Optional[Dict[str, Any]]): Ratings/reviews.
             - artifact_content (S3): Content stored in S3.
+
+    Relationships:
+        - rating: One-to-many with Rating_Model (via has_one)
 
     s3_fields:
         - artifact_content: Content stored in S3 bucket.
@@ -41,7 +43,6 @@ class Artifact_Model(Model):
         source_url: str,
         file_size: Optional[int] = None,
         license: Optional[str] = None,
-        rating: Optional[Dict[str, Any]] = None,
         **kwargs
     ):
         """
@@ -53,7 +54,6 @@ class Artifact_Model(Model):
         self.source_url = source_url
         self.file_size = file_size
         self.license = license
-        self.rating = rating or {}
 
         super().__init__(**kwargs)
 
@@ -127,6 +127,14 @@ class Artifact_Model(Model):
                 'last_evaluated_key': None
             }
 
+    # Define relationship at class level for automatic cascade
+    _rating_relationship = has_one(
+        Rating_Model,
+        'artifact_id',
+        'id',
+        on_delete='CASCADE'
+    )
+    
     def rating(self):
         """
         Get the rating for this artifact (one-to-one relationship)
@@ -134,32 +142,9 @@ class Artifact_Model(Model):
         Returns:
             Rating_Model instance or None
         """
-        from .Rating_Model import Rating_Model
-        return has_one(Rating_Model, 'artifact_id', 'id')(self)
+        return self._rating_relationship(self)
 
-    def delete(self):
-        """
-        Delete artifact and cascade delete related records
-        Cascading deletions:
-        - Delete related ratings from Ratings collection (if exists)
-        Returns:
-            bool: True if deletion successful, False otherwise
-        """
-        try:
-            # CASCADE DELETE: Delete related ratings from Ratings collection
-            rating = Rating_Model.get({'artifact_id': self.id})
-            if rating:
-                print(
-                    f"Cascading delete: Removing rating for "
-                    f"artifact {self.id}"
-                )
-                rating.delete()
-
-            # Call parent delete method to handle S3 files and DB deletion
-            return super().delete()
-        except Exception as e:
-            print(f"Error during cascading delete for artifact {self.id}: {e}")
-            return False
+    # Cascade delete handled automatically via _rating_relationship
 
     def update_id(self, new_id: str):
         """
@@ -176,10 +161,10 @@ class Artifact_Model(Model):
 
             # CASCADE UPDATE: Update artifact_id in Ratings collection
             from .Rating_Model import Rating_Model
-            rating = Rating_Model.get({'artifact_id': old_id})
-            if rating:
+            ratings = Rating_Model.where({'artifact_id': old_id})
+            for rating in ratings:
                 print(
-                    f"Cascading update: Updating rating for "
+                    f"Cascading update: Updating rating {rating.id} for "
                     f"artifact {old_id} to {new_id}"
                 )
                 # Delete old rating

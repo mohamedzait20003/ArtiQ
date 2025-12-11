@@ -28,11 +28,11 @@ from .aws import (
     get_ecs
 )
 from .relationships import (
-    belongs_to,
+    belong_to_one,
     has_one,
     has_many,
     has_one_through,
-    BelongsTo,
+    BelongToOne,
     HasOne,
     HasMany,
     HasOneThrough,

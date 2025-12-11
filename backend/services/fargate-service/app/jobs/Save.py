@@ -79,14 +79,12 @@ def save_ratings_step(context):
         rating.save()
         logger.info(f"[SAVE] Ratings saved for artifact {artifact.id}")
         print(f"[PIPELINE] Ratings saved for artifact {artifact.id}")
-
-        # Update artifact's rating field with summary
-        artifact.rating = rating.to_api_response()
-        artifact.save()
+        
+        # Rating is now accessible via artifact.rating() relationship
         logger.info(
-            f"[SAVE] Artifact rating field updated for {artifact.id}"
+            f"[SAVE] Rating can be accessed via relationship for "
+            f"artifact {artifact.id}"
         )
-        print("[PIPELINE] Artifact rating field updated")
 
     except Exception as e:
         logger.error(

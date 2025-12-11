@@ -68,13 +68,15 @@ def lambda_handler(event, context):
                 400
             )
 
-        # Check if artifact has embedded rating
+        # Get rating via relationship
         logger.info(
-            f"[RATE] Checking for rating data on artifact {artifact_id}"
+            f"[RATE] Fetching rating for artifact {artifact_id}"
         )
-        if not artifact.rating or not isinstance(artifact.rating, dict):
+        rating_obj = artifact.rating()
+        
+        if not rating_obj:
             logger.warning(
-                f"[RATE] No rating data found for artifact {artifact_id}"
+                f"[RATE] No rating found for artifact {artifact_id}"
             )
             return (
                 {
@@ -85,83 +87,81 @@ def lambda_handler(event, context):
                 404
             )
 
-        # Use the embedded rating from the artifact
-        rating = artifact.rating
         logger.info(
             f"[RATE] Rating found - net_score: "
-            f"{rating.get('net_score', {}).get('value', 'N/A')}"
+            f"{rating_obj.net_score.get('value', 'N/A')}"
         )
 
         # Format response according to ModelRating schema (flattened format)
         response = {
-            "name": rating.get("name", artifact.name),
-            "category": rating.get("category", ""),
-            "net_score": rating.get("net_score", {}).get("value", 0.0),
+            "name": artifact.name,
+            "category": getattr(artifact, 'category', 'unknown'),
+            "net_score": rating_obj.net_score.get("value", 0.0),
             "net_score_latency": (
-                rating.get("net_score", {}).get("latency", 0.0)
+                rating_obj.net_score.get("latency", 0.0)
             ),
             "ramp_up_time": (
-                rating.get("ramp_up_time", {}).get("value", 0.0)
+                rating_obj.ramp_up_time.get("value", 0.0)
             ),
             "ramp_up_time_latency": (
-                rating.get("ramp_up_time", {}).get("latency", 0.0)
+                rating_obj.ramp_up_time.get("latency", 0.0)
             ),
-            "bus_factor": rating.get("bus_factor", {}).get("value", 0.0),
+            "bus_factor": rating_obj.bus_factor.get("value", 0.0),
             "bus_factor_latency": (
-                rating.get("bus_factor", {}).get("latency", 0.0)
+                rating_obj.bus_factor.get("latency", 0.0)
             ),
             "performance_claims": (
-                rating.get("performance_claims", {}).get("value", 0.0)
+                rating_obj.performance_claims.get("value", 0.0)
             ),
             "performance_claims_latency": (
-                rating.get("performance_claims", {}).get("latency", 0.0)
+                rating_obj.performance_claims.get("latency", 0.0)
             ),
-            "license": rating.get("license", {}).get("value", 0.0),
+            "license": rating_obj.license.get("value", 0.0),
             "license_latency": (
-                rating.get("license", {}).get("latency", 0.0)
+                rating_obj.license.get("latency", 0.0)
             ),
             "dataset_and_code_score": (
-                rating.get("dataset_and_code_score", {}).get("value", 0.0)
+                rating_obj.dataset_and_code_score.get("value", 0.0)
             ),
             "dataset_and_code_score_latency": (
-                rating.get("dataset_and_code_score", {}).get("latency", 0.0)
+                rating_obj.dataset_and_code_score.get("latency", 0.0)
             ),
             "dataset_quality": (
-                rating.get("dataset_quality", {}).get("value", 0.0)
+                rating_obj.dataset_quality.get("value", 0.0)
             ),
             "dataset_quality_latency": (
-                rating.get("dataset_quality", {}).get("latency", 0.0)
+                rating_obj.dataset_quality.get("latency", 0.0)
             ),
             "code_quality": (
-                rating.get("code_quality", {}).get("value", 0.0)
+                rating_obj.code_quality.get("value", 0.0)
             ),
             "code_quality_latency": (
-                rating.get("code_quality", {}).get("latency", 0.0)
+                rating_obj.code_quality.get("latency", 0.0)
             ),
             "reproducibility": (
-                rating.get("reproducibility", {}).get("value", 0.0)
+                rating_obj.reproducibility.get("value", 0.0)
             ),
             "reproducibility_latency": (
-                rating.get("reproducibility", {}).get("latency", 0.0)
+                rating_obj.reproducibility.get("latency", 0.0)
             ),
             "reviewedness": (
-                rating.get("reviewedness", {}).get("value", 0.0)
+                rating_obj.reviewedness.get("value", 0.0)
             ),
             "reviewedness_latency": (
-                rating.get("reviewedness", {}).get("latency", 0.0)
+                rating_obj.reviewedness.get("latency", 0.0)
             ),
-            "tree_score": rating.get("tree_score", {}).get("value", 0.0),
+            "tree_score": rating_obj.tree_score.get("value", 0.0),
             "tree_score_latency": (
-                rating.get("tree_score", {}).get("latency", 0.0)
+                rating_obj.tree_score.get("latency", 0.0)
             ),
-            "size_score": rating.get("size_score", {}).get("value", {
+            "size_score": rating_obj.size_score.get("value", {
                 "raspberry_pi": 0.0,
                 "jetson_nano": 0.0,
                 "desktop_pc": 0.0,
                 "aws_server": 0.0
             }),
             "size_score_latency": (
-                rating.get("size_score", {}).get("latency", 0.0)
+                rating_obj.size_score.get("latency", 0.0)
             )
         }
 

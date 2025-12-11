@@ -1,7 +1,8 @@
 import os
 from .Model import Model
+from typing import Optional
 from include import has_one
-from typing import Optional, Dict, Any
+from .Rating_Model import Rating_Model
 
 
 class Artifact_Model(Model):
@@ -19,8 +20,10 @@ class Artifact_Model(Model):
             - source_url (str): URL or location of the artifact.
             - file_size (Optional[int]): Size in bytes.
             - license (Optional[str]): License information.
-            - rating (Optional[Dict[str, Any]]): Ratings/reviews.
             - artifact_content (S3): Content stored in S3.
+
+    Relationships:
+        - rating: One-to-many with Rating_Model (via has_one)
 
     s3_fields:
         - artifact_content: Content stored in S3 bucket.
@@ -40,7 +43,6 @@ class Artifact_Model(Model):
         source_url: str,
         file_size: Optional[int] = None,
         license: Optional[str] = None,
-        rating: Optional[Dict[str, Any]] = None,
         **kwargs
     ):
         """
@@ -52,7 +54,6 @@ class Artifact_Model(Model):
         self.source_url = source_url
         self.file_size = file_size
         self.license = license
-        self.rating = rating or {}
 
         super().__init__(**kwargs)
 
@@ -126,6 +127,14 @@ class Artifact_Model(Model):
                 'last_evaluated_key': None
             }
 
+    # Define relationship at class level for automatic cascade
+    _rating_relationship = has_one(
+        Rating_Model,
+        'artifact_id',
+        'id',
+        on_delete='CASCADE'
+    )
+    
     def rating(self):
         """
         Get the rating for this artifact (one-to-one relationship)
@@ -133,7 +142,6 @@ class Artifact_Model(Model):
         Returns:
             Rating_Model instance or None
         """
-        from .Rating_Model import Rating_Model
-        return has_one(Rating_Model, 'artifact_id', 'id')(self)
+        return self._rating_relationship(self)
 
     # TODO: Add methods based on OpenAPI spec requirements

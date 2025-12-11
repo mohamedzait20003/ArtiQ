@@ -132,12 +132,20 @@ class Auth_Model(Model):
         Returns:
             Role_Model instance or None
         """
-        from .Role_Model import Role_Model
         return has_one_through(
             Role_Model,
             through_key='RoleID',
             foreign_key='RoleID'
         )(self)
+
+    # Define relationship at class level for automatic cascade
+    _session_relationship = has_one(
+        None,  # Will be set in session() method due to circular import
+        foreign_key='UserID',
+        local_key='ID',
+        filter_callback=active_session_filter,
+        on_delete='CASCADE'
+    )
 
     def session(self) -> Optional['Session_Model']:
         """
@@ -148,12 +156,10 @@ class Auth_Model(Model):
             Session_Model instance or None
         """
         from .Session_Model import Session_Model
-        return has_one(
-            Session_Model,
-            foreign_key='UserID',
-            local_key='ID',
-            filter_callback=active_session_filter
-        )(self)
+        # Set the related model if not already set
+        if self._session_relationship.related_model is None:
+            self._session_relationship.related_model = Session_Model
+        return self._session_relationship(self)
 
     def get_role(self) -> Optional['Role_Model']:
         """
@@ -227,69 +233,3 @@ class Auth_Model(Model):
         except Exception as e:
             print(f"Error getting user by email: {e}")
             return None
-
-    def delete(self):
-        """
-        Delete user and cascade delete related records
-
-        Cascading deletions:
-        - Delete all sessions for this user (UserID foreign key)
-
-        Returns:
-            bool: True if deletion successful, False otherwise
-        """
-        try:
-            # CASCADE DELETE: Delete all sessions for this user
-            from .Session_Model import Session_Model
-            sessions = Session_Model.where({'UserID': self.ID})
-            for session in sessions:
-                print(
-                    f"Cascading delete: Removing session {session.ID} "
-                    f"for user {self.ID}"
-                )
-                session.delete()
-
-            # Call parent delete method to handle database deletion
-            return super().delete()
-        except Exception as e:
-            print(f"Error during cascading delete for user {self.ID}: {e}")
-            return False
-
-    def update_id(self, new_id: str):
-        """
-        Update user ID and cascade update related records
-        
-        Cascading updates:
-        - Update UserID in Sessions collection for all user sessions
-        
-        Args:
-            new_id: New user ID
-            
-        Returns:
-            bool: True if update successful, False otherwise
-        """
-        try:
-            old_id = self.ID
-            
-            # CASCADE UPDATE: Update UserID in Sessions collection
-            from .Session_Model import Session_Model
-            sessions = Session_Model.where({'UserID': old_id})
-            for session in sessions:
-                print(
-                    f"Cascading update: Updating session {session.ID} "
-                    f"UserID from {old_id} to {new_id}"
-                )
-                session.UserID = new_id
-                session.save()
-            
-            # Delete old record
-            collection = self.collection()
-            collection.delete_one({'ID': old_id})
-            
-            # Update ID and save as new record
-            self.ID = new_id
-            return self.save()
-            
-        except Exception as e:
-            print(f"Error during cascading update for user {old_id}: {e}")
-            return False

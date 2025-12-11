@@ -44,11 +44,11 @@ from lib.encryption import (  # noqa: E402
     generate_encryption_key
 )
 from lib.relationships import (  # noqa: E402
-    belongs_to,
+    belong_to_one,
     has_one,
     has_many,
     has_one_through,
-    BelongsTo,
+    BelongToOne,
     HasOne,
     HasMany,
     HasOneThrough,
@@ -81,11 +81,11 @@ __all__ = [
     'decrypt_artifact_id',
     'get_encryption_key',
     'generate_encryption_key',
-    'belongs_to',
+    'belong_to_one',
     'has_one',
     'has_many',
     'has_one_through',
-    'BelongsTo',
+    'BelongToOne',
     'HasOne',
     'HasMany',
     'HasOneThrough',
