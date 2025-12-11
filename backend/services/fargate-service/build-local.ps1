@@ -41,36 +41,75 @@ if (-not $SkipLint) {
     Write-Host "Dependencies installed" -ForegroundColor Green
     Write-Host ""
 
-    # Step 2: Run linting
+    # Step 2: Copy shared lib for linting
+    Write-Host "Copying shared lib..." -ForegroundColor Yellow
+    if (Test-Path "$ServiceRoot\lib") {
+        Remove-Item -Path "$ServiceRoot\lib" -Recurse -Force
+    }
+    Copy-Item -Path "$ServiceRoot\..\..\lib" -Destination "$ServiceRoot\lib" -Recurse
+    Write-Host "Shared lib copied" -ForegroundColor Green
+    Write-Host ""
+
+    # Step 3: Run linting
     Write-Host "Running flake8 linting..." -ForegroundColor Yellow
     
     Write-Host "  Critical errors check..." -ForegroundColor Gray
-    flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+    flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
     
     Write-Host "  Full lint check..." -ForegroundColor Gray
-    flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    flake8 app --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     
     Write-Host "Linting passed" -ForegroundColor Green
     Write-Host ""
 }
 
-# Step 3: Build Docker image
+# Step 4: Prepare Docker build context
 if (-not $SkipBuild) {
+    Write-Host "Preparing Docker build context..." -ForegroundColor Yellow
+    
+    # Copy shared lib for Docker build
+    if (Test-Path "$ServiceRoot\lib") {
+        Remove-Item -Path "$ServiceRoot\lib" -Recurse -Force
+    }
+    Copy-Item -Path "$ServiceRoot\..\..\lib" -Destination "$ServiceRoot\lib" -Recurse
+    Write-Host "Build context prepared" -ForegroundColor Green
+    Write-Host ""
+    
+    # Step 5: Build Docker image
     Write-Host "Building Docker image..." -ForegroundColor Yellow
     
     # Check if Docker is running
     docker info > $null 2>&1
     if ($LASTEXITCODE -ne 0) {
         Write-Host "ERROR: Docker is not running. Please start Docker Desktop." -ForegroundColor Red
+        # Clean up lib before exit
+        if (Test-Path "$ServiceRoot\lib") {
+            Remove-Item -Path "$ServiceRoot\lib" -Recurse -Force
+        }
         exit 1
     }
     
     $ImageName = "fargate-service:$ImageTag"
     
-    docker build -t $ImageName .
+    # Build with environment variables as build args (optional, can be overridden at runtime)
+    $buildArgs = @()
+    if ($env:GH_TOKEN) { $buildArgs += "--build-arg", "GH_TOKEN=$env:GH_TOKEN" }
+    if ($env:HF_TOKEN) { $buildArgs += "--build-arg", "HF_TOKEN=$env:HF_TOKEN" }
+    if ($env:MONGODB_URI) { $buildArgs += "--build-arg", "MONGODB_URI=$env:MONGODB_URI" }
+    if ($env:ARTIFACT_ENCRYPTION_KEY) { $buildArgs += "--build-arg", "ARTIFACT_ENCRYPTION_KEY=$env:ARTIFACT_ENCRYPTION_KEY" }
+    
+    if ($buildArgs.Count -gt 0) {
+        docker build $buildArgs -t $ImageName .
+    } else {
+        docker build -t $ImageName .
+    }
     
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Docker build failed" -ForegroundColor Red
+        # Clean up lib before exit
+        if (Test-Path "$ServiceRoot\lib") {
+            Remove-Item -Path "$ServiceRoot\lib" -Recurse -Force
+        }
         exit 1
     }
     
@@ -83,7 +122,7 @@ if (-not $SkipBuild) {
     Write-Host ""
 }
 
-# Step 4: Push to ECR (default, unless skipped)
+# Step 6: Push to ECR (default, unless skipped)
 if (-not $SkipPush -and -not $SkipBuild) {
     Write-Host "Pushing to Amazon ECR..." -ForegroundColor Yellow
     
@@ -130,6 +169,16 @@ if (-not $SkipPush -and -not $SkipBuild) {
     Write-Host "Successfully pushed to ECR: ${ecrImageName}:${ImageTag}" -ForegroundColor Green
     Write-Host ""
 }
+
+# Step 7: Clean up copied lib
+Write-Host "Cleaning up..." -ForegroundColor Yellow
+if (Test-Path "$ServiceRoot\lib") {
+    Remove-Item -Path "$ServiceRoot\lib" -Recurse -Force
+    Write-Host "Cleaned up build artifacts" -ForegroundColor Green
+} else {
+    Write-Host "Nothing to clean up" -ForegroundColor Gray
+}
+Write-Host ""
 
 Write-Host "Build completed successfully!" -ForegroundColor Green
 Write-Host ""
