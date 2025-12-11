@@ -48,7 +48,7 @@ class DefaultAdminSeeder(Seeder):
         salt_from_env = os.environ.get('PASSWORD_SALT')
         if not salt_from_env:
             raise ValueError(
-                "ADMIN_PASSWORD_SALT not found in environment variables. "
+                "PASSWORD_SALT not found in environment variables. "
                 "Run 'python scripts/generate_salt.py' to generate a salt "
                 "and add it to your .env file."
             )

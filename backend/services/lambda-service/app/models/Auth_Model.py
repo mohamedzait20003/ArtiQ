@@ -86,7 +86,7 @@ class Auth_Model(Model):
             Hashed password string
         """
         # Always use fixed salt from environment for consistent hashing
-        salt = os.environ.get('ADMIN_PASSWORD_SALT')
+        salt = os.environ.get('PASSWORD_SALT')
         if not salt:
             raise ValueError(
                 "ADMIN_PASSWORD_SALT not found in environment variables. "
