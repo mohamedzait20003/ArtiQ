@@ -38,7 +38,7 @@ class DefaultAdminSeeder(Seeder):
         user_id = str(uuid.uuid4())
         username = "ece30861defaultadminuser"
         password = (
-            "correcthorsebatterystaple123(!__+@**(A'\"`; DROP TABLE artifacts;"
+            "correcthorsebatterystaple123(!__+@**(A'\"`; DROP TABLE packages;"
         )
 
         # Hash the password using bcrypt

@@ -1,15 +1,15 @@
 import bcrypt
+import traceback
 from .Model import Model
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
+from .Role_Model import Role_Model
+from .Session_Model import Session_Model
+
 from include import (
     has_one,
     has_one_through,
     active_session_filter
 )
-
-if TYPE_CHECKING:
-    from .Role_Model import Role_Model
-    from .Session_Model import Session_Model
 
 
 class Auth_Model(Model):
@@ -132,6 +132,7 @@ class Auth_Model(Model):
         Returns:
             Role_Model instance or None
         """
+        from .Role_Model import Role_Model  # noqa: F811
         return has_one_through(
             Role_Model,
             through_key='RoleID',
@@ -185,6 +186,7 @@ class Auth_Model(Model):
         try:
             # MongoDB query with $or operator
             collection = cls.collection()
+            print(f"[AUTH_MODEL] Looking up user: {username}")
             item = collection.find_one({
                 '$or': [
                     {'Username': username},
@@ -193,17 +195,42 @@ class Auth_Model(Model):
             })
 
             if item:
+                print(f"[AUTH_MODEL] User found in database: {username}")
                 if '_id' in item:
                     del item['_id']
 
                 user = cls(**item)
+                print(f"[AUTH_MODEL] Verifying password for user: {username}")
+                print(f"[AUTH_MODEL] Password to verify: {password[:10]}...")
+                print(f"[AUTH_MODEL] Stored hash: {user.Password[:20]}...")
+                
                 # Use bcrypt to verify password
-                if cls._verify_password(password, user.Password):
+                password_valid = cls._verify_password(
+                    password, user.Password
+                )
+                print(
+                    f"[AUTH_MODEL] Password verification result: "
+                    f"{password_valid}"
+                )
+                
+                if password_valid:
+                    print(
+                        f"[AUTH_MODEL] Authentication successful for: "
+                        f"{username}"
+                    )
                     return user
+                else:
+                    print(
+                        f"[AUTH_MODEL] Password verification failed for: "
+                        f"{username}"
+                    )
+            else:
+                print(f"[AUTH_MODEL] User not found in database: {username}")
 
             return None
         except Exception as e:
             print(f"Error checking user credentials: {e}")
+            traceback.print_exc()
             return None
 
     @classmethod
