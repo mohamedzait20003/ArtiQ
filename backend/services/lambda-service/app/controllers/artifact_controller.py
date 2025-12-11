@@ -9,7 +9,6 @@ from app.types.artifact_types import (
     SimpleLicenseCheckRequest,
     ModelRating
 )
-from app.models import Artifact_Model
 from app.jobs import (
     artifacts_list_job,
     artifact_create_job,
@@ -304,54 +303,6 @@ class ArtifactController:
                 detail=f"Error invoking model_artifact_rate: {str(e)}"
             )
 
-    async def artifact_download_url(
-        self,
-        artifact_type: str = Path(
-            ..., description="Type of artifact"),
-        id: str = Path(..., description="Artifact ID")
-    ):
-        """Get download URL for an artifact (BASELINE)"""
-        print(f"GET /artifact/{artifact_type}/{id}/download called")
-        try:
-            # Retrieve artifact
-            artifact = Artifact_Model.get({'id': id})
-            if not artifact:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Artifact {id} not found"
-                )
-            
-            # Verify artifact type matches
-            if artifact.artifact_type != artifact_type:
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        f"Artifact type mismatch: expected {artifact_type}, "
-                        f"got {artifact.artifact_type}"
-                    )
-                )
-            
-            # Generate a mock presigned URL or download link
-            # In production this would use S3 presigned URLs
-            download_url = (
-                f"https://api.local/v1/artifacts/{id}/content"
-            )
-            
-            return {
-                "artifact_id": id,
-                "artifact_type": artifact_type,
-                "download_url": download_url,
-                "expires_in": 3600
-            }
-        except HTTPException:
-            raise
-        except Exception as e:
-            msg = f"GET /artifact/{artifact_type}/{id}/download"
-            print(f"{msg} RETURNING: 500")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error generating download URL: {str(e)}")
-
     async def artifact_cost(
         self,
         artifact_type: str = Path(
@@ -362,50 +313,9 @@ class ArtifactController:
     ):
         """Get the cost of an artifact (BASELINE)"""
         print(f"GET /artifact/{artifact_type}/{id}/cost called")
-        try:
-            # Retrieve artifact from database
-            artifact = Artifact_Model.get({'id': id})
-            if not artifact:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Artifact {id} not found"
-                )
-            
-            # Verify artifact type matches
-            if artifact.artifact_type != artifact_type:
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        f"Artifact type mismatch: expected {artifact_type}, "
-                        f"got {artifact.artifact_type}"
-                    )
-                )
-            
-            # Calculate cost based on file size
-            # Simple heuristic: $0.001 per MB
-            file_size = artifact.file_size or 100  # Default size if unknown
-            cost = (file_size / (1024 * 1024)) * 0.001
-            
-            # Base cost + size cost
-            total_cost = 0.01 + cost  # $0.01 base + size cost
-            
-            return {
-                "artifact_id": id,
-                "artifact_type": artifact_type,
-                "cost": round(total_cost, 4),
-                "base_cost": 0.01,
-                "size_cost": round(cost, 4),
-                "file_size": file_size,
-                "include_dependencies": dependency
-            }
-        except HTTPException:
-            raise
-        except Exception as e:
-            print(f"GET /artifact/{artifact_type}/{id}/cost RETURNING: 500 - "
-                  f"Exception: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error retrieving artifact cost: {str(e)}")
+        # TODO: Implement logic
+        raise HTTPException(
+            status_code=501, detail="Not implemented")
 
     async def artifact_by_name_get(
         self,
@@ -413,46 +323,9 @@ class ArtifactController:
     ):
         """List artifact metadata for this name (NON-BASELINE)"""
         print(f"GET /artifact/byName/{name} called")
-        try:
-            # Query artifacts by name
-            from app.models import Artifact_Model
-            collection = Artifact_Model.collection()
-            
-            # Find all artifacts with matching name
-            artifacts_cursor = collection.find(
-                {'name': name}
-            )
-            
-            artifacts = []
-            for artifact_doc in artifacts_cursor:
-                if '_id' in artifact_doc:
-                    del artifact_doc['_id']
-                artifacts.append({
-                    'metadata': {
-                        'name': artifact_doc.get('name'),
-                        'id': artifact_doc.get('id'),
-                        'type': artifact_doc.get('artifact_type')
-                    },
-                    'data': {
-                        'url': artifact_doc.get('source_url')
-                    }
-                })
-            
-            if not artifacts:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"No artifacts found with name: {name}"
-                )
-            
-            return artifacts
-        except HTTPException:
-            raise
-        except Exception as e:
-            print(f"GET /artifact/byName/{name} RETURNING: 500 - "
-                  f"Exception: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error retrieving artifacts by name: {str(e)}")
+        # TODO: Implement logic
+        raise HTTPException(
+            status_code=501, detail="Not implemented")
 
     async def artifact_audit_get(
         self,
@@ -462,26 +335,9 @@ class ArtifactController:
     ):
         """Retrieve audit entries for this artifact (NON-BASELINE)"""
         print(f"GET /artifact/{artifact_type}/{id}/audit called")
-        try:
-            artifact = Artifact_Model.get({'id': id})
-            if not artifact:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Artifact {id} not found"
-                )
-            
-            # Return empty audit log (no modifications tracked yet)
-            return {
-                "artifact_id": id,
-                "audit_log": []
-            }
-        except HTTPException:
-            raise
-        except Exception as e:
-            print(f"GET /artifact/{artifact_type}/{id}/audit RETURNING: 500")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error retrieving artifact audit: {str(e)}")
+        # TODO: Implement logic
+        raise HTTPException(
+            status_code=501, detail="Not implemented")
 
     async def artifact_lineage_get(
         self,
@@ -489,34 +345,9 @@ class ArtifactController:
     ):
         """Retrieve the lineage graph for this artifact (BASELINE)"""
         print(f"GET /artifact/model/{id}/lineage called")
-        try:
-            artifact = Artifact_Model.get({'id': id})
-            if not artifact:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Artifact {id} not found"
-                )
-            
-            # Return lineage graph structure
-            return {
-                "artifact_id": id,
-                "nodes": [
-                    {
-                        "id": id,
-                        "name": artifact.name,
-                        "type": artifact.artifact_type
-                    }
-                ],
-                "edges": [],
-                "root_id": id
-            }
-        except HTTPException:
-            raise
-        except Exception as e:
-            print(f"GET /artifact/model/{id}/lineage RETURNING: 500")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error retrieving artifact lineage: {str(e)}")
+        # TODO: Implement logic
+        raise HTTPException(
+            status_code=501, detail="Not implemented")
 
     async def artifact_license_check(
         self,
@@ -528,37 +359,9 @@ class ArtifactController:
         inference usage (BASELINE)
         """
         print(f"POST /artifact/model/{id}/license-check called")
-        try:
-            artifact = Artifact_Model.get({'id': id})
-            if not artifact:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Artifact {id} not found"
-                )
-            
-            # Get license from artifact or default
-            license_type = artifact.license or "MIT"
-            
-            # Simple license compatibility check
-            # MIT, Apache 2.0, GPL allow both fine-tune and inference
-            commercial_licenses = ["MIT", "Apache-2.0", "BSD"]
-            can_finetune = license_type in commercial_licenses
-            can_inference = license_type in commercial_licenses
-            
-            return {
-                "artifact_id": id,
-                "license": license_type,
-                "can_finetune": can_finetune,
-                "can_inference": can_inference,
-                "commercial_use": can_finetune and can_inference
-            }
-        except HTTPException:
-            raise
-        except Exception as e:
-            print(f"POST /artifact/model/{id}/license-check RETURNING: 500")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error checking artifact license: {str(e)}")
+        # TODO: Implement logic
+        raise HTTPException(
+            status_code=501, detail="Not implemented")
 
     async def artifact_by_regex_get(
         self,

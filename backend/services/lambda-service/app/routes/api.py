@@ -185,14 +185,6 @@ def register_api_routes(app) -> None:
         status_code=200
     )
 
-    # Artifact download URL
-    Route.get(
-        '/artifact/{artifact_type}/{id}/download',
-        artifacts.artifact_download_url,
-        tags=['artifacts'],
-        status_code=200
-    )
-
     # Artifact audit
     Route.get(
         '/artifact/{artifact_type}/{id}/audit',

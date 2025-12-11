@@ -70,36 +70,3 @@ class DefaultAdminSeeder(Seeder):
         Role: Admin
         ID: {user_id}
         """)
-        
-        # Also seed a simple 'admin' user for testing
-        # username: admin, password: password
-        test_admin_id = str(uuid.uuid4())
-        test_admin_password = "password"
-        test_admin_hashed = bcrypt.hashpw(
-            test_admin_password.encode('utf-8'),
-            bcrypt.gensalt()
-        ).decode('utf-8')
-        
-        test_admin_user = {
-            "ID": test_admin_id,
-            "Username": "admin",
-            "Name": "admin",
-            "Email": "admin@test.local",
-            "Password": test_admin_hashed,
-            "RoleID": admin_role_id
-        }
-        
-        # Update or create the test admin user
-        self.update_or_create(
-            collection="Users",
-            filter_query={"Username": "admin"},
-            document=test_admin_user
-        )
-        
-        print(f"""
-        ✓ Test admin user seeded successfully!
-        Username: admin
-        Password: {test_admin_password}
-        Role: Admin
-        ID: {test_admin_id}
-        """)
