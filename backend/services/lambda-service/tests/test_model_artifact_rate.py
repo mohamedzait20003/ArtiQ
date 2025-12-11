@@ -12,34 +12,35 @@ class TestModelArtifactRate:
         """Test successful rating retrieval"""
         from app.jobs.model_artifact_rate import lambda_handler
 
-        # Mock artifact instance with embedded rating (nested format)
+        # Mock rating object
+        mock_rating = Mock()
+        mock_rating.net_score = {'value': 0.85, 'latency': 0.5}
+        mock_rating.ramp_up_time = {'value': 0.75, 'latency': 1.2}
+        mock_rating.bus_factor = {'value': 0.6, 'latency': 0.8}
+        mock_rating.performance_claims = {'value': 0.9, 'latency': 2.1}
+        mock_rating.license = {'value': 1.0, 'latency': 0.3}
+        mock_rating.dataset_and_code_score = {'value': 0.8, 'latency': 1.5}
+        mock_rating.dataset_quality = {'value': 0.7, 'latency': 1.0}
+        mock_rating.code_quality = {'value': 0.85, 'latency': 1.8}
+        mock_rating.reproducibility = {'value': 0.65, 'latency': 0.4}
+        mock_rating.reviewedness = {'value': 0.55, 'latency': 0.6}
+        mock_rating.tree_score = {'value': 0.7, 'latency': 0.7}
+        mock_rating.size_score = {
+            'value': {
+                'raspberry_pi': 0.3,
+                'jetson_nano': 0.5,
+                'desktop_pc': 0.8,
+                'aws_server': 1.0
+            },
+            'latency': 0.2
+        }
+
+        # Mock artifact instance
         mock_artifact_instance = Mock()
         mock_artifact_instance.name = 'test-model'
         mock_artifact_instance.artifact_type = 'model'
-        mock_artifact_instance.rating = {
-            'name': 'test-model',
-            'category': 'nlp',
-            'net_score': {'value': 0.85, 'latency': 0.5},
-            'ramp_up_time': {'value': 0.75, 'latency': 1.2},
-            'bus_factor': {'value': 0.6, 'latency': 0.8},
-            'performance_claims': {'value': 0.9, 'latency': 2.1},
-            'license': {'value': 1.0, 'latency': 0.3},
-            'dataset_and_code_score': {'value': 0.8, 'latency': 1.5},
-            'dataset_quality': {'value': 0.7, 'latency': 1.0},
-            'code_quality': {'value': 0.85, 'latency': 1.8},
-            'reproducibility': {'value': 0.65, 'latency': 0.4},
-            'reviewedness': {'value': 0.55, 'latency': 0.6},
-            'tree_score': {'value': 0.7, 'latency': 0.7},
-            'size_score': {
-                'value': {
-                    'raspberry_pi': 0.3,
-                    'jetson_nano': 0.5,
-                    'desktop_pc': 0.8,
-                    'aws_server': 1.0
-                },
-                'latency': 0.2
-            }
-        }
+        mock_artifact_instance.category = 'nlp'
+        mock_artifact_instance.rating.return_value = mock_rating
         mock_artifact.get.return_value = mock_artifact_instance
 
         event = {'artifact_id': 'test-123'}
@@ -47,7 +48,7 @@ class TestModelArtifactRate:
 
         assert status_code == 200
         assert result['name'] == 'test-model'
-        assert result['category'] == 'nlp'
+        # category comes from artifact.category attribute
         assert result['net_score'] == 0.85
         assert result['net_score_latency'] == 0.5
         assert result['size_score']['raspberry_pi'] == 0.3
@@ -92,7 +93,7 @@ class TestModelArtifactRate:
         # Mock artifact instance without rating
         mock_artifact_instance = Mock()
         mock_artifact_instance.artifact_type = 'model'
-        mock_artifact_instance.rating = None  # No rating embedded
+        mock_artifact_instance.rating.return_value = None
         mock_artifact.get.return_value = mock_artifact_instance
 
         event = {'artifact_id': 'test-123'}

@@ -1,11 +1,11 @@
 """
 Bus Factor Evaluation Job
-Evaluates repository bus factor based on contributors and commit activity
+Evaluates contributor diversity and project sustainability
+Uses HuggingFace metadata for fast estimation without cloning
 """
 import time
 import logging
-from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 # Configure logger for CloudWatch
 logger = logging.getLogger(__name__)
@@ -14,13 +14,10 @@ logger.setLevel(logging.INFO)
 
 class BusFactorEvaluator:
     """
-    Job class for evaluating bus factor based on contributor count
-    and commit recency following clean software architecture principles.
+    Job class for evaluating bus factor based on contributor diversity
+    Formula: min(1.0, contributors / 5.0)
+    Uses HF metadata for fast estimation without cloning
     """
-
-    # Scoring weights
-    CONTRIBUTOR_WEIGHT = 0.7
-    RECENCY_WEIGHT = 0.3
 
     def __init__(self):
         """Initialize the Bus Factor Evaluator"""
@@ -41,37 +38,9 @@ class BusFactorEvaluator:
             logger.info("[BUS_FACTOR] Starting evaluation")
             print("[BusFactorEvaluator] Starting evaluation...")
 
-            # Extract contributor count
-            n_contrib = self._contributors_count(metadata)
-            logger.info(f"[BUS_FACTOR] Contributors count: {n_contrib}")
-
-            # Extract latest commit timestamp
-            last_ts = self._latest_commit_ts(metadata)
-            logger.info(f"[BUS_FACTOR] Latest commit timestamp: {last_ts}")
-
-            # Calculate component scores
-            c_score = self._contributors_score(n_contrib)
-            r_score = self._recency_score(last_ts)
-            logger.info(
-                f"[BUS_FACTOR] Component scores - "
-                f"contributors: {c_score:.3f}, recency: {r_score:.3f}"
-            )
-
-            # Blend scores
-            score = (
-                self.CONTRIBUTOR_WEIGHT * c_score +
-                self.RECENCY_WEIGHT * r_score
-            )
-            score = max(0.0, min(1.0, score))
-
-            # Calculate months ago for details
-            months = None
-            if last_ts is not None:
-                months = round(
-                    self._months_between(
-                        datetime.now(timezone.utc), last_ts
-                    ), 2
-                )
+            # Calculate bus factor score
+            score = self._calculate_bus_factor_score(metadata)
+            logger.info(f"[BUS_FACTOR] Bus factor score: {score:.3f}")
 
             # Create result
             latency = time.time() - start_time
@@ -79,9 +48,7 @@ class BusFactorEvaluator:
                 f"[BUS_FACTOR] Evaluation complete - "
                 f"score: {score:.3f}, latency: {latency:.3f}s"
             )
-            return self._create_success_result(
-                score, n_contrib, c_score, r_score, months, latency
-            )
+            return self._create_success_result(score, latency)
 
         except Exception as e:
             logger.error(
@@ -94,142 +61,159 @@ class BusFactorEvaluator:
             latency = time.time() - start_time
             return self._create_error_result(str(e), latency)
 
-    def _contributors_count(self, metadata) -> int:
+    def _calculate_bus_factor_score(self, metadata) -> float:
         """
-        Count active contributors from metadata
+        Calculate bus factor from contributor diversity.
+
+        Formula: min(1.0, contributors / 5.0)
+        Uses GitHub data when available, HF estimation otherwise.
 
         Args:
             metadata: Model metadata object
 
         Returns:
-            int: Number of active contributors
+            float: Score between 0.0 and 1.0
         """
-        contribs = getattr(metadata, "repo_contributors", [])
-        if not isinstance(contribs, list):
-            return 0
-        return sum(
-            1 for c in contribs
-            if int(c.get("contributions", 0)) > 0
+        contributors = 1.0  # Default baseline
+
+        # Priority 1: Use GitHub contributor data if available
+        repo_contributors = getattr(metadata, "repo_contributors", [])
+        if isinstance(repo_contributors, list) and repo_contributors:
+            # Count contributors with meaningful contributions (> 5 commits)
+            significant_contributors = sum(
+                1 for c in repo_contributors
+                if isinstance(c, dict) and
+                int(c.get("contributions", 0)) > 5
+            )
+            
+            # Count all active contributors (> 0 commits)
+            active_contributors = sum(
+                1 for c in repo_contributors
+                if isinstance(c, dict) and
+                int(c.get("contributions", 0)) > 0
+            )
+
+            if significant_contributors > 0:
+                # Use significant contributors as primary metric
+                contributors = min(5, significant_contributors)
+                logger.info(
+                    f"[BUS_FACTOR] Using GitHub significant contributors "
+                    f"(>5 commits): {significant_contributors}"
+                )
+            elif active_contributors > 0:
+                # Fallback to active contributors
+                contributors = min(5, active_contributors * 0.8)
+                logger.info(
+                    f"[BUS_FACTOR] Using GitHub active contributors: "
+                    f"{active_contributors}"
+                )
+
+        # Priority 2: Estimate from HF engagement metrics if no GitHub data
+        else:
+            hf_info = getattr(metadata, 'info', None)
+            if hf_info:
+                downloads = getattr(hf_info, 'downloads', 0) or 0
+                likes = getattr(hf_info, 'likes', 0) or 0
+
+                # Get file count from siblings
+                siblings = getattr(hf_info, 'siblings', [])
+                file_count = len(siblings) if siblings else 0
+
+                # Get model ID for organization check
+                model_id = (
+                    getattr(hf_info, 'id', '') or getattr(metadata, 'id', '')
+                )
+                
+                # Check for tags indicating community involvement
+                tags = getattr(hf_info, 'tags', []) or []
+
+                logger.info(
+                    f"[BUS_FACTOR] HF metrics - downloads: {downloads}, "
+                    f"likes: {likes}, files: {file_count}, id: {model_id}, "
+                    f"tags: {len(tags)}"
+                )
+
+                # Estimate contributors from multiple signals
+                contributor_estimate = 1.0
+
+                # Downloads indicate community usage
+                if downloads > 1000000:
+                    contributor_estimate += 2.5
+                elif downloads > 500000:
+                    contributor_estimate += 2.0
+                elif downloads > 100000:
+                    contributor_estimate += 1.5
+                elif downloads > 50000:
+                    contributor_estimate += 1.0
+                elif downloads > 10000:
+                    contributor_estimate += 0.7
+                elif downloads > 1000:
+                    contributor_estimate += 0.5
+
+                # Likes indicate community engagement
+                if likes > 500:
+                    contributor_estimate += 2.0
+                elif likes > 200:
+                    contributor_estimate += 1.5
+                elif likes > 100:
+                    contributor_estimate += 1.2
+                elif likes > 50:
+                    contributor_estimate += 1.0
+                elif likes > 20:
+                    contributor_estimate += 0.7
+                elif likes > 5:
+                    contributor_estimate += 0.4
+
+                # File count suggests maintenance activity
+                if file_count > 100:
+                    contributor_estimate += 1.0
+                elif file_count > 50:
+                    contributor_estimate += 0.7
+                elif file_count > 20:
+                    contributor_estimate += 0.5
+
+                # Organization models likely have teams
+                if model_id and "/" in str(model_id):
+                    org_name = str(model_id).split("/")[0]
+                    # Well-known orgs likely have larger teams
+                    if org_name.lower() in [
+                        'meta', 'facebook', 'google', 'microsoft',
+                        'openai', 'huggingface', 'stabilityai',
+                        'anthropic', 'nvidia', 'deepmind'
+                    ]:
+                        contributor_estimate += 2.0
+                    else:
+                        contributor_estimate += 1.0
+
+                contributors = min(5, contributor_estimate)
+                logger.info(
+                    f"[BUS_FACTOR] Estimated contributors from HF metrics: "
+                    f"{contributors:.2f}"
+                )
+
+        # Ensure minimum baseline of 1 for any published model
+        if contributors < 1:
+            contributors = 1.0
+
+        # Specification: BusFactor = min(1.0, contributors / 5.0)
+        score = min(1.0, contributors / 5.0)
+        logger.info(
+            f"[BUS_FACTOR] Final calculation - "
+            f"contributors: {contributors}, score: {score}"
         )
 
-    def _latest_commit_ts(self, metadata) -> Optional[datetime]:
-        """
-        Extract latest commit timestamp from metadata
-
-        Args:
-            metadata: Model metadata object
-
-        Returns:
-            Optional[datetime]: Latest commit timestamp or None
-        """
-        commits = getattr(metadata, "repo_commit_history", [])
-        for item in commits:
-            commit = item.get("commit", {})
-            author = commit.get("author", {})
-            ts = author.get("date")
-            if isinstance(ts, str):
-                dt = self._parse_iso8601(ts)
-                if dt is not None:
-                    return dt
-        return None
-
-    def _contributors_score(self, contrib_count: int) -> float:
-        """
-        Calculate score based on contributor count
-
-        Args:
-            contrib_count: Number of active contributors
-
-        Returns:
-            float: Score between 0.0 and 1.0
-        """
-        if contrib_count >= 7:
-            return 1.0
-        if 4 <= contrib_count <= 6:
-            return 0.7
-        if 2 <= contrib_count <= 3:
-            return 0.5
-        if contrib_count == 1:
-            return 0.3
-        return 0.0
-
-    def _recency_score(self, last_commit: Optional[datetime]) -> float:
-        """
-        Calculate score based on commit recency
-
-        Args:
-            last_commit: Last commit timestamp
-
-        Returns:
-            float: Score between 0.0 and 1.0
-        """
-        if last_commit is None:
-            return 0.0
-        now = datetime.now(timezone.utc)
-        months = self._months_between(now, last_commit)
-        if months < 3.0:
-            return 1.0
-        score = 1.0 - 0.1 * (months - 3.0)
-        if months > 12.0:
-            return 0.0
-        return max(0.0, min(1.0, score))
-
-    def _months_between(
-        self, dt1: datetime, dt2: datetime
-    ) -> float:
-        """
-        Calculate months between two datetime objects
-
-        Args:
-            dt1: First datetime
-            dt2: Second datetime
-
-        Returns:
-            float: Number of months between dates
-        """
-        delta = dt1 - dt2
-        return delta.total_seconds() / (30.44 * 24 * 3600)
-
-    def _parse_iso8601(self, ts_str: str) -> Optional[datetime]:
-        """
-        Parse ISO 8601 timestamp string
-
-        Args:
-            ts_str: Timestamp string
-
-        Returns:
-            Optional[datetime]: Parsed datetime or None
-        """
-        try:
-            # Handle various ISO 8601 formats
-            if ts_str.endswith('Z'):
-                ts_str = ts_str[:-1] + '+00:00'
-            return datetime.fromisoformat(ts_str)
-        except Exception as e:
-            print(
-                f"[BusFactorEvaluator] "
-                f"Warning: Could not parse timestamp: {e}"
-            )
-            return None
+        return score
 
     def _create_success_result(
         self,
         score: float,
-        n_contrib: int,
-        c_score: float,
-        r_score: float,
-        months: Optional[float],
         latency: float
     ) -> Dict[str, Any]:
         """
         Create successful evaluation result
 
         Args:
-            score: Final blended score
-            n_contrib: Number of contributors
-            c_score: Contributors score
-            r_score: Recency score
-            months: Months since last commit
+            score: Final bus factor score
             latency: Evaluation time in seconds
 
         Returns:
@@ -242,11 +226,8 @@ class BusFactorEvaluator:
             'score': score,
             'latency': round(latency, 3),
             'details': {
-                'contributors_count': n_contrib,
-                'contributors_score': round(c_score, 3),
-                'last_commit_months_ago': months,
-                'recency_score': round(r_score, 3),
-                'blend': '0.7*contributors + 0.3*recency',
+                'formula': 'min(1.0, contributors / 5.0)',
+                'method': 'HF engagement estimation',
                 'evaluator': 'BusFactorEvaluator'
             }
         }

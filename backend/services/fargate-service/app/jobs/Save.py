@@ -26,7 +26,6 @@ def save_ratings_step(context):
     latencies = aggregated_data.get('latencies', {})
     net_score = aggregated_data.get('net_score', 0.0)
     net_latency = aggregated_data.get('net_latency', 0.0)
-    metadata = aggregated_data.get('metadata')
 
     if not artifact:
         logger.warning("[SAVE] No artifact found, skipping save")
@@ -39,32 +38,36 @@ def save_ratings_step(context):
 
     try:
         # Helper to create metric dict with value and latency
+        # Uses actual score if available, otherwise uses default
         def metric_dict(metric_name, default=0.0):
             return {
                 'value': scores.get(metric_name, default),
                 'latency': latencies.get(metric_name, 0.0)
             }
 
-        # Extract name and category from metadata or artifact
-        name = getattr(metadata, 'name', None) or artifact.name
-        category = getattr(metadata, 'category', 'unknown')
+        # Generate rating ID (use artifact_id as rating id for uniqueness)
+        rating_id = f"rating_{artifact.id}"
 
-        # Create or update rating with proper schema
+        # Log which metrics were evaluated
+        logger.info(f"[SAVE] Available metrics: {list(scores.keys())}")
+        logger.info(f"[SAVE] Scores values: {scores}")
+        
+        # Create or update rating with evaluated metrics
+        # All metrics in parallel pipeline should be present
         rating = Rating_Model(
+            id=rating_id,
             artifact_id=artifact.id,
-            name=name,
-            category=category,
             net_score={
                 'value': net_score,
                 'latency': net_latency
             },
-            ramp_up_time=metric_dict('ramp_up'),
-            bus_factor=metric_dict('bus_factor'),
-            performance_claims=metric_dict('performance'),
-            license=metric_dict('license'),
-            dataset_and_code_score=metric_dict('availability'),
-            dataset_quality=metric_dict('dataset_quality'),
-            code_quality=metric_dict('code_quality'),
+            ramp_up_time=metric_dict('ramp_up', 0.0),
+            bus_factor=metric_dict('bus_factor', 0.0),
+            performance_claims=metric_dict('performance', 0.0),
+            license=metric_dict('license', 0.0),
+            dataset_and_code_score=metric_dict('availability', 0.0),
+            dataset_quality=metric_dict('dataset_quality', 0.0),
+            code_quality=metric_dict('code_quality', 0.0),
             reproducibility={'value': 0.0, 'latency': 0.0},
             reviewedness={'value': 0.0, 'latency': 0.0},
             tree_score={'value': 0.0, 'latency': 0.0},
@@ -83,13 +86,11 @@ def save_ratings_step(context):
         logger.info(f"[SAVE] Ratings saved for artifact {artifact.id}")
         print(f"[PIPELINE] Ratings saved for artifact {artifact.id}")
 
-        # Update artifact's rating field with summary
-        artifact.rating = rating.to_api_response()
-        artifact.save()
+        # Rating is now accessible via artifact.rating() relationship
         logger.info(
-            f"[SAVE] Artifact rating field updated for {artifact.id}"
+            f"[SAVE] Rating can be accessed via relationship for "
+            f"artifact {artifact.id}"
         )
-        print("[PIPELINE] Artifact rating field updated")
 
     except Exception as e:
         logger.error(

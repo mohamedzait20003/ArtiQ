@@ -16,9 +16,14 @@ def aggregate_scores_step(context):
     metric_results = (
         context.get('last') if isinstance(context, dict) else context
     )
-    metadata = (
-        context.get('results')[-2] if isinstance(context, dict) else None
-    )
+    
+    # Get metadata from pipeline context
+    # results[0] = validate, results[1] = fetch_metadata, results[2] = metrics
+    if isinstance(context, dict):
+        all_results = context.get('results', [])
+    else:
+        all_results = []
+    metadata = all_results[1] if len(all_results) > 1 else None
 
     logger.info("[AGGREGATE] Starting score aggregation")
     print("[PIPELINE] Step 4: Aggregating scores...")
@@ -28,8 +33,14 @@ def aggregate_scores_step(context):
     total_score = 0.0
     count = 0
 
+    # Handle both single result and list of results
+    if isinstance(metric_results, list):
+        results_list = metric_results
+    else:
+        results_list = [metric_results]
+
     # Extract scores and latencies from metric results
-    for result in metric_results:
+    for result in results_list:
         if result and isinstance(result, dict):
             metric_name = result.get('metric_name', 'unknown')
             score = result.get('score', 0.0)

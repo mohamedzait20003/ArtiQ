@@ -5,8 +5,8 @@ Evaluates code quality through tests, structure, and documentation
 import json
 import time
 import logging
-from typing import Dict, Any, Optional, List
-from ..providers.LLMAgent import LLMAgent
+from typing import Dict, Any, List
+from app.bootstrap import get_llm_agent
 
 # Configure logger for CloudWatch
 logger = logging.getLogger(__name__)
@@ -24,9 +24,9 @@ class CodeQualityEvaluator:
     DEFAULT_MAX_TOKENS = 4096
     MAX_REPO_ITEMS = 50
 
-    def __init__(self, llm_agent: Optional[LLMAgent] = None):
+    def __init__(self, llm_agent=None):
         """Initialize with optional LLMAgent instance"""
-        self.llm_agent = llm_agent or LLMAgent()
+        self.llm_agent = llm_agent or get_llm_agent()
 
     def evaluate(self, metadata) -> Dict[str, Any]:
         """

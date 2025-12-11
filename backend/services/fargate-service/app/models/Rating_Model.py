@@ -4,8 +4,11 @@ Model for storing artifact ratings and metrics
 """
 
 from .Model import Model
-from typing import Optional, Dict, Any
-from include import belongs_to
+from typing import Optional, Dict, Any, TYPE_CHECKING
+from include import belong_to_one
+
+if TYPE_CHECKING:
+    from .Artifact_Model import Artifact_Model  # noqa: F401
 
 
 class Rating_Model(Model):
@@ -39,6 +42,7 @@ class Rating_Model(Model):
 
     def __init__(
         self,
+        id: str,
         artifact_id: str,
         net_score: Optional[Dict[str, float]] = None,
         ramp_up_time: Optional[Dict[str, float]] = None,
@@ -58,9 +62,8 @@ class Rating_Model(Model):
         Initialize Rating instance
 
         Args:
-            artifact_id: Unique identifier for the artifact being rated
-            name: Name of the artifact
-            category: Model category
+            id: Primary key for the rating
+            artifact_id: Reference to the artifact being rated
             net_score: Overall score {value, latency}
             ramp_up_time: Ease-of-adoption {value, latency}
             bus_factor: Team redundancy {value, latency}
@@ -74,6 +77,7 @@ class Rating_Model(Model):
             tree_score: Dependency health {value, latency}
             size_score: Size suitability with nested device scores
         """
+        self.id = id
         self.artifact_id = artifact_id
         self.net_score = net_score or {"value": 0.0, "latency": 0.0}
         self.ramp_up_time = ramp_up_time or {"value": 0.0, "latency": 0.0}
@@ -109,7 +113,7 @@ class Rating_Model(Model):
     @classmethod
     def primary_key(cls):
         """Define the primary key for database operations"""
-        return ["artifact_id"]
+        return ["id"]
 
     @classmethod
     def find_by_artifact_id(cls, artifact_id: str):
@@ -120,62 +124,15 @@ class Rating_Model(Model):
             artifact_id: The artifact ID to search for
 
         Returns:
-            Rating_Model instance or None
+            List of Rating_Model instances
         """
-        return cls.get({"artifact_id": artifact_id})
+        return cls.where({"artifact_id": artifact_id})
 
     def artifact(self):
         """
-        Get the artifact this rating belongs to (belongs-to relationship)
+        Get the artifact this rating belongs to (belong-to-one relationship)
 
         Returns:
             Artifact_Model instance or None
         """
-        from .Artifact_Model import Artifact_Model
-        return belongs_to(Artifact_Model, 'artifact_id', 'id')(self)
-
-    def to_api_response(self) -> Dict[str, Any]:
-        """
-        Convert to API response format matching OpenAPI spec
-
-        Returns:
-            Dictionary formatted for API response
-        """
-        return {
-            "name": self.name,
-            "category": self.category,
-            "net_score": self.net_score.get("value", 0.0),
-            "net_score_latency": self.net_score.get("latency", 0.0),
-            "ramp_up_time": self.ramp_up_time.get("value", 0.0),
-            "ramp_up_time_latency": self.ramp_up_time.get("latency", 0.0),
-            "bus_factor": self.bus_factor.get("value", 0.0),
-            "bus_factor_latency": self.bus_factor.get("latency", 0.0),
-            "performance_claims": self.performance_claims.get("value", 0.0),
-            "performance_claims_latency": (
-                self.performance_claims.get("latency", 0.0)
-            ),
-            "license": self.license.get("value", 0.0),
-            "license_latency": self.license.get("latency", 0.0),
-            "dataset_and_code_score": (
-                self.dataset_and_code_score.get("value", 0.0)
-            ),
-            "dataset_and_code_score_latency": (
-                self.dataset_and_code_score.get("latency", 0.0)
-            ),
-            "dataset_quality": self.dataset_quality.get("value", 0.0),
-            "dataset_quality_latency": (
-                self.dataset_quality.get("latency", 0.0)
-            ),
-            "code_quality": self.code_quality.get("value", 0.0),
-            "code_quality_latency": self.code_quality.get("latency", 0.0),
-            "reproducibility": self.reproducibility.get("value", 0.0),
-            "reproducibility_latency": (
-                self.reproducibility.get("latency", 0.0)
-            ),
-            "reviewedness": self.reviewedness.get("value", 0.0),
-            "reviewedness_latency": self.reviewedness.get("latency", 0.0),
-            "tree_score": self.tree_score.get("value", 0.0),
-            "tree_score_latency": self.tree_score.get("latency", 0.0),
-            "size_score": self.size_score.get("value", {}),
-            "size_score_latency": self.size_score.get("latency", 0.0)
-        }
+        return belong_to_one(Artifact_Model, 'artifact_id', 'id')(self)

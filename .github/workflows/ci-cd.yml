@@ -78,6 +78,7 @@ jobs:
         PYTHONPATH: ${{ github.workspace }}/backend/services/lambda-service
         MONGODB_URI: mongodb://mock:27017/
         ARTIFACT_ENCRYPTION_KEY: ${{ secrets.ARTIFACT_ENCRYPTION_KEY }}
+        PASSWORD_SALT: ${{ secrets.PASSWORD_SALT }}
       run: |
         cd backend/services/lambda-service
         python -m pytest -v --tb=short tests
@@ -185,7 +186,7 @@ jobs:
         npm run test -- --watch=false --browsers=ChromeHeadless
     
     - name: Upload build artifacts
-      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Evluation-Initial')
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/EVALUATION-FIX ')
       uses: actions/upload-artifact@v4
       with:
         name: frontend-build
@@ -197,7 +198,7 @@ jobs:
     name: Build & Push Fargate Image
     runs-on: ubuntu-latest
     needs: fargate-service
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Evluation-Initial')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/EVALUATION-FIX')
     
     steps:
     - uses: actions/checkout@v3
@@ -227,15 +228,11 @@ jobs:
         IMAGE_TAG: ${{ github.sha }}
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        ARTIFACT_ENCRYPTION_KEY: ${{ secrets.ARTIFACT_ENCRYPTION_KEY }}
       run: |
         cd backend/services/fargate-service
         docker build \
           --build-arg GH_TOKEN=$GH_TOKEN \
           --build-arg HF_TOKEN=$HF_TOKEN \
-          --build-arg MONGODB_URI=$MONGODB_URI \
-          --build-arg ARTIFACT_ENCRYPTION_KEY=$ARTIFACT_ENCRYPTION_KEY \
           -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
@@ -252,7 +249,7 @@ jobs:
     name: Deploy Lambda Service
     runs-on: ubuntu-latest
     needs: lambda-service
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Evluation-Initial')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/EVALUATION-FIX')
     env:
       AWS_REGION: us-east-2
     
@@ -291,15 +288,17 @@ jobs:
         CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
         SUBNET_ID: ${{ secrets.SUBNET_ID }}
         SECURITY_GROUP: ${{ secrets.SECURITY_GROUP }}
+        PASSWORD_SALT: ${{ secrets.PASSWORD_SALT }}
       run: |
         cd backend/services/lambda-service
         sam deploy \
           --no-confirm-changeset \
           --no-fail-on-empty-changeset \
+          --disable-rollback \
           --capabilities CAPABILITY_IAM \
           --region us-east-2 \
           --resolve-s3 \
-          --parameter-overrides MongoDBUri="${MONGODB_URI}" EncryptionKey="${ARTIFACT_ENCRYPTION_KEY}" ClusterName="${CLUSTER_NAME}" TaskDefinition="${TASK_DEFINITION}" ContainerName="${CONTAINER_NAME}" SubnetId="${SUBNET_ID}" SecurityGroup="${SECURITY_GROUP}"
+          --parameter-overrides MongoDBUri="${MONGODB_URI}" EncryptionKey="${ARTIFACT_ENCRYPTION_KEY}" ClusterName="${CLUSTER_NAME}" TaskDefinition="${TASK_DEFINITION}" ContainerName="${CONTAINER_NAME}" SubnetId="${SUBNET_ID}" SecurityGroup="${SECURITY_GROUP}" PasswordSalt="${PASSWORD_SALT}"
     
     - name: Get API Gateway URL
       run: |

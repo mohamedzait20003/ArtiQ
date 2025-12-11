@@ -39,6 +39,11 @@ Parameters:
     Type: String
     Description: Security group for Fargate tasks
     Default: 'sg-09e4b74cc268af399'
+  PasswordSalt:
+    Type: String
+    Description: Password salt for hashing
+    NoEcho: true
+    Default: ''
 
 Resources:
   # Main FastAPI Lambda (handles all requests)
@@ -59,6 +64,7 @@ Resources:
           ECS_CONTAINER_NAME: !Ref ContainerName
           ECS_SUBNET_ID: !Ref SubnetId
           ECS_SECURITY_GROUP: !Ref SecurityGroup
+          PASSWORD_SALT: !Ref PasswordSalt
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref ArtifactsBucket

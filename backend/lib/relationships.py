@@ -37,10 +37,10 @@ class Relationship:
         raise NotImplementedError
 
 
-class BelongsTo(Relationship):
+class BelongToOne(Relationship):
     """
-    Belongs To relationship (inverse of Has One/Has Many)
-    Example: Session belongs to User
+    Belong To One relationship (inverse of Has One/Has Many)
+    Example: Session belong_to_one User
     """
 
     def __call__(self, parent: 'Model') -> Optional['Model']:
@@ -106,15 +106,22 @@ class HasOne(Relationship):
 
         try:
             query = {self.foreign_key: local_value}
+            
+            print(f"[HasOne] Looking for {self.related_model.__name__} "
+                  f"where {self.foreign_key}={local_value}")
 
             # Apply additional filters if provided
             if self.filter_callback:
                 query = self.filter_callback(query, parent)
 
             # Use Eloquent's get method
-            return self.related_model.get(query)
+            result = self.related_model.get(query)
+            print(f"[HasOne] Query result: {result}")
+            return result
         except Exception as e:
             print(f"Error in HasOne relationship: {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
 
@@ -234,13 +241,13 @@ def active_session_filter(query: dict, parent: 'Model') -> dict:
 
 
 # Convenience functions for common relationship patterns
-def belongs_to(
+def belong_to_one(
     related_model: Type['Model'],
     foreign_key: str,
     local_key: str = None
-) -> BelongsTo:
+) -> BelongToOne:
     """
-    Create a BelongsTo relationship
+    Create a BelongToOne relationship
 
     Args:
         related_model: The related model class
@@ -248,9 +255,9 @@ def belongs_to(
         local_key: The local key field name
 
     Returns:
-        BelongsTo relationship instance
+        BelongToOne relationship instance
     """
-    return BelongsTo(related_model, foreign_key, local_key)
+    return BelongToOne(related_model, foreign_key, local_key)
 
 
 def has_one(

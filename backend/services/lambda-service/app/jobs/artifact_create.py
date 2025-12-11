@@ -1,3 +1,4 @@
+import time
 import uuid
 from app.models import Artifact_Model
 from app.utils import url_to_artifact_name, invoke_fargate_task
@@ -29,8 +30,7 @@ def lambda_handler(event, context):
             artifact_type=artifact_type,
             source_url=url,
             file_size=None,
-            license=None,
-            rating=None
+            license=None
         )
 
         # Create a mock artifact file (empty file as placeholder)
@@ -50,6 +50,8 @@ def lambda_handler(event, context):
         # Invoke Fargate task for model artifacts
         if artifact_type == 'model':
             invoke_fargate_task(artifact_id)
+
+        time.sleep(2)  # Wait for a moment to ensure artifact is saved
 
         response_data = {
             'metadata': {

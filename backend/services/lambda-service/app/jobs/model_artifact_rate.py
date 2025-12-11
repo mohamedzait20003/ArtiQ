@@ -2,6 +2,7 @@
 Model Artifact Rate Job
 Retrieves ratings for a model artifact
 """
+import time
 import logging
 from app.models import Artifact_Model
 
@@ -26,7 +27,7 @@ def lambda_handler(event, context):
     """
     try:
         logger.info("[RATE] Starting model artifact rate request")
-        
+
         # Extract artifact_id from event
         artifact_id = event.get('artifact_id')
         logger.info(f"[RATE] Requested artifact ID: {artifact_id}")
@@ -68,104 +69,151 @@ def lambda_handler(event, context):
                 400
             )
 
-        # Check if artifact has embedded rating
+        # Get rating via relationship with optimized retry logic
         logger.info(
-            f"[RATE] Checking for rating data on artifact {artifact_id}"
+            f"[RATE] Fetching rating for artifact {artifact_id}"
         )
-        if not artifact.rating or not isinstance(artifact.rating, dict):
-            logger.warning(
-                f"[RATE] No rating data found for artifact {artifact_id}"
-            )
-            return (
-                {
-                    'errorMessage':
-                        f'No rating found for artifact {artifact_id}. '
-                        'The artifact may not have been evaluated yet.'
-                },
-                404
+        rating_obj = artifact.rating()
+
+        # Optimized polling: exponential backoff + early termination
+        # Fast checks initially, slower as time progresses
+        if not rating_obj:
+            logger.info(
+                f"[RATE] No rating found for artifact {artifact_id}. "
+                "Starting optimized polling..."
             )
 
-        # Use the embedded rating from the artifact
-        rating = artifact.rating
+            # Aggressive polling for first 10s (most evals complete quickly)
+            for attempt in range(1, 11):  # 10 attempts * 1s = 10s
+                time.sleep(1)
+                rating_obj = artifact.rating()
+                if rating_obj:
+                    logger.info(
+                        f"[RATE] Rating found after {attempt}s "
+                        f"(fast polling)"
+                    )
+                    break
+
+            # Medium polling for next 20s
+            if not rating_obj:
+                for attempt in range(1, 11):  # 10 attempts * 2s = 20s
+                    time.sleep(2)
+                    rating_obj = artifact.rating()
+                    if rating_obj:
+                        logger.info(
+                            f"[RATE] Rating found after {10 + attempt * 2}s "
+                            f"(medium polling)"
+                        )
+                        break
+
+            # Slow polling for remaining time (up to 3 minutes total)
+            if not rating_obj:
+                for attempt in range(1, 27):  # 26 attempts * 5s = 130s
+                    time.sleep(5)
+                    rating_obj = artifact.rating()
+                    if rating_obj:
+                        logger.info(
+                            f"[RATE] Rating found after "
+                            f"{30 + attempt * 5}s (slow polling)"
+                        )
+                        break
+
+            # Final check - if still not available
+            if not rating_obj:
+                logger.warning(
+                    f"[RATE] No rating found for artifact {artifact_id} "
+                    f"after 3 minutes of polling"
+                )
+                return (
+                    {
+                        'errorMessage':
+                            f'No rating found for artifact {artifact_id}. '
+                            'The artifact evaluation is taking longer than '
+                            'expected. Please try again in a few minutes.'
+                    },
+                    404
+                )
+
         logger.info(
             f"[RATE] Rating found - net_score: "
-            f"{rating.get('net_score', {}).get('value', 'N/A')}"
+            f"{rating_obj.net_score.get('value', 'N/A')}"
         )
 
         # Format response according to ModelRating schema (flattened format)
         response = {
-            "name": rating.get("name", artifact.name),
-            "category": rating.get("category", ""),
-            "net_score": rating.get("net_score", {}).get("value", 0.0),
+            "name": artifact.name,
+            "category": getattr(artifact, 'category', 'unknown'),
+            "net_score": rating_obj.net_score.get("value", 0.0),
             "net_score_latency": (
-                rating.get("net_score", {}).get("latency", 0.0)
+                rating_obj.net_score.get("latency", 0.0)
             ),
             "ramp_up_time": (
-                rating.get("ramp_up_time", {}).get("value", 0.0)
+                rating_obj.ramp_up_time.get("value", 0.0)
             ),
             "ramp_up_time_latency": (
-                rating.get("ramp_up_time", {}).get("latency", 0.0)
+                rating_obj.ramp_up_time.get("latency", 0.0)
             ),
-            "bus_factor": rating.get("bus_factor", {}).get("value", 0.0),
+            "bus_factor": rating_obj.bus_factor.get("value", 0.0),
             "bus_factor_latency": (
-                rating.get("bus_factor", {}).get("latency", 0.0)
+                rating_obj.bus_factor.get("latency", 0.0)
             ),
             "performance_claims": (
-                rating.get("performance_claims", {}).get("value", 0.0)
+                rating_obj.performance_claims.get("value", 0.0)
             ),
             "performance_claims_latency": (
-                rating.get("performance_claims", {}).get("latency", 0.0)
+                rating_obj.performance_claims.get("latency", 0.0)
             ),
-            "license": rating.get("license", {}).get("value", 0.0),
+            "license": rating_obj.license.get("value", 0.0),
             "license_latency": (
-                rating.get("license", {}).get("latency", 0.0)
+                rating_obj.license.get("latency", 0.0)
             ),
             "dataset_and_code_score": (
-                rating.get("dataset_and_code_score", {}).get("value", 0.0)
+                rating_obj.dataset_and_code_score.get("value", 0.0)
             ),
             "dataset_and_code_score_latency": (
-                rating.get("dataset_and_code_score", {}).get("latency", 0.0)
+                rating_obj.dataset_and_code_score.get("latency", 0.0)
             ),
             "dataset_quality": (
-                rating.get("dataset_quality", {}).get("value", 0.0)
+                rating_obj.dataset_quality.get("value", 0.0)
             ),
             "dataset_quality_latency": (
-                rating.get("dataset_quality", {}).get("latency", 0.0)
+                rating_obj.dataset_quality.get("latency", 0.0)
             ),
             "code_quality": (
-                rating.get("code_quality", {}).get("value", 0.0)
+                rating_obj.code_quality.get("value", 0.0)
             ),
             "code_quality_latency": (
-                rating.get("code_quality", {}).get("latency", 0.0)
+                rating_obj.code_quality.get("latency", 0.0)
             ),
             "reproducibility": (
-                rating.get("reproducibility", {}).get("value", 0.0)
+                rating_obj.reproducibility.get("value", 0.0)
             ),
             "reproducibility_latency": (
-                rating.get("reproducibility", {}).get("latency", 0.0)
+                rating_obj.reproducibility.get("latency", 0.0)
             ),
             "reviewedness": (
-                rating.get("reviewedness", {}).get("value", 0.0)
+                rating_obj.reviewedness.get("value", 0.0)
             ),
             "reviewedness_latency": (
-                rating.get("reviewedness", {}).get("latency", 0.0)
+                rating_obj.reviewedness.get("latency", 0.0)
             ),
-            "tree_score": rating.get("tree_score", {}).get("value", 0.0),
+            "tree_score": rating_obj.tree_score.get("value", 0.0),
             "tree_score_latency": (
-                rating.get("tree_score", {}).get("latency", 0.0)
+                rating_obj.tree_score.get("latency", 0.0)
             ),
-            "size_score": rating.get("size_score", {}).get("value", {
+            "size_score": rating_obj.size_score.get("value", {
                 "raspberry_pi": 0.0,
                 "jetson_nano": 0.0,
                 "desktop_pc": 0.0,
                 "aws_server": 0.0
             }),
             "size_score_latency": (
-                rating.get("size_score", {}).get("latency", 0.0)
+                rating_obj.size_score.get("latency", 0.0)
             )
         }
 
         logger.info(f"[RATE] Successfully retrieved rating for {artifact_id}")
+        logger.info(f"[RATE] Final response for CloudWatch: {response}")
         return (response, 200)
 
     except Exception as e:

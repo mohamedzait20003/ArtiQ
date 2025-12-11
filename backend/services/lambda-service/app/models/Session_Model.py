@@ -2,7 +2,7 @@ import time
 import hashlib
 from .Model import Model
 from typing import Optional, TYPE_CHECKING
-from include import belongs_to
+from include import belong_to_one
 
 if TYPE_CHECKING:
     from .Auth_Model import Auth_Model
@@ -138,13 +138,12 @@ class Session_Model(Model):
     def user(self) -> Optional['Auth_Model']:
         """
         Eloquent-style relationship: Get the user for this session
-        Inverse one-to-one relationship using BelongsTo
+        Inverse one-to-one relationship using BelongToOne
 
         Returns:
             Auth_Model instance or None
         """
-        from .Auth_Model import Auth_Model
-        return belongs_to(
+        return belong_to_one(
             Auth_Model,
             foreign_key='UserID',
             local_key='ID'

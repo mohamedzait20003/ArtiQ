@@ -11,6 +11,7 @@ except ImportError:
 
 from .container import Container, container
 from .eloquent import Eloquent
+from .cache import Cache, CacheManager, cache  # noqa: F401
 from .pipeline import (
     Pipeline,
     Parallel,
@@ -27,12 +28,12 @@ from .aws import (
     get_lambda,
     get_ecs
 )
-from .relationships import (
-    belongs_to,
+from .relationships import (  # noqa: F401
+    belong_to_one,
     has_one,
     has_many,
     has_one_through,
-    BelongsTo,
+    BelongToOne,
     HasOne,
     HasMany,
     HasOneThrough,

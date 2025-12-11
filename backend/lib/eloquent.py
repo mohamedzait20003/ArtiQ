@@ -1,9 +1,12 @@
 import uuid
+import logging
 from typing import Optional
 from abc import ABC, abstractmethod
 from botocore.exceptions import ClientError
 from lib.aws import get_s3, get_collection
 from lib.relationships import HasOne, HasMany
+
+logger = logging.getLogger(__name__)
 
 
 class Eloquent(ABC):
@@ -236,6 +239,18 @@ class Eloquent(ABC):
     def delete(self):
         """Delete item from database and associated S3 files"""
         key = {k: getattr(self, k) for k in self.primary_key()}
+        
+        # Log delete operation with stack trace
+        import traceback
+        stack_trace = ''.join(traceback.format_stack())
+        logger.warning(
+            f"[DELETE] Deleting {self.__class__.__name__} with key {key}\n"
+            f"Stack trace:\n{stack_trace}"
+        )
+        print(
+            f"[DELETE WARNING] Deleting {self.__class__.__name__} "
+            f"with key {key}"
+        )
 
         # Handle CASCADE deletes for dependent records
         self._cascade_delete()
@@ -251,13 +266,28 @@ class Eloquent(ABC):
             # MongoDB deleteOne operation
             collection = self.collection()
             result = collection.delete_one(key)
+            logger.info(
+                f"[DELETE] Successfully deleted {self.__class__.__name__} "
+                f"with key {key}, deleted_count: {result.deleted_count}"
+            )
             return result.deleted_count > 0
         except Exception as e:
+            logger.error(
+                f"[DELETE] Error deleting {self.__class__.__name__} "
+                f"with key {key}: {e}",
+                exc_info=True
+            )
             print(f"Error deleting item: {e}")
             return False
 
     def _cascade_delete(self):
         """Handle CASCADE deletes for dependent records"""
+        key = {k: getattr(self, k) for k in self.primary_key()}
+        logger.info(
+            f"[CASCADE] Starting cascade delete for "
+            f"{self.__class__.__name__} with key {key}"
+        )
+        
         # Get all class-level attributes that are relationships
         for attr_name in dir(self.__class__):
             # Skip private/magic methods
@@ -277,7 +307,16 @@ class Eloquent(ABC):
                     continue
 
                 if class_attr.on_delete != 'CASCADE':
+                    logger.debug(
+                        f"[CASCADE] Skipping {attr_name} - "
+                        f"on_delete={class_attr.on_delete}"
+                    )
                     continue
+
+                logger.info(
+                    f"[CASCADE] Processing relationship '{attr_name}' "
+                    f"for {self.__class__.__name__}"
+                )
 
                 # Get the relationship method from the instance
                 relationship_method = getattr(self, attr_name, None)
@@ -290,14 +329,31 @@ class Eloquent(ABC):
                 # Delete related records
                 if result is not None:
                     if isinstance(result, list):
+                        logger.info(
+                            f"[CASCADE] Found {len(result)} related "
+                            f"records via '{attr_name}'"
+                        )
                         for related in result:
                             if hasattr(related, 'delete'):
                                 related.delete()
                     elif hasattr(result, 'delete'):
+                        logger.info(
+                            f"[CASCADE] Found 1 related record "
+                            f"via '{attr_name}'"
+                        )
                         result.delete()
+                else:
+                    logger.debug(
+                        f"[CASCADE] No related records found "
+                        f"via '{attr_name}'"
+                    )
 
             except Exception as e:
                 # Skip attributes that cause errors
+                logger.warning(
+                    f"[CASCADE] Failed to cascade delete {attr_name}: {e}",
+                    exc_info=True
+                )
                 print(f"Warning: Failed to cascade delete {attr_name}: {e}")
                 continue
 

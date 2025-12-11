@@ -10,6 +10,8 @@
     "seed:force": "python scripts/seed.py --force",
     "db:fresh": "python scripts/db.py fresh",
     "db:reset": "python scripts/db.py reset",
+    "generate:salt": "python scripts/generate_salt.py",
+    "generate:key": "python scripts/generate_key.py",
     "lambda:dev": "cd services/lambda-service; uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
     "lambda:test": "cd services/lambda-service; pytest",
     "lambda:test:coverage": "cd services/lambda-service; pytest --cov=app --cov-report=html",
