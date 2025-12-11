@@ -56,7 +56,23 @@ class AWSServices:
             'mongodb://localhost:27017/'
         )
 
-        database_name = cls._database_name        # Create MongoDB client
+        # Log connection details (mask password)
+        masked_uri = connection_string
+        if '@' in masked_uri:
+            parts = masked_uri.split('@')
+            if ':' in parts[0]:
+                user_pass = parts[0].split('://')
+                if len(user_pass) > 1 and ':' in user_pass[1]:
+                    user = user_pass[1].split(':')[0]
+                    masked_uri = (
+                        f"{user_pass[0]}://{user}:****@{parts[1]}"
+                    )
+        print(f"[MongoDB] Connecting to: {masked_uri}")
+
+        database_name = cls._database_name
+        print(f"[MongoDB] Database name: {database_name}")
+
+        # Create MongoDB client
         cls._documentdb_client = MongoClient(
             connection_string,
             retryWrites=False,

@@ -2,7 +2,12 @@
 Model Artifact Rate Job
 Retrieves ratings for a model artifact
 """
-from app.models import Artifact_Model, Rating_Model
+import logging
+from app.models import Artifact_Model
+
+# Configure logger for CloudWatch
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def lambda_handler(event, context):
@@ -20,26 +25,41 @@ def lambda_handler(event, context):
         tuple: (response_data, status_code)
     """
     try:
+        logger.info("[RATE] Starting model artifact rate request")
+        
         # Extract artifact_id from event
         artifact_id = event.get('artifact_id')
+        logger.info(f"[RATE] Requested artifact ID: {artifact_id}")
 
         if not artifact_id:
+            logger.warning("[RATE] artifact_id is missing from request")
             return (
                 {'errorMessage': 'artifact_id is required'},
                 400
             )
 
         # Retrieve the artifact from database
+        logger.info(f"[RATE] Retrieving artifact from database: {artifact_id}")
         artifact = Artifact_Model.get({'id': artifact_id})
 
         if not artifact:
+            logger.warning(f"[RATE] Artifact not found: {artifact_id}")
             return (
                 {'errorMessage': f'Artifact {artifact_id} does not exist'},
                 404
             )
 
+        logger.info(
+            f"[RATE] Artifact found: {artifact.name} "
+            f"(type: {artifact.artifact_type})"
+        )
+
         # Verify it's a model artifact
         if artifact.artifact_type != 'model':
+            logger.warning(
+                f"[RATE] Artifact type mismatch: expected 'model', "
+                f"got '{artifact.artifact_type}'"
+            )
             return (
                 {
                     'errorMessage':
@@ -48,10 +68,14 @@ def lambda_handler(event, context):
                 400
             )
 
-        # Retrieve rating for this artifact
-        rating = Rating_Model.find_by_artifact_id(artifact_id)
-
-        if not rating:
+        # Check if artifact has embedded rating
+        logger.info(
+            f"[RATE] Checking for rating data on artifact {artifact_id}"
+        )
+        if not artifact.rating or not isinstance(artifact.rating, dict):
+            logger.warning(
+                f"[RATE] No rating data found for artifact {artifact_id}"
+            )
             return (
                 {
                     'errorMessage':
@@ -61,50 +85,25 @@ def lambda_handler(event, context):
                 404
             )
 
-        # Format response according to ModelRating schema
-        response = {
-            'name': rating.name,
-            'category': rating.category,
-            'net_score': rating.net_score.get('value', 0.0),
-            'net_score_latency': rating.net_score.get('latency', 0.0),
-            'ramp_up_time': rating.ramp_up_time.get('value', 0.0),
-            'ramp_up_time_latency': rating.ramp_up_time.get('latency', 0.0),
-            'bus_factor': rating.bus_factor.get('value', 0.0),
-            'bus_factor_latency': rating.bus_factor.get('latency', 0.0),
-            'performance_claims': rating.performance_claims.get('value', 0.0),
-            'performance_claims_latency':
-                rating.performance_claims.get('latency', 0.0),
-            'license': rating.license.get('value', 0.0),
-            'license_latency': rating.license.get('latency', 0.0),
-            'dataset_and_code_score':
-                rating.dataset_and_code_score.get('value', 0.0),
-            'dataset_and_code_score_latency':
-                rating.dataset_and_code_score.get('latency', 0.0),
-            'dataset_quality': rating.dataset_quality.get('value', 0.0),
-            'dataset_quality_latency':
-                rating.dataset_quality.get('latency', 0.0),
-            'code_quality': rating.code_quality.get('value', 0.0),
-            'code_quality_latency': rating.code_quality.get('latency', 0.0),
-            'reproducibility': rating.reproducibility.get('value', 0.0),
-            'reproducibility_latency':
-                rating.reproducibility.get('latency', 0.0),
-            'reviewedness': rating.reviewedness.get('value', 0.0),
-            'reviewedness_latency': rating.reviewedness.get('latency', 0.0),
-            'tree_score': rating.tree_score.get('value', 0.0),
-            'tree_score_latency': rating.tree_score.get('latency', 0.0),
-            'size_score': rating.size_score.get('value', {
-                'raspberry_pi': 0.0,
-                'jetson_nano': 0.0,
-                'desktop_pc': 0.0,
-                'aws_server': 0.0
-            }),
-            'size_score_latency': rating.size_score.get('latency', 0.0)
-        }
+        # Use the embedded rating from the artifact
+        rating = artifact.rating
+        logger.info(
+            f"[RATE] Rating found - net_score: "
+            f"{rating.get('net_score', 'N/A')}"
+        )
 
+        # Format response according to ModelRating schema
+        # The rating is already in the correct format from the artifact
+        response = rating
+
+        logger.info(f"[RATE] Successfully retrieved rating for {artifact_id}")
         return (response, 200)
 
     except Exception as e:
-        print(f"Error in model_artifact_rate: {str(e)}")
+        logger.error(
+            f"[RATE] Error in model_artifact_rate: {str(e)}",
+            exc_info=True
+        )
         return (
             {
                 'errorMessage':

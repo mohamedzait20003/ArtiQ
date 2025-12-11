@@ -40,10 +40,13 @@ def lambda_handler(event, context):
             )
 
         # Retrieve artifact from database
+        print(f"[RETRIEVE] Looking for artifact: {artifact_id}")
         artifact = Artifact_Model.get({'id': artifact_id}, load_s3_data=False)
+        print(f"[RETRIEVE] Found: {artifact is not None}")
 
         if not artifact:
             # Return 404 response
+            print(f"[RETRIEVE] Artifact {artifact_id} not found")
             return (
                 {'errorMessage': f"Artifact with ID {artifact_id} not found"},
                 404

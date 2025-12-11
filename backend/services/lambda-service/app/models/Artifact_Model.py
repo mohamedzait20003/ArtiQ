@@ -2,6 +2,7 @@ import os
 from .Model import Model
 from include import has_one
 from typing import Optional, Dict, Any
+from .Rating_Model import Rating_Model
 
 
 class Artifact_Model(Model):
@@ -135,5 +136,65 @@ class Artifact_Model(Model):
         """
         from .Rating_Model import Rating_Model
         return has_one(Rating_Model, 'artifact_id', 'id')(self)
+
+    def delete(self):
+        """
+        Delete artifact and cascade delete related records
+        Cascading deletions:
+        - Delete related ratings from Ratings collection (if exists)
+        Returns:
+            bool: True if deletion successful, False otherwise
+        """
+        try:
+            # CASCADE DELETE: Delete related ratings from Ratings collection
+            rating = Rating_Model.get({'artifact_id': self.id})
+            if rating:
+                print(
+                    f"Cascading delete: Removing rating for "
+                    f"artifact {self.id}"
+                )
+                rating.delete()
+
+            # Call parent delete method to handle S3 files and DB deletion
+            return super().delete()
+        except Exception as e:
+            print(f"Error during cascading delete for artifact {self.id}: {e}")
+            return False
+
+    def update_id(self, new_id: str):
+        """
+        Update artifact ID and cascade update related records
+        Cascading updates:
+        - Update artifact_id in Ratings collection (if exists)
+        Args:
+            new_id: New artifact ID
+        Returns:
+            bool: True if update successful, False otherwise
+        """
+        try:
+            old_id = self.id
+
+            # CASCADE UPDATE: Update artifact_id in Ratings collection
+            from .Rating_Model import Rating_Model
+            rating = Rating_Model.get({'artifact_id': old_id})
+            if rating:
+                print(
+                    f"Cascading update: Updating rating artifact_id "
+                    f"from {old_id} to {new_id}"
+                )
+                rating.artifact_id = new_id
+                rating.save()
+
+            # Delete old record
+            collection = self.collection()
+            collection.delete_one({'id': old_id})
+
+            # Update ID and save as new record
+            self.id = new_id
+            return self.save()
+
+        except Exception as e:
+            print(f"Error during cascading update for artifact {old_id}: {e}")
+            return False
 
     # TODO: Add methods based on OpenAPI spec requirements
