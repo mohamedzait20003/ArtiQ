@@ -143,7 +143,6 @@ class Session_Model(Model):
         Returns:
             Auth_Model instance or None
         """
-        from .Auth_Model import Auth_Model
         return belong_to_one(
             Auth_Model,
             foreign_key='UserID',

@@ -137,7 +137,6 @@ class Artifact_Model(Model):
         Returns:
             Rating_Model instance or None
         """
-        from .Rating_Model import Rating_Model  # noqa: F811
         # Create relationship with CASCADE to avoid circular import
         _rating_relationship = has_one(
             Rating_Model,

@@ -135,5 +135,4 @@ class Rating_Model(Model):
         Returns:
             Artifact_Model instance or None
         """
-        from .Artifact_Model import Artifact_Model  # noqa: F811
         return belong_to_one(Artifact_Model, 'artifact_id', 'id')(self)

@@ -129,9 +129,8 @@ class Role_Model(Model):
             print(f"Error listing roles: {e}")
             return []
 
-    # Define relationship at class level for automatic cascade
     _users_relationship = has_many(
-        None,  # Will be set in users() method due to circular import
+        None,
         foreign_key='RoleID',
         local_key='RoleID',
         on_delete='CASCADE'
@@ -145,8 +144,6 @@ class Role_Model(Model):
         Returns:
             List of Auth_Model instances
         """
-        from .Auth_Model import Auth_Model
-        # Set the related model if not already set
         if self._users_relationship.related_model is None:
             self._users_relationship.related_model = Auth_Model
         return self._users_relationship(self)

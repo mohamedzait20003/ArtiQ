@@ -140,7 +140,7 @@ class Auth_Model(Model):
 
     # Define relationship at class level for automatic cascade
     _session_relationship = has_one(
-        None,  # Will be set in session() method due to circular import
+        None,
         foreign_key='UserID',
         local_key='ID',
         filter_callback=active_session_filter,
@@ -155,8 +155,6 @@ class Auth_Model(Model):
         Returns:
             Session_Model instance or None
         """
-        from .Session_Model import Session_Model
-        # Set the related model if not already set
         if self._session_relationship.related_model is None:
             self._session_relationship.related_model = Session_Model
         return self._session_relationship(self)
