@@ -5,6 +5,7 @@ WORKDIR /app
 # Declare build arguments for tokens
 ARG HF_TOKEN
 ARG GH_TOKEN
+ARG MONGODB_URI
 
 # Copy requirements and install dependencies
 COPY requirements.txt .
@@ -22,6 +23,7 @@ COPY include/ ./include/
 # Set environment variables from build args
 ENV GH_TOKEN=${GH_TOKEN}
 ENV HF_TOKEN=${HF_TOKEN}
+ENV MONGODB_URI=${MONGODB_URI}
 
 # Set Python path to include current directory
 ENV PYTHONPATH=/app

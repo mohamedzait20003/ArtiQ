@@ -227,11 +227,13 @@ jobs:
         IMAGE_TAG: ${{ github.sha }}
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
       run: |
         cd backend/services/fargate-service
         docker build \
           --build-arg GH_TOKEN=$GH_TOKEN \
           --build-arg HF_TOKEN=$HF_TOKEN \
+          --build-arg MONGODB_URI=$MONGODB_URI \
           -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
