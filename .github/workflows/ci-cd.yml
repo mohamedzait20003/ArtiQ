@@ -185,7 +185,7 @@ jobs:
         npm run test -- --watch=false --browsers=ChromeHeadless
     
     - name: Upload build artifacts
-      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Evluation-Initial')
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/EVALUATION-FIX ')
       uses: actions/upload-artifact@v4
       with:
         name: frontend-build
@@ -197,7 +197,7 @@ jobs:
     name: Build & Push Fargate Image
     runs-on: ubuntu-latest
     needs: fargate-service
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Evluation-Initial')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/EVALUATION-FIX')
     
     steps:
     - uses: actions/checkout@v3
@@ -252,7 +252,7 @@ jobs:
     name: Deploy Lambda Service
     runs-on: ubuntu-latest
     needs: lambda-service
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Evluation-Initial')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/EVALUATION-FIX')
     env:
       AWS_REGION: us-east-2
     

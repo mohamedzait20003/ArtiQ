@@ -100,17 +100,17 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
             result = Pipeline(
                 validate_artifact_step,
                 fetch_metadata_step,
-                ParallelGroup(
-                    evaluate_bus_factor,
-                    # evaluate_performance,
-                    # evaluate_rampup,
-                    # evaluate_size,
-                    # evaluate_license,
-                    # evaluate_availability,
-                    # evaluate_code_quality,
-                    # evaluate_dataset_quality,
-                    max_workers=8
-                ),
+                evaluate_bus_factor,
+                # ParallelGroup(
+                #     # evaluate_performance,
+                #     # evaluate_rampup,
+                #     # evaluate_size,
+                #     # evaluate_license,
+                #     # evaluate_availability,
+                #     # evaluate_code_quality,
+                #     # evaluate_dataset_quality,
+                #     max_workers=8
+                # ),
                 aggregate_scores_step,
                 save_ratings_step
             ).start(artifact)
