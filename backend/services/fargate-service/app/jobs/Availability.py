@@ -1,6 +1,6 @@
 """
-Performance/Correctness Evaluation Job
-Evaluates model performance claims and correctness using LLM
+Dataset and Code Availability Evaluation Job
+Evaluates availability of datasets and code using LLM analysis
 """
 import json
 import time
@@ -8,15 +8,15 @@ from typing import Dict, Any, Optional
 from ..providers.LLMAgent import LLMAgent
 
 
-class PerformanceEvaluator:
+class AvailabilityEvaluator:
     """
-    Job class for evaluating performance claims in model documentation
-    using LLM-based analysis following clean software architecture principles.
+    Job class for evaluating dataset and code availability
+    using LLM-based analysis following clean architecture principles.
     """
 
     # Constants
     MAX_TEXT_LENGTH = 16000
-    MAX_PROMPT_LENGTH = 8000
+    MAX_PROMPT_LENGTH = 6000
     MAX_NOTES_LENGTH = 400
     DEFAULT_TEMPERATURE = 0.7
     DEFAULT_MAX_TOKENS = 4096
@@ -27,7 +27,7 @@ class PerformanceEvaluator:
 
     def evaluate(self, metadata) -> Dict[str, Any]:
         """
-        Main evaluation method for performance claims
+        Main evaluation method for dataset and code availability
         Args:
             metadata: Model metadata object
         Returns:
@@ -35,7 +35,7 @@ class PerformanceEvaluator:
         """
         start_time = time.time()
         try:
-            print("[PerformanceEvaluator] Starting evaluation...")
+            print("[AvailabilityEvaluator] Starting evaluation...")
 
             # Extract and compose source text
             text = self._compose_source_text(metadata)
@@ -53,22 +53,24 @@ class PerformanceEvaluator:
             # Parse and validate response
             parsed_result = self._parse_llm_response(response)
 
+            # Calculate score
+            score = self._calculate_score(parsed_result)
+
             # Create final result
             latency = time.time() - start_time
-            return self._create_success_result(
-                parsed_result, len(text), latency
-            )
+            return self._create_success_result(parsed_result, score, latency)
 
         except Exception as e:
-            print(f"[PerformanceEvaluator] Error during evaluation: {e}")
+            print(f"[AvailabilityEvaluator] Error during evaluation: {e}")
             import traceback
             traceback.print_exc()
             latency = time.time() - start_time
-            return self._create_error_result(str(e), metadata, latency)
-            return self._create_error_result(str(e), metadata)
+            return self._create_error_result(str(e), latency)
 
     def _compose_source_text(self, metadata) -> str:
-        """Extract and compose documentation text from README and model card"""
+        """
+        Extract and compose documentation text from README and model card
+        """
         readme = self._extract_readme(metadata)
         card = self._extract_model_card(metadata)
 
@@ -93,7 +95,7 @@ class PerformanceEvaluator:
                 return fh.read()
         except Exception as e:
             print(
-                f"[PerformanceEvaluator] "
+                f"[AvailabilityEvaluator] "
                 f"Warning: Could not read README: {e}"
             )
             return ""
@@ -112,26 +114,24 @@ class PerformanceEvaluator:
         truncated_text = text[:self.MAX_PROMPT_LENGTH]
 
         return (
-            "You are assessing a model card/README for performance claims. "
-            "Be recall-oriented and generous. Consider any reasonable hints: "
-            "named benchmarks, numbers (accuracy/F1/BLEU/etc.), tables, or "
-            "comparisons to baselines/SoTA/leaderboards.\n\n"
-            "Output STRICT JSON ONLY with two fields:\n"
+            "OUTPUT FORMAT: JSON ONLY\n\n"
+            "Check for dataset and code references. "
+            "Return this JSON format:\n\n"
             "{\n"
-            '  "score": <float between 0.0 and 1.0>,\n'
-            '  "notes": "very brief rationale (<=200 chars)"\n'
+            '  "lists_training_datasets": true,\n'
+            '  "links_to_huggingface_datasets": false,\n'
+            '  "links_to_code_repo": true,\n'
+            '  "notes": "Found dataset names and GitHub links"\n'
             "}\n\n"
-            "Scoring guidance (soft, not exact):\n"
-            "- 0.00–0.20: No claims or evidence.\n"
-            "- 0.21–0.50: Mentions benchmarks OR some metrics/figures.\n"
-            "- 0.51–0.80: Clear metrics/tables and some comparison signals.\n"
-            "- 0.81–1.00: Strong metrics+tabled results and explicit "
-            "baselines/SoTA/leaderboard links.\n"
-            "When uncertain, prefer a higher score (recall > precision).\n\n"
-            "Answer with JSON only. No prose.\n"
-            "=== BEGIN TEXT ===\n"
-            f"{truncated_text}\n"
-            "=== END TEXT ===\n"
+            "Criteria:\n"
+            "- lists_training_datasets: true if mentions specific "
+            "dataset names\n"
+            "- links_to_huggingface_datasets: true if has "
+            "huggingface.co/datasets/ URLs\n"
+            "- links_to_code_repo: true if has GitHub/GitLab "
+            "repository links\n\n"
+            f"ANALYZE THIS TEXT:\n{truncated_text}\n\n"
+            "RESPOND WITH JSON ONLY:"
         )
 
     def _send_to_llm(self, prompt: str) -> str:
@@ -148,7 +148,7 @@ class PerformanceEvaluator:
             )
 
         content = response.get('content', '')
-        print(f"[PerformanceEvaluator] LLM response: {content[:100]}...")
+        print(f"[AvailabilityEvaluator] LLM response: {content[:100]}...")
 
         return content
 
@@ -156,8 +156,8 @@ class PerformanceEvaluator:
         """Parse and validate LLM response"""
         try:
             if not response_text or not response_text.strip():
-                print("[PerformanceEvaluator] Warning: Empty LLM response")
-                return {"score": 0.0, "notes": "Empty response from LLM"}
+                print("[AvailabilityEvaluator] Warning: Empty LLM response")
+                return self._get_default_parsed_result()
 
             # Clean markdown formatting
             clean_response = self._clean_markdown(response_text)
@@ -165,29 +165,26 @@ class PerformanceEvaluator:
             # Parse JSON
             obj = json.loads(clean_response)
 
-            # Extract and validate score
-            score = self._validate_score(obj.get("score", 0.0))
-
-            # Extract and truncate notes
-            notes = str(obj.get("notes", ""))[:self.MAX_NOTES_LENGTH]
-
             return {
-                "score": score,
-                "notes": notes,
+                "lists_training_datasets": bool(
+                    obj.get("lists_training_datasets", False)
+                ),
+                "links_to_huggingface_datasets": bool(
+                    obj.get("links_to_huggingface_datasets", False)
+                ),
+                "links_to_code_repo": bool(
+                    obj.get("links_to_code_repo", False)
+                ),
+                "notes": str(obj.get("notes", ""))[:self.MAX_NOTES_LENGTH],
             }
 
         except json.JSONDecodeError as e:
+            print(f"[AvailabilityEvaluator] Warning: JSON parse error: {e}")
             print(
-                f"[PerformanceEvaluator] Warning: JSON parse error: {e}"
-            )
-            print(
-                f"[PerformanceEvaluator] "
+                f"[AvailabilityEvaluator] "
                 f"Raw response: {response_text[:200]}..."
             )
-            return {
-                "score": 0.0,
-                "notes": f"JSON parse error: {str(e)[:100]}"
-            }
+            return self._get_default_parsed_result()
 
     def _clean_markdown(self, text: str) -> str:
         """Remove markdown code block formatting from text"""
@@ -202,38 +199,44 @@ class PerformanceEvaluator:
 
         return clean.strip()
 
-    def _validate_score(self, score_value: Any) -> float:
-        """Validate and normalize score to [0.0, 1.0] range"""
-        try:
-            score = float(score_value)
-        except (TypeError, ValueError):
-            print(
-                f"[PerformanceEvaluator] "
-                f"Warning: Invalid score value: {score_value}"
-            )
-            return 0.0
+    def _get_default_parsed_result(self) -> Dict[str, Any]:
+        """Get default parsed result for errors"""
+        return {
+            "lists_training_datasets": False,
+            "links_to_huggingface_datasets": False,
+            "links_to_code_repo": False,
+            "notes": "Failed to parse LLM response"
+        }
 
-        return max(0.0, min(1.0, score))
+    def _calculate_score(self, parsed_result: Dict[str, Any]) -> float:
+        """Calculate final score from parsed result"""
+        score = 0.0
+        if parsed_result["lists_training_datasets"]:
+            score += 0.3
+        if parsed_result["links_to_huggingface_datasets"]:
+            score += 0.3
+        if parsed_result["links_to_code_repo"]:
+            score += 0.4
+
+        return min(1.0, score)
 
     def _create_success_result(
         self,
         parsed_result: Dict[str, Any],
-        text_length: int,
+        score: float,
         latency: float
     ) -> Dict[str, Any]:
         """Create successful evaluation result"""
-        score = parsed_result.get("score", 0.0)
-        print(f"[PerformanceEvaluator] Performance Score: {score}")
+        print(f"[AvailabilityEvaluator] Availability Score: {score}")
 
         return {
-            'metric_name': 'performance',
+            'metric_name': 'availability',
             'score': score,
             'latency': round(latency, 3),
             'details': {
                 'mode': 'llm',
-                'notes': parsed_result.get('notes', ''),
-                'text_length': text_length,
-                'evaluator': 'PerformanceEvaluator'
+                **parsed_result,
+                'evaluator': 'AvailabilityEvaluator'
             }
         }
 
@@ -241,57 +244,45 @@ class PerformanceEvaluator:
         self, latency: float
     ) -> Dict[str, Any]:
         """Create result for insufficient documentation"""
-        print("[PerformanceEvaluator] Insufficient text for LLM analysis")
+        print("[AvailabilityEvaluator] Insufficient text for LLM analysis")
         return {
-            'metric_name': 'performance',
+            'metric_name': 'availability',
             'score': 0.0,
             'latency': round(latency, 3),
             'details': {
                 'mode': 'llm',
                 'notes': 'Insufficient documentation for analysis',
-                'evaluator': 'PerformanceEvaluator'
+                'evaluator': 'AvailabilityEvaluator'
             }
         }
 
     def _create_error_result(
-        self, error_msg: str, metadata, latency: float
+        self, error_msg: str, latency: float
     ) -> Dict[str, Any]:
         """Create fallback result when LLM evaluation fails"""
-        readme_path = getattr(metadata, 'readme_path', None)
-        card = getattr(metadata, 'card', None)
-
-        score = 0.5
-        if readme_path:
-            score = 0.6
-        if card:
-            score = 0.7
-
-        print(f"[PerformanceEvaluator] Using fallback score: {score}")
+        print("[AvailabilityEvaluator] Using fallback score: 0.0")
 
         return {
-            'metric_name': 'performance',
-            'score': score,
+            'metric_name': 'availability',
+            'score': 0.0,
             'latency': round(latency, 3),
             'details': {
                 'mode': 'fallback',
                 'error': error_msg,
-                'has_readme': bool(readme_path),
-                'has_card': bool(card),
-                'evaluator': 'PerformanceEvaluator'
+                'evaluator': 'AvailabilityEvaluator'
             }
         }
 
 
 # Pipeline integration function
-def evaluate_performance(context):
+def evaluate_availability(context):
     """
-    Evaluate performance claims using LLM-based analysis
-
+    Evaluate dataset and code availability using LLM-based analysis
     Args:
         context: Pipeline context containing metadata
     Returns:
         dict: Evaluation result with metric name and score
     """
     metadata = context.get('last') if isinstance(context, dict) else context
-    evaluator = PerformanceEvaluator()
+    evaluator = AvailabilityEvaluator()
     return evaluator.evaluate(metadata)

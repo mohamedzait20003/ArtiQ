@@ -1,5 +1,4 @@
 """HuggingFace API Manager"""
-import os
 import re
 import logging
 from typing import Optional
@@ -9,10 +8,12 @@ from huggingface_hub import DatasetInfo, HfApi, ModelInfo
 class HuggingFaceAPIManager:
     """Manager for HuggingFace API interactions"""
 
-    def __init__(self):
-        """Initialize HuggingFace API manager"""
-        token = os.getenv("HF_TOKEN")
-
+    def __init__(self, token: Optional[str] = None):
+        """
+        Initialize HuggingFace API manager
+        Args:
+            token: Optional HuggingFace API token for authenticated access
+        """
         # Token is optional for public repositories
         if token:
             logging.info(

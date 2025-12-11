@@ -2,6 +2,7 @@
 fastapi[standard]==0.119.1
 pydantic==2.9.0
 python-dotenv==1.0.0
+huggingface_hub
 
 # AWS dependencies
 boto3==1.40.56

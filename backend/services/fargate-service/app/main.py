@@ -6,9 +6,17 @@ Designed to be invoked as an ephemeral task from Lambda
 import os
 import sys
 import json
-from include import AWSServices
+from include import AWSServices, Pipeline, Parallel
 from app.utils.encryption import decrypt_artifact_id
 from app.utils.artifact import get_artifact_from_db
+from app.jobs import (
+    validate_artifact_step, fetch_metadata_step,
+    aggregate_scores_step, save_ratings_step,
+    evaluate_bus_factor, evaluate_license,
+    evaluate_performance, evaluate_rampup, evaluate_size,
+    evaluate_availability, evaluate_code_quality,
+    evaluate_dataset_quality
+)
 
 
 os.environ.setdefault("AWS_REGION", "us-east-2")
@@ -48,29 +56,43 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
               f"(type: {artifact.artifact_type})")
         print(f"[FARGATE] Source URL: {artifact.source_url}")
 
-        # TODO: Implement pipeline creation and execution logic here
-        # This will depend on the artifact type and requirements
-        # Pipeline(
-        #     validate_artifact,
-        #     fetch_metadata,
-        #     parallel(
-        #         calculate_bus_factor,
-        #         calculate_correctness,
-        #         calculate_rampup,
-        #         calculate_responsiveness,
-        #         calculate_license
-        #     ),
-        #     aggregate_scores,
-        #     save_ratings
-        # ).start(artifact)
+        # Execute the evaluation pipeline
+        try:
+            result = Pipeline(
+                validate_artifact_step,
+                fetch_metadata_step,
+                Parallel(
+                    evaluate_bus_factor,
+                    evaluate_performance,
+                    evaluate_rampup,
+                    evaluate_size,
+                    evaluate_license,
+                    evaluate_availability,
+                    evaluate_code_quality,
+                    evaluate_dataset_quality,
+                    max_workers=8
+                ),
+                aggregate_scores_step,
+                save_ratings_step
+            ).start(artifact)
 
-        print(f"[FARGATE] Successfully processed artifact {artifact_id}")
-        return {
-            'success': True,
-            'artifact_id': artifact_id,
-            'artifact_name': artifact.name,
-            'artifact_type': artifact.artifact_type
-        }
+            print("[FARGATE] Pipeline completed successfully")
+            print(f"[FARGATE] Final scores: {result.get('scores', {})}")
+
+            return {
+                'success': True,
+                'artifact_id': artifact_id,
+                'artifact_name': artifact.name,
+                'artifact_type': artifact.artifact_type,
+                'ratings': result.get('scores', {}),
+                'net_score': result.get('net_score', 0.0)
+            }
+
+        except Exception as pipeline_error:
+            print(f"[FARGATE] Pipeline execution failed: {pipeline_error}")
+            import traceback
+            traceback.print_exc()
+            raise
 
     except Exception as e:
         print(f"[FARGATE] Error processing artifact: {e}")
@@ -94,7 +116,7 @@ def handler(event, context=None):
     Args:
         event: Event data (can be dict or string encrypted artifact_id)
         context: Lambda context (optional, for compatibility)
-  
+
     Returns:
         dict: Processing result
     """

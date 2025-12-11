@@ -3,9 +3,11 @@ HuggingFace Agent
 Handles interactions with HuggingFace API for models and datasets
 """
 
+import os
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from huggingface_hub import ModelInfo, DatasetInfo
+from lib.huggingface import HuggingFaceAPIManager
 
 
 class HGAgent:
@@ -13,14 +15,17 @@ class HGAgent:
     HuggingFace Agent for retrieving model and dataset information
     """
 
-    def __init__(self, hf_manager):
+    def __init__(self, token: Optional[str] = None):
         """
         Initialize HuggingFace Agent
-
         Args:
-            hf_manager: HuggingFaceAPIManager instance from lib.huggingface
+            token: Optional HuggingFace API token. If not provided,
+                   will use HF_TOKEN from environment variables
         """
-        self.hf_manager = hf_manager
+        if token is None:
+            token = os.getenv("HF_TOKEN")
+
+        self.hf_manager = HuggingFaceAPIManager(token=token)
         logging.info("[HGAgent] Initialized HuggingFace Agent")
 
     def get_model_data(self, model_url: str) -> Dict[str, Any]:
@@ -167,3 +172,28 @@ class HGAgent:
                 "success": False,
                 "error": f"Unknown artifact type: {artifact_type}"
             }
+
+    # Delegation methods for direct manager access
+    def model_link_to_id(self, model_link: str) -> str:
+        """Delegate to HuggingFaceAPIManager.model_link_to_id"""
+        return self.hf_manager.model_link_to_id(model_link)
+
+    def dataset_link_to_id(self, dataset_link: str) -> str:
+        """Delegate to HuggingFaceAPIManager.dataset_link_to_id"""
+        return self.hf_manager.dataset_link_to_id(dataset_link)
+
+    def get_model_info(self, model_id: str) -> ModelInfo:
+        """Delegate to HuggingFaceAPIManager.get_model_info"""
+        return self.hf_manager.get_model_info(model_id)
+
+    def get_dataset_info(self, dataset_id: str) -> DatasetInfo:
+        """Delegate to HuggingFaceAPIManager.get_dataset_info"""
+        return self.hf_manager.get_dataset_info(dataset_id)
+
+    def download_model_readme(self, model_id: str):
+        """Delegate to HuggingFaceAPIManager.download_model_readme"""
+        return self.hf_manager.download_model_readme(model_id)
+
+    def download_dataset_readme(self, dataset_id: str):
+        """Delegate to HuggingFaceAPIManager.download_dataset_readme"""
+        return self.hf_manager.download_dataset_readme(dataset_id)
