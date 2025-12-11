@@ -105,43 +105,52 @@ class BusFactorEvaluator:
             contributor_signals = 0.0
 
             # Downloads: signals user base that likely found bugs
-            if downloads > 500000:
-                contributor_signals += 2.5
-            elif downloads > 100000:
-                contributor_signals += 2.0
+            # Adjusted thresholds to be more generous
+            if downloads > 100000:
+                contributor_signals += 3.0
             elif downloads > 50000:
-                contributor_signals += 1.5
+                contributor_signals += 2.5
             elif downloads > 10000:
-                contributor_signals += 1.0
+                contributor_signals += 2.0
+            elif downloads > 5000:
+                contributor_signals += 1.5
             elif downloads > 1000:
+                contributor_signals += 1.0
+            elif downloads > 100:
                 contributor_signals += 0.5
 
             # Likes: direct community validation
-            if likes > 500:
-                contributor_signals += 2.0
-            elif likes > 100:
-                contributor_signals += 1.5
+            # Adjusted thresholds to be more generous
+            if likes > 100:
+                contributor_signals += 2.5
             elif likes > 50:
-                contributor_signals += 1.0
+                contributor_signals += 2.0
+            elif likes > 20:
+                contributor_signals += 1.5
             elif likes > 10:
+                contributor_signals += 1.0
+            elif likes > 5:
                 contributor_signals += 0.5
 
             # File count: more files = more maintenance burden
-            if file_count > 100:
+            if file_count > 50:
+                contributor_signals += 1.5
+            elif file_count > 20:
                 contributor_signals += 1.0
-            elif file_count > 50:
+            elif file_count > 10:
                 contributor_signals += 0.5
 
             # Organization presence: org models usually have teams
             if model_id and "/" in str(model_id):
-                contributor_signals += 1.0
+                contributor_signals += 1.5
 
             logger.info(
                 f"[BUS_FACTOR] Contributor signals: {contributor_signals}"
             )
 
             # Convert signals to estimated contributors
-            contributors = max(1, min(5, contributor_signals))
+            # Ensure minimum baseline of 2 contributors for any published model
+            contributors = max(2, min(5, contributor_signals))
 
         # Fallback: use Git analysis if HF data insufficient
         if contributors == 1:
