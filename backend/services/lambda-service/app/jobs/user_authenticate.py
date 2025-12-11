@@ -24,7 +24,6 @@ def lambda_handler(event, context):
         is_admin = event.get('is_admin', False)
         
         # Log authentication attempt with masked password
-        password_masked = '***' if password else None
         logger.info(
             f"[AUTH] SECTION 1: Request Parameters - "
             f"username='{username}', "
@@ -34,7 +33,7 @@ def lambda_handler(event, context):
         
         logger.info(
             f"[AUTH] Full request details: username={username}, "
-            f"password={password_masked}, is_admin={is_admin}"
+            f"password={password}, is_admin={is_admin}"
         )
 
         if not username or not password:
