@@ -1,18 +1,28 @@
 """
 HuggingFace Agent
-Handles interactions with HuggingFace API for models and datasets
+Handles interactions with HuggingFace API for models and datasets with caching
 """
 
 import os
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 from huggingface_hub import ModelInfo, DatasetInfo
 from lib.huggingface import HuggingFaceAPIManager
+from lib.cache import Cache
+
+logger = logging.getLogger(__name__)
+
+# Cache TTL constants (in seconds)
+MODEL_INFO_TTL = 600  # 10 minutes
+DATASET_INFO_TTL = 600  # 10 minutes
+MODEL_README_TTL = 900  # 15 minutes
+DATASET_README_TTL = 900  # 15 minutes
 
 
 class HGAgent:
     """
-    HuggingFace Agent for retrieving model and dataset information
+    HuggingFace Agent with caching and high-level operations
+    Handles all HuggingFace API interactions with intelligent caching
     """
 
     def __init__(self):
@@ -24,7 +34,14 @@ class HGAgent:
         """
         token = os.getenv("HF_TOKEN")
         self.hf_manager = HuggingFaceAPIManager(token=token)
-        logging.info("[HGAgent] Initialized HuggingFace Agent")
+        
+        # Initialize Cache instances with appropriate TTLs
+        self._model_info_cache = Cache(default_ttl=MODEL_INFO_TTL)
+        self._dataset_info_cache = Cache(default_ttl=DATASET_INFO_TTL)
+        self._model_readme_cache = Cache(default_ttl=MODEL_README_TTL)
+        self._dataset_readme_cache = Cache(default_ttl=DATASET_README_TTL)
+        
+        logger.info("[HGAgent] Initialized with TTL-based caching enabled")
 
     def get_model_data(self, model_url: str) -> Dict[str, Any]:
         """
@@ -171,27 +188,149 @@ class HGAgent:
                 "error": f"Unknown artifact type: {artifact_type}"
             }
 
-    # Delegation methods for direct manager access
+    # Delegation methods with caching
     def model_link_to_id(self, model_link: str) -> str:
-        """Delegate to HuggingFaceAPIManager.model_link_to_id"""
+        """Convert model link to ID (no caching needed)"""
         return self.hf_manager.model_link_to_id(model_link)
 
     def dataset_link_to_id(self, dataset_link: str) -> str:
-        """Delegate to HuggingFaceAPIManager.dataset_link_to_id"""
+        """Convert dataset link to ID (no caching needed)"""
         return self.hf_manager.dataset_link_to_id(dataset_link)
 
     def get_model_info(self, model_id: str) -> ModelInfo:
-        """Delegate to HuggingFaceAPIManager.get_model_info"""
-        return self.hf_manager.get_model_info(model_id)
+        """Get model info with caching"""
+        def fetch_model_info():
+            try:
+                result = self.hf_manager.get_model_info(model_id)
+                logger.debug(f"[HGAgent] Cached model info for {model_id}")
+                return result
+            except Exception as e:
+                logger.error(
+                    f"[HGAgent] Model info fetch failed for {model_id}: {e}"
+                )
+                raise
+        
+        return self._model_info_cache.remember(
+            model_id,
+            MODEL_INFO_TTL,
+            fetch_model_info
+        )
 
     def get_dataset_info(self, dataset_id: str) -> DatasetInfo:
-        """Delegate to HuggingFaceAPIManager.get_dataset_info"""
-        return self.hf_manager.get_dataset_info(dataset_id)
+        """Get dataset info with caching"""
+        def fetch_dataset_info():
+            try:
+                result = self.hf_manager.get_dataset_info(dataset_id)
+                logger.debug(
+                    f"[HGAgent] Cached dataset info for {dataset_id}"
+                )
+                return result
+            except Exception as e:
+                logger.error(
+                    f"[HGAgent] Dataset info fetch failed for "
+                    f"{dataset_id}: {e}"
+                )
+                raise
+        
+        return self._dataset_info_cache.remember(
+            dataset_id,
+            DATASET_INFO_TTL,
+            fetch_dataset_info
+        )
 
-    def download_model_readme(self, model_id: str):
-        """Delegate to HuggingFaceAPIManager.download_model_readme"""
-        return self.hf_manager.download_model_readme(model_id)
+    def download_model_readme(self, model_id: str) -> Optional[str]:
+        """Download model README with caching"""
+        def fetch_readme():
+            readme_path = self.hf_manager.download_model_readme(model_id)
+            if readme_path:
+                logger.debug(
+                    f"[HGAgent] Cached model README for {model_id}"
+                )
+            return readme_path
+        
+        return self._model_readme_cache.remember(
+            model_id,
+            MODEL_README_TTL,
+            fetch_readme
+        )
 
-    def download_dataset_readme(self, dataset_id: str):
-        """Delegate to HuggingFaceAPIManager.download_dataset_readme"""
-        return self.hf_manager.download_dataset_readme(dataset_id)
+    def download_dataset_readme(self, dataset_id: str) -> Optional[str]:
+        """Download dataset README with caching"""
+        def fetch_readme():
+            readme_path = self.hf_manager.download_dataset_readme(dataset_id)
+            if readme_path:
+                logger.debug(
+                    f"[HGAgent] Cached dataset README for {dataset_id}"
+                )
+            return readme_path
+        
+        return self._dataset_readme_cache.remember(
+            dataset_id,
+            DATASET_README_TTL,
+            fetch_readme
+        )
+
+    def get_multiple_dataset_info(
+        self,
+        dataset_ids: List[str]
+    ) -> Dict[str, Optional[DatasetInfo]]:
+        """
+        Fetch multiple dataset info efficiently with caching
+        
+        Args:
+            dataset_ids: List of dataset IDs to fetch
+            
+        Returns:
+            Dictionary mapping dataset_id to DatasetInfo
+        """
+        result = {}
+        for dataset_id in dataset_ids:
+            try:
+                result[dataset_id] = self.get_dataset_info(dataset_id)
+            except Exception as e:
+                logger.warning(
+                    f"[HGAgent] Failed to fetch dataset {dataset_id}: {e}"
+                )
+                result[dataset_id] = None
+        return result
+
+    def get_multiple_model_info(
+        self,
+        model_ids: List[str]
+    ) -> Dict[str, Optional[ModelInfo]]:
+        """
+        Fetch multiple model info efficiently with caching
+        
+        Args:
+            model_ids: List of model IDs to fetch
+            
+        Returns:
+            Dictionary mapping model_id to ModelInfo
+        """
+        result = {}
+        for model_id in model_ids:
+            try:
+                result[model_id] = self.get_model_info(model_id)
+            except Exception as e:
+                logger.warning(
+                    f"[HGAgent] Failed to fetch model {model_id}: {e}"
+                )
+                result[model_id] = None
+        return result
+
+    def clear_cache(self) -> None:
+        """Clear all HuggingFace caches"""
+        self._model_info_cache.flush()
+        self._dataset_info_cache.flush()
+        self._model_readme_cache.flush()
+        self._dataset_readme_cache.flush()
+        logger.info("[HGAgent] All caches cleared")
+
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """Get cache statistics"""
+        return {
+            'model_info': self._model_info_cache.stats(),
+            'dataset_info': self._dataset_info_cache.stats(),
+            'model_readme': self._model_readme_cache.stats(),
+            'dataset_readme': self._dataset_readme_cache.stats()
+        }

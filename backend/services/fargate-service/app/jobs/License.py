@@ -6,7 +6,7 @@ import json
 import time
 import logging
 from typing import Dict, Any, Optional, Tuple
-from ..providers.LLMAgent import LLMAgent
+from app.bootstrap import get_llm_agent
 
 # Configure logger for CloudWatch
 logger = logging.getLogger(__name__)
@@ -25,9 +25,9 @@ class LicenseEvaluator:
     MAX_LICENSE_TEXT = 500
     MAX_LLM_TEXT = 2000
 
-    def __init__(self, llm_agent: Optional[LLMAgent] = None):
+    def __init__(self, llm_agent=None):
         """Initialize with optional LLMAgent instance"""
-        self.llm_agent = llm_agent or LLMAgent()
+        self.llm_agent = llm_agent or get_llm_agent()
 
     def evaluate(self, metadata) -> Dict[str, Any]:
         """

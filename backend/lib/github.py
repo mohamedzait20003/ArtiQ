@@ -46,6 +46,7 @@ class GitHubAPIManager:
                 f"GitHub API request failed: {response.status_code} "
                 f"{response.text}"
             )
+        
         return response.json()
 
     def get_repo_contents(
@@ -73,4 +74,32 @@ class GitHubAPIManager:
         """Get repository README."""
         result = self.github_request(path=f"/repos/{owner}/{repo}/readme")
         assert isinstance(result, dict), "Expected a dict for README"
+        return result
+
+    def get_repo_contributors(
+        self,
+        owner: str,
+        repo: str,
+        per_page: int = 100
+    ) -> List:
+        """Get repository contributors."""
+        result = self.github_request(
+            path=f"/repos/{owner}/{repo}/contributors",
+            params={"per_page": per_page}
+        )
+        assert isinstance(result, list), "Expected a list of contributors"
+        return result
+
+    def get_repo_commits(
+        self,
+        owner: str,
+        repo: str,
+        per_page: int = 10
+    ) -> List:
+        """Get repository commits."""
+        result = self.github_request(
+            path=f"/repos/{owner}/{repo}/commits",
+            params={"per_page": per_page}
+        )
+        assert isinstance(result, list), "Expected a list of commits"
         return result

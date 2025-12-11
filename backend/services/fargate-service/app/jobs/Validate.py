@@ -3,8 +3,7 @@ Validate Artifact Job
 Validates that artifact exists on HuggingFace and GitHub
 """
 import logging
-from ..providers.HGAgent import HGAgent
-from ..providers.GHAgent import GHAgent
+from app.bootstrap import get_gh_agent, get_hg_agent
 
 # Configure logger for CloudWatch
 logger = logging.getLogger(__name__)
@@ -42,7 +41,7 @@ def validate_artifact_step(context):
         logger.info(
             f"[VALIDATE] Checking HuggingFace model: {artifact.source_url}"
         )
-        hf_manager = HGAgent()
+        hf_manager = get_hg_agent()
 
         try:
             model_id = hf_manager.model_link_to_id(artifact.source_url)
@@ -79,7 +78,7 @@ def validate_artifact_step(context):
 
     if code_link:
         logger.info(f"[VALIDATE] Checking GitHub repository: {code_link}")
-        gh_manager = GHAgent()
+        gh_manager = get_gh_agent()
 
         try:
             owner, repo = gh_manager.code_link_to_repo(code_link)

@@ -9,6 +9,7 @@ import json
 import logging
 from datetime import datetime
 from include import AWSServices, Pipeline
+from app.bootstrap import bootstrap_agents
 from app.utils.encryption import decrypt_artifact_id
 from app.utils.artifact import get_artifact_from_db
 from app.jobs import (
@@ -30,12 +31,21 @@ os.environ.setdefault("AWS_REGION", "us-east-2")
 # Debug: Log environment variables
 logger.info("[DEBUG] Environment variables:")
 logger.info(f"  AWS_REGION: {os.environ.get('AWS_REGION', 'NOT SET')}")
-logger.info(f"  MONGODB_URI: {'SET' if os.environ.get('MONGODB_URI') else 'NOT SET'}")
-logger.info(f"  ARTIFACT_ENCRYPTION_KEY: {'SET' if os.environ.get('ARTIFACT_ENCRYPTION_KEY') else 'NOT SET'}")
-logger.info(f"  GH_TOKEN: {'SET' if os.environ.get('GH_TOKEN') else 'NOT SET'}")
-logger.info(f"  HF_TOKEN: {'SET' if os.environ.get('HF_TOKEN') else 'NOT SET'}")
+mongodb_set = 'SET' if os.environ.get('MONGODB_URI') else 'NOT SET'
+logger.info(f"  MONGODB_URI: {mongodb_set}")
+encryption_key_set = (
+    'SET' if os.environ.get('ARTIFACT_ENCRYPTION_KEY') else 'NOT SET'
+)
+logger.info(f"  ARTIFACT_ENCRYPTION_KEY: {encryption_key_set}")
+gh_token_set = 'SET' if os.environ.get('GH_TOKEN') else 'NOT SET'
+logger.info(f"  GH_TOKEN: {gh_token_set}")
+hf_token_set = 'SET' if os.environ.get('HF_TOKEN') else 'NOT SET'
+logger.info(f"  HF_TOKEN: {hf_token_set}")
 
 AWSServices.initialize(region=os.environ.get("AWS_REGION"))
+
+# Bootstrap agents as singletons for memory efficiency
+bootstrap_agents()
 
 
 def process_artifact(encrypted_artifact_id: str) -> dict:
