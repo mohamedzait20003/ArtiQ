@@ -26,7 +26,6 @@ def save_ratings_step(context):
     latencies = aggregated_data.get('latencies', {})
     net_score = aggregated_data.get('net_score', 0.0)
     net_latency = aggregated_data.get('net_latency', 0.0)
-    metadata = aggregated_data.get('metadata')
 
     if not artifact:
         logger.warning("[SAVE] No artifact found, skipping save")
@@ -45,15 +44,13 @@ def save_ratings_step(context):
                 'latency': latencies.get(metric_name, 0.0)
             }
 
-        # Extract name and category from metadata or artifact
-        name = getattr(metadata, 'name', None) or artifact.name
-        category = getattr(metadata, 'category', 'unknown')
+        # Generate rating ID (use artifact_id as rating id for uniqueness)
+        rating_id = f"rating_{artifact.id}"
 
         # Create or update rating with proper schema
         rating = Rating_Model(
+            id=rating_id,
             artifact_id=artifact.id,
-            name=name,
-            category=category,
             net_score={
                 'value': net_score,
                 'latency': net_latency

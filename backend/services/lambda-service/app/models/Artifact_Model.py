@@ -179,9 +179,14 @@ class Artifact_Model(Model):
             rating = Rating_Model.get({'artifact_id': old_id})
             if rating:
                 print(
-                    f"Cascading update: Updating rating artifact_id "
-                    f"from {old_id} to {new_id}"
+                    f"Cascading update: Updating rating for "
+                    f"artifact {old_id} to {new_id}"
                 )
+                # Delete old rating
+                rating.delete()
+                
+                # Create new rating with updated artifact_id and id
+                rating.id = f"rating_{new_id}"
                 rating.artifact_id = new_id
                 rating.save()
 

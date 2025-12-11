@@ -39,6 +39,7 @@ class Rating_Model(Model):
 
     def __init__(
         self,
+        id: str,
         artifact_id: str,
         net_score: Optional[Dict[str, float]] = None,
         ramp_up_time: Optional[Dict[str, float]] = None,
@@ -58,9 +59,8 @@ class Rating_Model(Model):
         Initialize Rating instance
 
         Args:
-            artifact_id: Unique identifier for the artifact being rated
-            name: Name of the artifact
-            category: Model category
+            id: Primary key for the rating
+            artifact_id: Reference to the artifact being rated
             net_score: Overall score {value, latency}
             ramp_up_time: Ease-of-adoption {value, latency}
             bus_factor: Team redundancy {value, latency}
@@ -74,6 +74,7 @@ class Rating_Model(Model):
             tree_score: Dependency health {value, latency}
             size_score: Size suitability with nested device scores
         """
+        self.id = id
         self.artifact_id = artifact_id
         self.net_score = net_score or {"value": 0.0, "latency": 0.0}
         self.ramp_up_time = ramp_up_time or {"value": 0.0, "latency": 0.0}
@@ -109,7 +110,7 @@ class Rating_Model(Model):
     @classmethod
     def primary_key(cls):
         """Define the primary key for database operations"""
-        return ["artifact_id"]
+        return ["id"]
 
     @classmethod
     def find_by_artifact_id(cls, artifact_id: str):
@@ -141,9 +142,17 @@ class Rating_Model(Model):
         Returns:
             Dictionary formatted for API response
         """
+        # Get artifact to retrieve name and category
+        artifact = self.artifact()
+        artifact_name = artifact.name if artifact else "Unknown"
+        artifact_category = (
+            getattr(artifact, 'category', 'unknown') if artifact
+            else 'unknown'
+        )
+        
         return {
-            "name": self.name,
-            "category": self.category,
+            "name": artifact_name,
+            "category": artifact_category,
             "net_score": self.net_score.get("value", 0.0),
             "net_score_latency": self.net_score.get("latency", 0.0),
             "ramp_up_time": self.ramp_up_time.get("value", 0.0),
