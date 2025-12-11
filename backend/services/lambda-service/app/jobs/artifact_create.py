@@ -29,8 +29,7 @@ def lambda_handler(event, context):
             artifact_type=artifact_type,
             source_url=url,
             file_size=None,
-            license=None,
-            rating=None
+            license=None
         )
 
         # Create a mock artifact file (empty file as placeholder)
