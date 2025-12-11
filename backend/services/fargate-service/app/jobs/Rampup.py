@@ -123,15 +123,26 @@ class RampupEvaluator:
             "OUTPUT FORMAT: JSON ONLY\n\n"
             "Rate the README quality and return this JSON format:\n\n"
             "{\n"
-            '  "quality_of_example_code": (0.0 - 0.5),\n'
-            '  "readme_coverage": (0.0 - 0.5),\n'
+            '  "quality_of_example_code": (0.0 - 1.0),\n'
+            '  "readme_coverage": (0.0 - 1.0),\n'
             '  "notes": "Good examples, clear docs"\n'
             "}\n\n"
-            "Scoring (0.0 to 0.5):\n"
-            "- quality_of_example_code: Rate code examples and "
-            "usage instructions\n"
-            "- readme_coverage: Rate documentation completeness "
-            "and structure\n\n"
+            "Scoring Guidelines (0.0 to 1.0 for each metric):\n\n"
+            "quality_of_example_code:\n"
+            "- 0.9-1.0: Comprehensive runnable examples with explanations\n"
+            "- 0.7-0.9: Multiple working examples with clear usage\n"
+            "- 0.5-0.7: Basic usage examples present\n"
+            "- 0.3-0.5: Minimal examples or code snippets\n"
+            "- 0.0-0.3: No examples or very unclear\n\n"
+            "readme_coverage:\n"
+            "- 0.9-1.0: Installation, usage, API docs, troubleshooting\n"
+            "- 0.7-0.9: Installation, usage, basic API documentation\n"
+            "- 0.5-0.7: Installation and basic usage instructions\n"
+            "- 0.3-0.5: Minimal documentation\n"
+            "- 0.0-0.3: Very sparse or missing key sections\n\n"
+            "IMPORTANT: Be generous - if documentation exists and is "
+            "reasonably clear, score should be >= 0.5 for each metric. "
+            "Well-documented projects should receive 0.7+ scores.\n\n"
             f"ANALYZE THIS README:\n{truncated_text}\n\n"
             "RESPOND WITH JSON ONLY:"
         )
@@ -206,7 +217,10 @@ class RampupEvaluator:
         score += parsed_result["quality_of_example_code"]
         score += parsed_result["readme_coverage"]
 
-        return max(0.0, min(1.0, score))
+        # Normalize to 0-1 range (sum of two 0-1.0 scores = 0-2.0)
+        normalized_score = score / 2.0
+
+        return max(0.0, min(1.0, normalized_score))
 
     def _create_success_result(
         self,
@@ -248,24 +262,47 @@ class RampupEvaluator:
         self, error_msg: str, metadata, latency: float
     ) -> Dict[str, Any]:
         """Create fallback result when LLM evaluation fails"""
-        # Simple heuristic fallback
+        # Simple heuristic fallback with more generous scoring
         readme_path = getattr(metadata, 'readme_path', None)
         repo_contents = getattr(metadata, 'repo_contents', [])
 
         score = 0.0
 
-        # Base score for having a README
+        # More generous base score for having a README
         if readme_path:
-            score += 0.5
+            try:
+                with open(readme_path, 'r', encoding='utf-8') as f:
+                    readme_content = f.read()
+                    readme_len = len(readme_content)
+
+                    # Score based on README length and content
+                    if readme_len > 2000:
+                        score += 0.6  # Substantial README
+                    elif readme_len > 500:
+                        score += 0.5  # Decent README
+                    elif readme_len > 100:
+                        score += 0.3  # Minimal README
+                    else:
+                        score += 0.1  # Very minimal
+
+                    # Bonus for common documentation keywords
+                    content_lower = readme_content.lower()
+                    if any(keyword in content_lower for keyword in
+                           ['install', 'usage', 'example', 'getting started']):
+                        score += 0.2
+
+            except Exception:
+                score += 0.4  # Default if can't read
 
         # Check for examples or docs folder
         if isinstance(repo_contents, list):
             for item in repo_contents:
                 if isinstance(item, dict):
                     name = item.get('name', '').lower()
-                    if 'example' in name or 'demo' in name or 'docs' in name:
-                        score += 0.3
-                        break
+                    if 'example' in name or 'demo' in name:
+                        score += 0.15
+                    if 'docs' in name or 'documentation' in name:
+                        score += 0.1
 
         score = min(score, 1.0)
 
