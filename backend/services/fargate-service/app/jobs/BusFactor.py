@@ -92,7 +92,7 @@ class BusFactorEvaluator:
                 if isinstance(c, dict) and
                 int(c.get("contributions", 0)) > 0
             )
-            
+
             if significant_contributors > 0:
                 # Use significant contributors as primary metric
                 contributors = min(5, significant_contributors)

@@ -38,6 +38,7 @@ def save_ratings_step(context):
 
     try:
         # Helper to create metric dict with value and latency
+        # Uses actual score if available, otherwise uses default
         def metric_dict(metric_name, default=0.0):
             return {
                 'value': scores.get(metric_name, default),
@@ -49,9 +50,10 @@ def save_ratings_step(context):
 
         # Log which metrics were evaluated
         logger.info(f"[SAVE] Available metrics: {list(scores.keys())}")
+        logger.info(f"[SAVE] Scores values: {scores}")
         
-        # Create or update rating with only evaluated metrics
-        # Set defaults to 0.0 for metrics not in the current pipeline
+        # Create or update rating with evaluated metrics
+        # All metrics in parallel pipeline should be present
         rating = Rating_Model(
             id=rating_id,
             artifact_id=artifact.id,
