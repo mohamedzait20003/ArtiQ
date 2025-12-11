@@ -3,8 +3,13 @@ Bus Factor Evaluation Job
 Evaluates repository bus factor based on contributors and commit activity
 """
 import time
+import logging
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
+
+# Configure logger for CloudWatch
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class BusFactorEvaluator:
@@ -33,17 +38,24 @@ class BusFactorEvaluator:
         """
         start_time = time.time()
         try:
+            logger.info("[BUS_FACTOR] Starting evaluation")
             print("[BusFactorEvaluator] Starting evaluation...")
 
             # Extract contributor count
             n_contrib = self._contributors_count(metadata)
+            logger.info(f"[BUS_FACTOR] Contributors count: {n_contrib}")
 
             # Extract latest commit timestamp
             last_ts = self._latest_commit_ts(metadata)
+            logger.info(f"[BUS_FACTOR] Latest commit timestamp: {last_ts}")
 
             # Calculate component scores
             c_score = self._contributors_score(n_contrib)
             r_score = self._recency_score(last_ts)
+            logger.info(
+                f"[BUS_FACTOR] Component scores - "
+                f"contributors: {c_score:.3f}, recency: {r_score:.3f}"
+            )
 
             # Blend scores
             score = (
@@ -63,11 +75,19 @@ class BusFactorEvaluator:
 
             # Create result
             latency = time.time() - start_time
+            logger.info(
+                f"[BUS_FACTOR] Evaluation complete - "
+                f"score: {score:.3f}, latency: {latency:.3f}s"
+            )
             return self._create_success_result(
                 score, n_contrib, c_score, r_score, months, latency
             )
 
         except Exception as e:
+            logger.error(
+                f"[BUS_FACTOR] Error during evaluation: {e}",
+                exc_info=True
+            )
             print(f"[BusFactorEvaluator] Error during evaluation: {e}")
             import traceback
             traceback.print_exc()

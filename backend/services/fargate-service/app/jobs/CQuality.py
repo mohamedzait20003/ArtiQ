@@ -4,8 +4,13 @@ Evaluates code quality through tests, structure, and documentation
 """
 import json
 import time
+import logging
 from typing import Dict, Any, Optional, List
 from ..providers.LLMAgent import LLMAgent
+
+# Configure logger for CloudWatch
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class CodeQualityEvaluator:
@@ -33,25 +38,41 @@ class CodeQualityEvaluator:
         """
         start_time = time.time()
         try:
+            logger.info("[CODE_QUALITY] Starting evaluation")
             print("[CodeQualityEvaluator] Starting evaluation...")
 
             # Extract repository contents
             repo_contents = getattr(metadata, "repo_contents", [])
+            logger.info(
+                f"[CODE_QUALITY] Found {len(repo_contents)} repo items"
+            )
 
             if not isinstance(repo_contents, list):
+                logger.warning(
+                    "[CODE_QUALITY] repo_contents is not a list"
+                )
                 latency = time.time() - start_time
                 return self._create_no_repo_result(latency)
 
             # Check for test files
             has_tests = self._check_test_files(repo_contents)
+            logger.info(f"[CODE_QUALITY] Has tests: {has_tests}")
 
             # Check for dependency management
             has_dependency_mgmt = self._check_dependency_management(
                 repo_contents
             )
+            logger.info(
+                f"[CODE_QUALITY] Has dependency mgmt: "
+                f"{has_dependency_mgmt}"
+            )
 
             # Analyze code with LLM
+            logger.info("[CODE_QUALITY] Running LLM analysis")
             llm_analysis = self._analyze_code_with_llm(repo_contents)
+            logger.info(
+                f"[CODE_QUALITY] LLM analysis: {llm_analysis}"
+            )
 
             # Calculate score
             score = self._calculate_score(
@@ -59,9 +80,14 @@ class CodeQualityEvaluator:
                 has_dependency_mgmt,
                 llm_analysis
             )
+            logger.info(f"[CODE_QUALITY] Final score: {score:.3f}")
 
             # Create final result
             latency = time.time() - start_time
+            logger.info(
+                f"[CODE_QUALITY] Evaluation complete "
+                f"(latency: {latency:.3f}s)"
+            )
             return self._create_success_result(
                 score,
                 has_tests,
@@ -71,6 +97,10 @@ class CodeQualityEvaluator:
             )
 
         except Exception as e:
+            logger.error(
+                f"[CODE_QUALITY] Error during evaluation: {e}",
+                exc_info=True
+            )
             print(f"[CodeQualityEvaluator] Error during evaluation: {e}")
             import traceback
             traceback.print_exc()

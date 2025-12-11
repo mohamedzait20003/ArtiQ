@@ -89,12 +89,81 @@ def lambda_handler(event, context):
         rating = artifact.rating
         logger.info(
             f"[RATE] Rating found - net_score: "
-            f"{rating.get('net_score', 'N/A')}"
+            f"{rating.get('net_score', {}).get('value', 'N/A')}"
         )
 
-        # Format response according to ModelRating schema
-        # The rating is already in the correct format from the artifact
-        response = rating
+        # Format response according to ModelRating schema (flattened format)
+        response = {
+            "name": rating.get("name", artifact.name),
+            "category": rating.get("category", ""),
+            "net_score": rating.get("net_score", {}).get("value", 0.0),
+            "net_score_latency": (
+                rating.get("net_score", {}).get("latency", 0.0)
+            ),
+            "ramp_up_time": (
+                rating.get("ramp_up_time", {}).get("value", 0.0)
+            ),
+            "ramp_up_time_latency": (
+                rating.get("ramp_up_time", {}).get("latency", 0.0)
+            ),
+            "bus_factor": rating.get("bus_factor", {}).get("value", 0.0),
+            "bus_factor_latency": (
+                rating.get("bus_factor", {}).get("latency", 0.0)
+            ),
+            "performance_claims": (
+                rating.get("performance_claims", {}).get("value", 0.0)
+            ),
+            "performance_claims_latency": (
+                rating.get("performance_claims", {}).get("latency", 0.0)
+            ),
+            "license": rating.get("license", {}).get("value", 0.0),
+            "license_latency": (
+                rating.get("license", {}).get("latency", 0.0)
+            ),
+            "dataset_and_code_score": (
+                rating.get("dataset_and_code_score", {}).get("value", 0.0)
+            ),
+            "dataset_and_code_score_latency": (
+                rating.get("dataset_and_code_score", {}).get("latency", 0.0)
+            ),
+            "dataset_quality": (
+                rating.get("dataset_quality", {}).get("value", 0.0)
+            ),
+            "dataset_quality_latency": (
+                rating.get("dataset_quality", {}).get("latency", 0.0)
+            ),
+            "code_quality": (
+                rating.get("code_quality", {}).get("value", 0.0)
+            ),
+            "code_quality_latency": (
+                rating.get("code_quality", {}).get("latency", 0.0)
+            ),
+            "reproducibility": (
+                rating.get("reproducibility", {}).get("value", 0.0)
+            ),
+            "reproducibility_latency": (
+                rating.get("reproducibility", {}).get("latency", 0.0)
+            ),
+            "reviewedness": (
+                rating.get("reviewedness", {}).get("value", 0.0)
+            ),
+            "reviewedness_latency": (
+                rating.get("reviewedness", {}).get("latency", 0.0)
+            ),
+            "tree_score": rating.get("tree_score", {}).get("value", 0.0),
+            "tree_score_latency": (
+                rating.get("tree_score", {}).get("latency", 0.0)
+            ),
+            "size_score": rating.get("size_score", {}).get("value", {
+                "raspberry_pi": 0.0,
+                "jetson_nano": 0.0,
+                "desktop_pc": 0.0,
+                "aws_server": 0.0
+            }),
+            "size_score_latency": (
+                rating.get("size_score", {}).get("latency", 0.0)
+            )
+        }
 
         logger.info(f"[RATE] Successfully retrieved rating for {artifact_id}")
         return (response, 200)

@@ -4,8 +4,13 @@ Evaluates model performance claims and correctness using LLM
 """
 import json
 import time
+import logging
 from typing import Dict, Any, Optional
 from ..providers.LLMAgent import LLMAgent
+
+# Configure logger for CloudWatch
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class PerformanceEvaluator:
@@ -35,31 +40,52 @@ class PerformanceEvaluator:
         """
         start_time = time.time()
         try:
+            logger.info("[PERFORMANCE] Starting evaluation")
             print("[PerformanceEvaluator] Starting evaluation...")
 
             # Extract and compose source text
             text = self._compose_source_text(metadata)
+            logger.info(f"[PERFORMANCE] Composed text length: {len(text)}")
 
             if not self._is_text_sufficient(text):
+                logger.warning(
+                    "[PERFORMANCE] Insufficient text for evaluation"
+                )
                 latency = time.time() - start_time
                 return self._create_insufficient_text_result(latency)
 
             # Prepare LLM prompt
             prompt = self._prepare_llm_prompt(text)
+            logger.info(
+                f"[PERFORMANCE] Prepared LLM prompt "
+                f"(length: {len(prompt)})"
+            )
 
             # Send to LLM
+            logger.info("[PERFORMANCE] Sending request to LLM")
             response = self._send_to_llm(prompt)
 
             # Parse and validate response
             parsed_result = self._parse_llm_response(response)
+            logger.info(
+                f"[PERFORMANCE] LLM response parsed: {parsed_result}"
+            )
 
             # Create final result
             latency = time.time() - start_time
+            logger.info(
+                f"[PERFORMANCE] Evaluation complete "
+                f"(latency: {latency:.3f}s)"
+            )
             return self._create_success_result(
                 parsed_result, len(text), latency
             )
 
         except Exception as e:
+            logger.error(
+                f"[PERFORMANCE] Error during evaluation: {e}",
+                exc_info=True
+            )
             print(f"[PerformanceEvaluator] Error during evaluation: {e}")
             import traceback
             traceback.print_exc()

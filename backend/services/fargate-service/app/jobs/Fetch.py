@@ -6,6 +6,10 @@ import logging
 from ..providers.HGAgent import HGAgent
 from ..providers.GHAgent import GHAgent
 
+# Configure logger for CloudWatch
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 
 def fetch_metadata_step(context):
     """
@@ -13,6 +17,7 @@ def fetch_metadata_step(context):
     """
     artifact = context.get('last') if isinstance(context, dict) else context
 
+    logger.info(f"[FETCH] Starting metadata fetch for: {artifact.name}")
     print("[PIPELINE] Step 2: Fetching metadata...")
 
     # Initialize managers
@@ -41,7 +46,13 @@ def fetch_metadata_step(context):
     # Fetch HuggingFace data for models
     if artifact.artifact_type.lower() == 'model':
         try:
+            logger.info(
+                f"[FETCH] Fetching HF model data from: "
+                f"{artifact.source_url}"
+            )
             metadata.id = hf_manager.model_link_to_id(artifact.source_url)
+            logger.info(f"[FETCH] Model ID: {metadata.id}")
+            
             metadata.info = hf_manager.get_model_info(metadata.id)
             metadata.card = (
                 metadata.info.card_data if metadata.info else None
@@ -49,8 +60,16 @@ def fetch_metadata_step(context):
             metadata.readme_path = hf_manager.download_model_readme(
                 metadata.id
             )
+            logger.info(
+                f"[FETCH] Successfully fetched HF model data: "
+                f"{metadata.id}"
+            )
             print(f"[PIPELINE] Fetched HuggingFace model data: {metadata.id}")
         except Exception as e:
+            logger.error(
+                f"[FETCH] Failed to fetch HF data: {e}",
+                exc_info=True
+            )
             print(f"[PIPELINE] Warning: Failed to fetch HF data: {e}")
 
     # Fetch dataset information if dataset links provided
@@ -66,18 +85,24 @@ def fetch_metadata_step(context):
         try:
             dataset_id = hf_manager.dataset_link_to_id(dataset_link)
             metadata.dataset_ids.append(dataset_id)
+            logger.info(f"[FETCH] Added dataset ID: {dataset_id}")
         except ValueError as e:
-            logging.warning(f"Skipping invalid dataset link: {e}")
+            logger.warning(f"[FETCH] Skipping invalid dataset link: {e}")
 
     # Fetch dataset info and cards for each dataset ID
     for dataset_id in metadata.dataset_ids:
         try:
+            logger.info(f"[FETCH] Fetching dataset info: {dataset_id}")
             dataset_info = hf_manager.get_dataset_info(dataset_id)
             metadata.dataset_infos[dataset_id] = dataset_info
             metadata.dataset_cards[dataset_id] = dataset_info.card_data
+            logger.info(f"[FETCH] Successfully fetched dataset: {dataset_id}")
             print(f"[PIPELINE] Fetched dataset data: {dataset_id}")
         except Exception as e:
-            logging.warning(f"Failed to fetch dataset {dataset_id}: {e}")
+            logger.error(
+                f"[FETCH] Failed to fetch dataset {dataset_id}: {e}",
+                exc_info=True
+            )
 
     # Extract GitHub code link
     code_link = None

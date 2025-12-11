@@ -40,8 +40,6 @@ class Rating_Model(Model):
     def __init__(
         self,
         artifact_id: str,
-        name: str,
-        category: str,
         net_score: Optional[Dict[str, float]] = None,
         ramp_up_time: Optional[Dict[str, float]] = None,
         bus_factor: Optional[Dict[str, float]] = None,
@@ -77,8 +75,6 @@ class Rating_Model(Model):
             size_score: Size suitability with nested device scores
         """
         self.artifact_id = artifact_id
-        self.name = name
-        self.category = category
         self.net_score = net_score or {"value": 0.0, "latency": 0.0}
         self.ramp_up_time = ramp_up_time or {"value": 0.0, "latency": 0.0}
         self.bus_factor = bus_factor or {"value": 0.0, "latency": 0.0}

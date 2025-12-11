@@ -2,6 +2,11 @@
 Aggregate Scores Job
 Aggregates metric scores into final rating
 """
+import logging
+
+# Configure logger for CloudWatch
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def aggregate_scores_step(context):
@@ -15,6 +20,7 @@ def aggregate_scores_step(context):
         context.get('results')[-2] if isinstance(context, dict) else None
     )
 
+    logger.info("[AGGREGATE] Starting score aggregation")
     print("[PIPELINE] Step 4: Aggregating scores...")
 
     scores = {}
@@ -33,6 +39,10 @@ def aggregate_scores_step(context):
             latencies[metric_name] = latency
             total_score += score
             count += 1
+            logger.info(
+                f"[AGGREGATE] {metric_name}: {score:.3f} "
+                f"(latency: {latency:.3f}s)"
+            )
             print(f"[PIPELINE]   {metric_name}: {score} "
                   f"(latency: {latency}s)")
 
@@ -40,6 +50,10 @@ def aggregate_scores_step(context):
     net_score = total_score / count if count > 0 else 0.0
     net_latency = sum(latencies.values())
 
+    logger.info(
+        f"[AGGREGATE] Net Score: {net_score:.3f} "
+        f"(total latency: {net_latency:.3f}s)"
+    )
     print(f"[PIPELINE] Net Score: {net_score}")
     print(f"[PIPELINE] Total Latency: {net_latency}s")
 

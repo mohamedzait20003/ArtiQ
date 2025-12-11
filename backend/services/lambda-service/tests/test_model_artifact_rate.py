@@ -12,28 +12,32 @@ class TestModelArtifactRate:
         """Test successful rating retrieval"""
         from app.jobs.model_artifact_rate import lambda_handler
 
-        # Mock artifact instance with embedded rating
+        # Mock artifact instance with embedded rating (nested format)
         mock_artifact_instance = Mock()
+        mock_artifact_instance.name = 'test-model'
         mock_artifact_instance.artifact_type = 'model'
         mock_artifact_instance.rating = {
             'name': 'test-model',
             'category': 'nlp',
-            'net_score': 0.85,
-            'ramp_up_time': 0.75,
-            'bus_factor': 0.6,
-            'performance_claims': 0.9,
-            'license': 1.0,
-            'dataset_and_code_score': 0.8,
-            'dataset_quality': 0.7,
-            'code_quality': 0.85,
-            'reproducibility': 0.65,
-            'reviewedness': 0.55,
-            'tree_score': 0.7,
+            'net_score': {'value': 0.85, 'latency': 0.5},
+            'ramp_up_time': {'value': 0.75, 'latency': 1.2},
+            'bus_factor': {'value': 0.6, 'latency': 0.8},
+            'performance_claims': {'value': 0.9, 'latency': 2.1},
+            'license': {'value': 1.0, 'latency': 0.3},
+            'dataset_and_code_score': {'value': 0.8, 'latency': 1.5},
+            'dataset_quality': {'value': 0.7, 'latency': 1.0},
+            'code_quality': {'value': 0.85, 'latency': 1.8},
+            'reproducibility': {'value': 0.65, 'latency': 0.4},
+            'reviewedness': {'value': 0.55, 'latency': 0.6},
+            'tree_score': {'value': 0.7, 'latency': 0.7},
             'size_score': {
-                'raspberry_pi': 0.3,
-                'jetson_nano': 0.5,
-                'desktop_pc': 0.8,
-                'aws_server': 1.0
+                'value': {
+                    'raspberry_pi': 0.3,
+                    'jetson_nano': 0.5,
+                    'desktop_pc': 0.8,
+                    'aws_server': 1.0
+                },
+                'latency': 0.2
             }
         }
         mock_artifact.get.return_value = mock_artifact_instance
@@ -45,7 +49,9 @@ class TestModelArtifactRate:
         assert result['name'] == 'test-model'
         assert result['category'] == 'nlp'
         assert result['net_score'] == 0.85
+        assert result['net_score_latency'] == 0.5
         assert result['size_score']['raspberry_pi'] == 0.3
+        assert result['size_score_latency'] == 0.2
 
     @patch('app.jobs.model_artifact_rate.Artifact_Model')
     def test_lambda_handler_artifact_not_found(self, mock_artifact):

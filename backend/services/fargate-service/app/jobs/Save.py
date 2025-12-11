@@ -2,7 +2,12 @@
 Save Ratings Job
 Saves ratings to database
 """
+import logging
 from app.models.Rating_Model import Rating_Model
+
+# Configure logger for CloudWatch
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def save_ratings_step(context):
@@ -13,6 +18,7 @@ def save_ratings_step(context):
         context.get('last') if isinstance(context, dict) else context
     )
 
+    logger.info("[SAVE] Starting ratings save to database")
     print("[PIPELINE] Step 5: Saving ratings to database...")
 
     artifact = aggregated_data.get('artifact')
@@ -23,8 +29,13 @@ def save_ratings_step(context):
     metadata = aggregated_data.get('metadata')
 
     if not artifact:
+        logger.warning("[SAVE] No artifact found, skipping save")
         print("[PIPELINE] Warning: No artifact found, skipping save")
         return aggregated_data
+
+    logger.info(
+        f"[SAVE] Saving ratings for artifact: {artifact.id} ({artifact.name})"
+    )
 
     try:
         # Helper to create metric dict with value and latency
@@ -69,14 +80,22 @@ def save_ratings_step(context):
         )
 
         rating.save()
+        logger.info(f"[SAVE] Ratings saved for artifact {artifact.id}")
         print(f"[PIPELINE] Ratings saved for artifact {artifact.id}")
 
         # Update artifact's rating field with summary
         artifact.rating = rating.to_api_response()
         artifact.save()
+        logger.info(
+            f"[SAVE] Artifact rating field updated for {artifact.id}"
+        )
         print("[PIPELINE] Artifact rating field updated")
 
     except Exception as e:
+        logger.error(
+            f"[SAVE] Error saving ratings for {artifact.id}: {e}",
+            exc_info=True
+        )
         print(f"[PIPELINE] Error saving ratings: {e}")
         import traceback
         traceback.print_exc()

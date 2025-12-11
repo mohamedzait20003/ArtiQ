@@ -4,8 +4,13 @@ Evaluates availability of datasets and code using LLM analysis
 """
 import json
 import time
+import logging
 from typing import Dict, Any, Optional
 from ..providers.LLMAgent import LLMAgent
+
+# Configure logger for CloudWatch
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class AvailabilityEvaluator:
@@ -35,32 +40,54 @@ class AvailabilityEvaluator:
         """
         start_time = time.time()
         try:
+            logger.info("[AVAILABILITY] Starting evaluation")
             print("[AvailabilityEvaluator] Starting evaluation...")
 
             # Extract and compose source text
             text = self._compose_source_text(metadata)
+            logger.info(f"[AVAILABILITY] Composed text length: {len(text)}")
 
             if not self._is_text_sufficient(text):
+                logger.warning(
+                    "[AVAILABILITY] Insufficient text for evaluation"
+                )
                 latency = time.time() - start_time
                 return self._create_insufficient_text_result(latency)
 
             # Prepare LLM prompt
             prompt = self._prepare_llm_prompt(text)
+            logger.info(
+                f"[AVAILABILITY] Prepared LLM prompt "
+                f"(length: {len(prompt)})"
+            )
 
             # Send to LLM
+            logger.info("[AVAILABILITY] Sending request to LLM")
             response = self._send_to_llm(prompt)
 
             # Parse and validate response
             parsed_result = self._parse_llm_response(response)
+            logger.info(
+                f"[AVAILABILITY] LLM response parsed: {parsed_result}"
+            )
 
             # Calculate score
             score = self._calculate_score(parsed_result)
+            logger.info(f"[AVAILABILITY] Calculated score: {score:.3f}")
 
             # Create final result
             latency = time.time() - start_time
+            logger.info(
+                f"[AVAILABILITY] Evaluation complete "
+                f"(latency: {latency:.3f}s)"
+            )
             return self._create_success_result(parsed_result, score, latency)
 
         except Exception as e:
+            logger.error(
+                f"[AVAILABILITY] Error during evaluation: {e}",
+                exc_info=True
+            )
             print(f"[AvailabilityEvaluator] Error during evaluation: {e}")
             import traceback
             traceback.print_exc()

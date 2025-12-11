@@ -4,8 +4,13 @@ Evaluates license permissiveness using rule-based and LLM analysis
 """
 import json
 import time
+import logging
 from typing import Dict, Any, Optional, Tuple
 from ..providers.LLMAgent import LLMAgent
+
+# Configure logger for CloudWatch
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class LicenseEvaluator:
@@ -34,10 +39,15 @@ class LicenseEvaluator:
         """
         start_time = time.time()
         try:
+            logger.info("[LICENSE] Starting evaluation")
             print("[LicenseEvaluator] Starting evaluation...")
 
             # Extract license information from all sources
             license_text = self._get_license_info(metadata)
+            logger.info(
+                f"[LICENSE] Extracted license text "
+                f"(length: {len(license_text) if license_text else 0})"
+            )
 
             # Attempt rule-based classification first
             score, classification_type, reason = self._classify_license(
@@ -46,6 +56,10 @@ class LicenseEvaluator:
 
             if score is not None:
                 # Successfully classified with rules
+                logger.info(
+                    f"[LICENSE] Rule-based classification: "
+                    f"score={score:.3f}, type={classification_type}"
+                )
                 latency = time.time() - start_time
                 return self._create_rule_based_result(
                     score, license_text, reason, latency
@@ -53,13 +67,19 @@ class LicenseEvaluator:
             else:
                 # Need LLM analysis for custom license
                 if not license_text:
+                    logger.warning("[LICENSE] No license text found")
                     latency = time.time() - start_time
                     return self._create_no_license_result(latency)
 
+                logger.info("[LICENSE] Using LLM analysis for custom license")
                 latency_before_llm = time.time() - start_time
                 return self._analyze_with_llm(license_text, latency_before_llm)
 
         except Exception as e:
+            logger.error(
+                f"[LICENSE] Error during evaluation: {e}",
+                exc_info=True
+            )
             print(f"[LicenseEvaluator] Error during evaluation: {e}")
             import traceback
             traceback.print_exc()

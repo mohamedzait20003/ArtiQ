@@ -4,8 +4,13 @@ Evaluates dataset quality through comprehensive analysis
 """
 import json
 import time
+import logging
 from typing import Dict, Any, Optional
 from ..providers.LLMAgent import LLMAgent
+
+# Configure logger for CloudWatch
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class DatasetQualityEvaluator:
@@ -34,37 +39,66 @@ class DatasetQualityEvaluator:
         """
         start_time = time.time()
         try:
+            logger.info("[DATASET_QUALITY] Starting evaluation")
             print("[DatasetQualityEvaluator] Starting evaluation...")
 
             # Extract dataset information
             dataset_cards = getattr(metadata, "dataset_cards", {})
             dataset_infos = getattr(metadata, "dataset_infos", {})
+            logger.info(
+                f"[DATASET_QUALITY] Found {len(dataset_cards)} cards, "
+                f"{len(dataset_infos)} infos"
+            )
 
             if not dataset_cards and not dataset_infos:
+                logger.warning(
+                    "[DATASET_QUALITY] No dataset cards or infos found"
+                )
                 latency = time.time() - start_time
                 return self._create_no_dataset_result(latency)
 
             # Compose dataset text
             dataset_text = self._compose_dataset_text(metadata)
+            logger.info(
+                f"[DATASET_QUALITY] Composed text length: "
+                f"{len(dataset_text)}"
+            )
 
             if not dataset_text.strip():
+                logger.warning(
+                    "[DATASET_QUALITY] No dataset content to analyze"
+                )
                 latency = time.time() - start_time
                 return self._create_no_content_result(latency)
 
             # Prepare LLM prompt
             prompt = self._prepare_dataset_llm_prompt(dataset_text)
+            logger.info(
+                f"[DATASET_QUALITY] Prepared LLM prompt "
+                f"(length: {len(prompt)})"
+            )
 
             # Send to LLM
+            logger.info("[DATASET_QUALITY] Sending request to LLM")
             response = self._send_to_llm(prompt)
 
             # Parse and validate response
             parsed_result = self._parse_dataset_llm_response(response)
+            logger.info(
+                f"[DATASET_QUALITY] LLM response parsed: "
+                f"{parsed_result}"
+            )
 
             # Calculate score
             score = self._calculate_score(parsed_result)
+            logger.info(f"[DATASET_QUALITY] Final score: {score:.3f}")
 
             # Create final result
             latency = time.time() - start_time
+            logger.info(
+                f"[DATASET_QUALITY] Evaluation complete "
+                f"(latency: {latency:.3f}s)"
+            )
             return self._create_success_result(
                 parsed_result,
                 score,
@@ -73,6 +107,10 @@ class DatasetQualityEvaluator:
             )
 
         except Exception as e:
+            logger.error(
+                f"[DATASET_QUALITY] Error during evaluation: {e}",
+                exc_info=True
+            )
             print(f"[DatasetQualityEvaluator] Error during evaluation: {e}")
             import traceback
             traceback.print_exc()

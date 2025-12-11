@@ -6,7 +6,8 @@ from app.types.artifact_types import (
     ArtifactData,
     Artifact,
     ArtifactRegEx,
-    SimpleLicenseCheckRequest
+    SimpleLicenseCheckRequest,
+    ModelRating
 )
 from app.jobs import (
     artifacts_list_job,
@@ -245,7 +246,7 @@ class ArtifactController:
     async def model_artifact_rate(
         self,
         id: str = Path(..., description="Artifact ID")
-    ):
+    ) -> ModelRating:
         """Get ratings for this model artifact (BASELINE)"""
         print(f"GET /artifact/model/{id}/rate called")
 

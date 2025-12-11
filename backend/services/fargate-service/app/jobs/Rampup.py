@@ -4,8 +4,13 @@ Evaluates how easy it is to get started with the model using LLM analysis
 """
 import json
 import time
+import logging
 from typing import Dict, Any, Optional
 from ..providers.LLMAgent import LLMAgent
+
+# Configure logger for CloudWatch
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class RampupEvaluator:
@@ -35,32 +40,49 @@ class RampupEvaluator:
         """
         start_time = time.time()
         try:
+            logger.info("[RAMPUP] Starting evaluation")
             print("[RampupEvaluator] Starting evaluation...")
 
             # Extract and compose source text
             text = self._compose_source_text(metadata)
+            logger.info(f"[RAMPUP] Composed text length: {len(text)}")
 
             if not self._is_text_sufficient(text):
+                logger.warning("[RAMPUP] Insufficient text for evaluation")
                 latency = time.time() - start_time
                 return self._create_insufficient_text_result(latency)
 
             # Prepare LLM prompt
             prompt = self._prepare_llm_prompt(text)
+            logger.info(
+                f"[RAMPUP] Prepared LLM prompt (length: {len(prompt)})"
+            )
 
             # Send to LLM
+            logger.info("[RAMPUP] Sending request to LLM")
             response = self._send_to_llm(prompt)
 
             # Parse and validate response
             parsed_result = self._parse_llm_response(response)
+            logger.info(f"[RAMPUP] LLM response parsed: {parsed_result}")
 
             # Calculate score
             score = self._calculate_score(parsed_result)
+            logger.info(f"[RAMPUP] Calculated score: {score:.3f}")
 
             # Create final result
             latency = time.time() - start_time
+            logger.info(
+                f"[RAMPUP] Evaluation complete "
+                f"(latency: {latency:.3f}s)"
+            )
             return self._create_success_result(parsed_result, score, latency)
 
         except Exception as e:
+            logger.error(
+                f"[RAMPUP] Error during evaluation: {e}",
+                exc_info=True
+            )
             print(f"[RampupEvaluator] Error during evaluation: {e}")
             import traceback
             traceback.print_exc()

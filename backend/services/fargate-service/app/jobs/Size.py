@@ -3,7 +3,12 @@ Size Evaluation Job
 Evaluates repository size for deployment feasibility across device types
 """
 import time
+import logging
 from typing import Dict, Any
+
+# Configure logger for CloudWatch
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class SizeEvaluator:
@@ -26,12 +31,16 @@ class SizeEvaluator:
         """
         start_time = time.time()
         try:
+            logger.info("[SIZE] Starting evaluation")
             print("[SizeEvaluator] Starting evaluation...")
 
             # Extract size from metadata
             repo_metadata = getattr(metadata, 'repo_metadata', None)
 
             if not isinstance(repo_metadata, dict):
+                logger.warning(
+                    "[SIZE] repo_metadata is not a dictionary"
+                )
                 print(
                     "[SizeEvaluator] Warning: "
                     "repo_metadata is not a dictionary"
@@ -42,6 +51,7 @@ class SizeEvaluator:
 
             # Parse size value
             size_mb = self._extract_size_mb(repo_metadata)
+            logger.info(f"[SIZE] Extracted size: {size_mb:.2f} MB")
 
             # Calculate device-specific scores
             r_pi = self._size_metric(
@@ -56,17 +66,29 @@ class SizeEvaluator:
             aws = self._size_metric(
                 self._size_band_mb(size_mb, 40000, 60000, 120000, 240000)
             )
+            logger.info(
+                f"[SIZE] Device scores - RPi: {r_pi:.3f}, "
+                f"Nano: {j_nano:.3f}, PC: {d_pc:.3f}, AWS: {aws:.3f}"
+            )
 
             # Average across all device types
             size_score = (r_pi + j_nano + d_pc + aws) / 4.0
+            logger.info(f"[SIZE] Final size score: {size_score:.3f}")
 
             # Create result
             latency = time.time() - start_time
+            logger.info(
+                f"[SIZE] Evaluation complete (latency: {latency:.3f}s)"
+            )
             return self._create_success_result(
                 size_score, size_mb, r_pi, j_nano, d_pc, aws, latency
             )
 
         except Exception as e:
+            logger.error(
+                f"[SIZE] Error during evaluation: {e}",
+                exc_info=True
+            )
             print(f"[SizeEvaluator] Error during evaluation: {e}")
             import traceback
             traceback.print_exc()
