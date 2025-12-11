@@ -293,7 +293,7 @@ class ArtifactController:
                         'Rating system encountered an error'
                     )
                 )
-                
+
         except HTTPException:
             raise
         except Exception as e:

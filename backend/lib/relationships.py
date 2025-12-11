@@ -106,15 +106,22 @@ class HasOne(Relationship):
 
         try:
             query = {self.foreign_key: local_value}
+            
+            print(f"[HasOne] Looking for {self.related_model.__name__} "
+                  f"where {self.foreign_key}={local_value}")
 
             # Apply additional filters if provided
             if self.filter_callback:
                 query = self.filter_callback(query, parent)
 
             # Use Eloquent's get method
-            return self.related_model.get(query)
+            result = self.related_model.get(query)
+            print(f"[HasOne] Query result: {result}")
+            return result
         except Exception as e:
             print(f"Error in HasOne relationship: {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
 

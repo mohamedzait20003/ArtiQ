@@ -145,5 +145,3 @@ class Artifact_Model(Model):
             on_delete='CASCADE'
         )
         return _rating_relationship(self)
-
-    # TODO: Add methods based on OpenAPI spec requirements

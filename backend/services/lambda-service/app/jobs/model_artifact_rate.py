@@ -2,6 +2,7 @@
 Model Artifact Rate Job
 Retrieves ratings for a model artifact
 """
+import time
 import logging
 from app.models import Artifact_Model
 
@@ -26,7 +27,7 @@ def lambda_handler(event, context):
     """
     try:
         logger.info("[RATE] Starting model artifact rate request")
-        
+
         # Extract artifact_id from event
         artifact_id = event.get('artifact_id')
         logger.info(f"[RATE] Requested artifact ID: {artifact_id}")
@@ -68,23 +69,43 @@ def lambda_handler(event, context):
                 400
             )
 
-        # Get rating via relationship
+        # Get rating via relationship with retry logic
         logger.info(
             f"[RATE] Fetching rating for artifact {artifact_id}"
         )
         rating_obj = artifact.rating()
-        
+
+        # If rating not found, wait and retry once
+        # (evaluation might be in progress)
         if not rating_obj:
             logger.warning(
-                f"[RATE] No rating found for artifact {artifact_id}"
+                f"[RATE] No rating found for artifact {artifact_id} "
+                "on first attempt. Waiting 2 seconds and retrying..."
             )
-            return (
-                {
-                    'errorMessage':
-                        f'No rating found for artifact {artifact_id}. '
-                        'The artifact may not have been evaluated yet.'
-                },
-                404
+            time.sleep(2)
+
+            # Retry fetching the rating
+            logger.info(
+                f"[RATE] Retrying rating fetch for artifact {artifact_id}"
+            )
+            rating_obj = artifact.rating()
+
+            if not rating_obj:
+                logger.warning(
+                    f"[RATE] No rating found for artifact {artifact_id} "
+                    "after retry"
+                )
+                return (
+                    {
+                        'errorMessage':
+                            f'No rating found for artifact {artifact_id}. '
+                            'The artifact may not have been evaluated yet.'
+                    },
+                    404
+                )
+
+            logger.info(
+                f"[RATE] Rating found on retry for artifact {artifact_id}"
             )
 
         logger.info(

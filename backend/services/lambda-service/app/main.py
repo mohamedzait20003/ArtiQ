@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 from mangum import Mangum
 from fastapi import FastAPI
 from include import AWSServices
@@ -6,6 +8,14 @@ from app.routes import register_api_routes
 from app.bootstrap import bootstrap_services
 from fastapi.middleware.cors import CORSMiddleware
 
+# Load global .env file from backend root
+backend_root = Path(__file__).resolve().parents[3]
+env_path = backend_root / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+    print(f"[MAIN] Loaded environment from {env_path}")
+else:
+    print(f"[MAIN] Warning: .env file not found at {env_path}")
 
 # Initialize AWS region
 os.environ.setdefault("AWS_REGION", "us-east-2")
