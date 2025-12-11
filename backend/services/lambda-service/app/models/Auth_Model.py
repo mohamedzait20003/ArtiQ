@@ -1,3 +1,4 @@
+import os
 import bcrypt
 import traceback
 from .Model import Model
@@ -77,10 +78,25 @@ class Auth_Model(Model):
 
     @staticmethod
     def _hash_password(password: str) -> str:
-        """Hash a password using bcrypt"""
+        """
+        Hash a password using bcrypt with fixed salt from environment
+        Args:
+            password: The password to hash
+        Returns:
+            Hashed password string
+        """
+        # Always use fixed salt from environment for consistent hashing
+        salt = os.environ.get('ADMIN_PASSWORD_SALT')
+        if not salt:
+            raise ValueError(
+                "ADMIN_PASSWORD_SALT not found in environment variables. "
+                "Run 'python scripts/generate_salt.py' to generate a salt "
+                "and add it to your .env file."
+            )
+
         return bcrypt.hashpw(
             password.encode('utf-8'),
-            bcrypt.gensalt()
+            salt.encode('utf-8')
         ).decode('utf-8')
 
     @staticmethod

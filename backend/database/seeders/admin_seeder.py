@@ -3,6 +3,7 @@ Default Admin User Seeder
 Seeds the default admin user for authentication as specified in the API spec
 """
 
+import os
 import uuid
 import bcrypt
 from lib import Seeder
@@ -41,10 +42,20 @@ class DefaultAdminSeeder(Seeder):
             "correcthorsebatterystaple123(!__+@**(A'\"`; DROP TABLE packages;"
         )
 
-        # Hash the password using bcrypt
+        # Hash the password using bcrypt with salt from environment
+        # This ensures the same hash is generated on local and AWS
+        # Get salt from environment variable
+        salt_from_env = os.environ.get('PASSWORD_SALT')
+        if not salt_from_env:
+            raise ValueError(
+                "ADMIN_PASSWORD_SALT not found in environment variables. "
+                "Run 'python scripts/generate_salt.py' to generate a salt "
+                "and add it to your .env file."
+            )
+
         hashed_password = bcrypt.hashpw(
             password.encode('utf-8'),
-            bcrypt.gensalt()
+            salt_from_env.encode('utf-8')
         ).decode('utf-8')
 
         default_admin_user = {
