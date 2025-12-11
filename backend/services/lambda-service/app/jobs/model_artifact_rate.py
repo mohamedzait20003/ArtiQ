@@ -166,6 +166,7 @@ def lambda_handler(event, context):
         }
 
         logger.info(f"[RATE] Successfully retrieved rating for {artifact_id}")
+        logger.info(f"[RATE] Final response for CloudWatch: {response}")
         return (response, 200)
 
     except Exception as e:
