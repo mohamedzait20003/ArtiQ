@@ -20,3 +20,5 @@ tqdm==4.67.1
 typing_extensions==4.15.0
 urllib3==2.5.0
 boto3
+pymongo==4.6.1
+cryptography==43.0.3

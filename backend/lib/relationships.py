@@ -8,7 +8,7 @@ from typing import Optional, List, Type, Callable, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from app.models.Model import Model
+    from lib.eloquent import Eloquent as Model
 
 
 class Relationship:
@@ -72,7 +72,8 @@ class HasOne(Relationship):
         related_model: Type['Model'],
         foreign_key: str,
         local_key: str = None,
-        filter_callback: Callable = None
+        filter_callback: Callable = None,
+        on_delete: str = 'CASCADE'
     ):
         """
         Initialize Has One relationship
@@ -82,9 +83,11 @@ class HasOne(Relationship):
             foreign_key: Foreign key on the related model
             local_key: Local key on this model
             filter_callback: Optional callback for additional filtering
+            on_delete: CASCADE, SET_NULL, or RESTRICT
         """
         super().__init__(related_model, foreign_key, local_key)
         self.filter_callback = filter_callback
+        self.on_delete = on_delete
 
     def __call__(self, parent: 'Model') -> Optional['Model']:
         """
@@ -102,19 +105,14 @@ class HasOne(Relationship):
         )
 
         try:
-            collection = self.related_model.collection()
             query = {self.foreign_key: local_value}
 
             # Apply additional filters if provided
             if self.filter_callback:
                 query = self.filter_callback(query, parent)
 
-            doc = collection.find_one(query)
-            if doc:
-                if '_id' in doc:
-                    del doc['_id']
-                return self.related_model(**doc)
-            return None
+            # Use Eloquent's get method
+            return self.related_model.get(query)
         except Exception as e:
             print(f"Error in HasOne relationship: {e}")
             return None
@@ -131,7 +129,8 @@ class HasMany(Relationship):
         related_model: Type['Model'],
         foreign_key: str,
         local_key: str = None,
-        filter_callback: Callable = None
+        filter_callback: Callable = None,
+        on_delete: str = 'CASCADE'
     ):
         """
         Initialize Has Many relationship
@@ -141,9 +140,11 @@ class HasMany(Relationship):
             foreign_key: Foreign key on the related model
             local_key: Local key on this model
             filter_callback: Optional callback for additional filtering
+            on_delete: CASCADE, SET_NULL, or RESTRICT
         """
         super().__init__(related_model, foreign_key, local_key)
         self.filter_callback = filter_callback
+        self.on_delete = on_delete
 
     def __call__(self, parent: 'Model') -> List['Model']:
         """
@@ -161,20 +162,14 @@ class HasMany(Relationship):
         )
 
         try:
-            collection = self.related_model.collection()
             query = {self.foreign_key: local_value}
 
             # Apply additional filters if provided
             if self.filter_callback:
                 query = self.filter_callback(query, parent)
 
-            cursor = collection.find(query)
-            results = []
-            for doc in cursor:
-                if '_id' in doc:
-                    del doc['_id']
-                results.append(self.related_model(**doc))
-            return results
+            # Use Eloquent's where method
+            return self.related_model.where(query)
         except Exception as e:
             print(f"Error in HasMany relationship: {e}")
             return []
@@ -262,7 +257,8 @@ def has_one(
     related_model: Type['Model'],
     foreign_key: str,
     local_key: str = None,
-    filter_callback: Callable = None
+    filter_callback: Callable = None,
+    on_delete: str = 'CASCADE'
 ) -> HasOne:
     """
     Create a HasOne relationship
@@ -272,18 +268,26 @@ def has_one(
         foreign_key: Foreign key on the related model
         local_key: Local key on this model
         filter_callback: Optional filter callback
+        on_delete: CASCADE, SET_NULL, or RESTRICT
 
     Returns:
         HasOne relationship instance
     """
-    return HasOne(related_model, foreign_key, local_key, filter_callback)
+    return HasOne(
+        related_model,
+        foreign_key,
+        local_key,
+        filter_callback,
+        on_delete
+    )
 
 
 def has_many(
     related_model: Type['Model'],
     foreign_key: str,
     local_key: str = None,
-    filter_callback: Callable = None
+    filter_callback: Callable = None,
+    on_delete: str = 'CASCADE'
 ) -> HasMany:
     """
     Create a HasMany relationship
@@ -293,11 +297,18 @@ def has_many(
         foreign_key: Foreign key on the related model
         local_key: Local key on this model
         filter_callback: Optional filter callback
+        on_delete: CASCADE, SET_NULL, or RESTRICT
 
     Returns:
         HasMany relationship instance
     """
-    return HasMany(related_model, foreign_key, local_key, filter_callback)
+    return HasMany(
+        related_model,
+        foreign_key,
+        local_key,
+        filter_callback,
+        on_delete
+    )
 
 
 def has_one_through(

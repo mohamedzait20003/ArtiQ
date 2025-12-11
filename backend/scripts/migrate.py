@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 """
 Global Migration Script
-Run database migrations for any service
+Run database migrations globally
 
 Usage:
-    python scripts/migrate.py [service_name] [options]
-    python scripts/migrate.py [service_name] --name [migration_name]
+    python scripts/migrate.py [options]
+    python scripts/migrate.py --name [migration_name]
 
 Examples:
-    python scripts/migrate.py lambda-service
-    python scripts/migrate.py lambda-service --rollback
-    python scripts/migrate.py lambda-service --status
-    python scripts/migrate.py lambda-service --name create_users_table
-    python scripts/migrate.py lambda-service --rollback --name
-        create_users_table
+    python scripts/migrate.py
+    python scripts/migrate.py --rollback
+    python scripts/migrate.py --status
+    python scripts/migrate.py --name create_users_table
+    python scripts/migrate.py --rollback --name create_users_table
 """
 
 import sys
@@ -21,77 +20,60 @@ import traceback
 from pathlib import Path
 from typing import Optional
 
+# Add backend root to path FIRST
+backend_root = Path(__file__).parent.parent
+sys.path.insert(0, str(backend_root))
 
-def get_service_path(service_name: str) -> Path:
-    """Get the service directory path"""
-    backend_root = Path(__file__).parent.parent
-    service_path = backend_root / 'services' / service_name
-
-    if not service_path.exists():
-        raise ValueError(f"Service not found: {service_name}")
-
-    return service_path
+# Load environment variables
+from dotenv import load_dotenv  # noqa: E402
+env_path = backend_root / '.env'
+if env_path.exists():
+    load_dotenv(env_path)
+    print(f"✓ Loaded environment from: {env_path}")
 
 
 def run_migrations(
-    service_name: str,
     rollback: bool = False,
     status: bool = False,
     migration_name: Optional[str] = None
 ):
-    """Run migrations for a specific service"""
-    backend_root = Path(__file__).parent.parent
-    service_path = get_service_path(service_name)
+    """Run migrations globally"""
 
-    # Add backend root and service to path
+    # Add backend root to path
     sys.path.insert(0, str(backend_root))
-    sys.path.insert(0, str(service_path))
 
-    # Import service-specific migration functions
+    # Import global migration functions
     try:
         if status:
             from database.migrations import get_migration_status
-            print(f"→ Getting migration status for {service_name}...")
+            print("→ Getting migration status...")
             get_migration_status()
         elif rollback:
             if migration_name:
                 from database.migrations import rollback_migration
-                msg = (
-                    f"→ Rolling back migration '{migration_name}' "
-                    f"for {service_name}..."
-                )
-                print(msg)
+                print(f"→ Rolling back migration '{migration_name}'...")
                 rollback_migration(migration_name)
-                print(f"✓ Rollback complete for {service_name}")
+                print("✓ Rollback complete")
             else:
                 from database.migrations import (
                     rollback_last_migration
                 )
-                msg = f"→ Rolling back last migration for {service_name}..."
-                print(msg)
+                print("→ Rolling back last migration...")
                 rollback_last_migration()
-                print(f"✓ Rollback complete for {service_name}")
+                print("✓ Rollback complete")
         else:
             if migration_name:
                 from database.migrations import run_migration
-                msg = (
-                    f"→ Running migration '{migration_name}' "
-                    f"for {service_name}..."
-                )
-                print(msg)
+                print(f"→ Running migration '{migration_name}'...")
                 run_migration(migration_name)
-                msg = (
-                    f"✓ Migration '{migration_name}' complete "
-                    f"for {service_name}"
-                )
-                print(msg)
+                print(f"✓ Migration '{migration_name}' complete")
             else:
                 from database.migrations import run_all_migrations
-                print(f"→ Running all migrations for {service_name}...")
+                print("→ Running all migrations...")
                 run_all_migrations()
-                print(f"✓ All migrations complete for {service_name}")
+                print("✓ All migrations complete")
     except ImportError as e:
-        print(f"✗ Error: Could not import migrations for {service_name}")
+        print("✗ Error: Could not import migrations")
         print("  Make sure database/migrations/__init__.py exists")
         print(f"  Error: {e}")
         sys.exit(1)
@@ -102,27 +84,19 @@ def run_migrations(
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python scripts/migrate.py [service_name] [options]")
-        print("\nAvailable services:")
-        print("  - lambda-service")
-        print("  - fargate-service")
+    if '--help' in sys.argv or '-h' in sys.argv:
+        print("Usage: python scripts/migrate.py [options]")
         print("\nOptions:")
         print("  --rollback    Rollback last or specific migration")
         print("  --status      Show migration status")
         print("  --name [name] Run/rollback specific migration by name")
         print("\nExamples:")
-        print("  python scripts/migrate.py lambda-service")
-        print("  python scripts/migrate.py lambda-service --rollback")
-        print("  python scripts/migrate.py lambda-service --status")
-        msg = (
-            "  python scripts/migrate.py lambda-service "
-            "--name create_users_table"
-        )
-        print(msg)
-        sys.exit(1)
+        print("  python scripts/migrate.py")
+        print("  python scripts/migrate.py --rollback")
+        print("  python scripts/migrate.py --status")
+        print("  python scripts/migrate.py --name create_users_table")
+        sys.exit(0)
 
-    service_name = sys.argv[1]
     rollback = '--rollback' in sys.argv
     status = '--status' in sys.argv
 
@@ -136,7 +110,7 @@ def main():
             print("✗ Error: --name requires a migration name")
             sys.exit(1)
 
-    run_migrations(service_name, rollback, status, migration_name)
+    run_migrations(rollback, status, migration_name)
 
 
 if __name__ == "__main__":

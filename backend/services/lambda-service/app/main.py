@@ -1,10 +1,11 @@
 import os
 from mangum import Mangum
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from include import AWSServices
-from app.bootstrap import bootstrap_services
 from app.routes import register_api_routes
+from app.bootstrap import bootstrap_services
+from fastapi.middleware.cors import CORSMiddleware
+
 
 # Initialize AWS region
 os.environ.setdefault("AWS_REGION", "us-east-2")

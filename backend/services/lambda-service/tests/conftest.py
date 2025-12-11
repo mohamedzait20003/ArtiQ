@@ -1,11 +1,10 @@
 import os
 import sys
-
 import boto3
 import pytest
 import mongomock
-from fastapi.testclient import TestClient
 from moto import mock_aws
+from fastapi.testclient import TestClient
 
 # Configure AWS credentials before any boto3 imports
 os.environ['AWS_ACCESS_KEY_ID'] = 'testing'
@@ -29,7 +28,7 @@ if BACKEND_ROOT not in sys.path:
     sys.path.insert(0, BACKEND_ROOT)
 
 from app.main import app  # noqa: E402
-from lib.aws import AWSServices  # noqa: E402
+from include import AWSServices  # noqa: E402
 
 
 def pytest_configure(config):

@@ -7,14 +7,10 @@ on:
     branches: [ "**" ]
 
 jobs:
-  lambda-service:
-    name: Lambda Service CI/CD
+  # Shared setup job to install dependencies once
+  setup-backend:
+    name: Setup Backend Dependencies
     runs-on: ubuntu-latest
-    env:
-      AWS_REGION: us-east-2
-      AWS_DEFAULT_REGION: us-east-2
-
-    
     steps:
     - uses: actions/checkout@v3
     
@@ -24,37 +20,85 @@ jobs:
         python-version: '3.11'
     
     - name: Cache Python dependencies
+      id: cache-pip
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-backend-${{ hashFiles('backend/requirements.txt') }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
         restore-keys: |
-          ${{ runner.os }}-pip-backend-
+          ${{ runner.os }}-pip-
     
     - name: Install dependencies
       run: |
         cd backend
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install flake8
+
+  # Lambda service testing and linting
+  lambda-service:
+    name: Lambda Service - Test & Lint
+    runs-on: ubuntu-latest
+    needs: setup-backend
+    env:
+      AWS_REGION: us-east-2
+      AWS_DEFAULT_REGION: us-east-2
     
-    - name: Run tests
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Restore Python dependencies cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install flake8
+    
+    - name: Copy shared lib for testing
       run: |
         cd backend/services/lambda-service
-        # Set PYTHONPATH to current directory and run tests
-        export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-        export MONGODB_URI="mongodb://mock:27017/"
+        rm -rf ./lib
+        cp -r ../../lib ./lib
+    
+    - name: Run tests
+      env:
+        PYTHONPATH: ${{ github.workspace }}/backend/services/lambda-service
+        MONGODB_URI: mongodb://mock:27017/
+        ARTIFACT_ENCRYPTION_KEY: ${{ secrets.ARTIFACT_ENCRYPTION_KEY }}
+      run: |
+        cd backend/services/lambda-service
         python -m pytest -v --tb=short tests
     
     - name: Lint with flake8
       run: |
         cd backend/services/lambda-service
-        pip install flake8
         flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 app --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Clean up copied lib
+      if: always()
+      run: |
+        cd backend/services/lambda-service
+        rm -rf ./lib
 
+  # Fargate service linting
   fargate-service:
-    name: Fargate Service CI/CD
+    name: Fargate Service - Lint
     runs-on: ubuntu-latest
+    needs: setup-backend
     
     steps:
     - uses: actions/checkout@v3
@@ -64,67 +108,97 @@ jobs:
       with:
         python-version: '3.11'
     
-    - name: Cache Python dependencies
+    - name: Restore Python dependencies cache
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-backend-${{ hashFiles('backend/requirements.txt') }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
         restore-keys: |
-          ${{ runner.os }}-pip-backend-
+          ${{ runner.os }}-pip-
     
     - name: Install dependencies
       run: |
         cd backend
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install flake8
+    
+    - name: Copy shared lib for linting
+      run: |
+        cd backend/services/fargate-service
+        rm -rf ./lib
+        cp -r ../../lib ./lib
+    
+    - name: Validate Fargate app structure
+      run: |
+        cd backend/services/fargate-service
+        # Verify main.py exists and imports work
+        python -c "import sys; sys.path.insert(0, '.'); from app.main import *" || echo "Warning: Import validation failed"
     
     - name: Lint with flake8
       run: |
         cd backend/services/fargate-service
-        pip install flake8
-        flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        # Lint the main application code
+        flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 app --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Clean up copied lib
+      if: always()
+      run: |
+        cd backend/services/fargate-service
+        rm -rf ./lib
 
-#  frontend:
-#    name: Frontend CI/CD
-#    runs-on: ubuntu-latest
-#    
-#    steps:
-#    - uses: actions/checkout@v3
-#    
-#    - name: Set up Node.js
-#      uses: actions/setup-node@v3
-#      with:
-#        node-version: '22'
-#    
-#    - name: Cache Node modules
-#      uses: actions/cache@v3
-#      with:
-#        path: frontend/node_modules
-#        key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
-#        restore-keys: |
-#          ${{ runner.os }}-node-
-#    
-#    - name: Install dependencies
-#      run: |
-#        cd frontend
-#        npm install
-#    
-#    - name: Build
-#      run: |
-#        cd frontend
-#        npm run build
-#    
-#    - name: Run tests
-#      run: |
-#        cd frontend
-#        npm run test -- --watch=false --browsers=ChromeHeadless
+  # Frontend build and test
+  frontend:
+    name: Frontend - Build & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+    
+    - name: Cache Node modules
+      uses: actions/cache@v3
+      with:
+        path: frontend/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    
+    - name: Install dependencies
+      run: |
+        cd frontend
+        npm install
+    
+    - name: Build Angular application
+      run: |
+        cd frontend
+        npm run build
+    
+    - name: Run tests
+      run: |
+        cd frontend
+        npm run test -- --watch=false --browsers=ChromeHeadless
+    
+    - name: Upload build artifacts
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Evluation-Initial')
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-build
+        path: frontend/dist
+        retention-days: 1
 
+  # Build and push Fargate Docker image to ECR
   build-fargate-image:
     name: Build & Push Fargate Image
     runs-on: ubuntu-latest
     needs: fargate-service
-
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Evluation-Initial')
+    
     steps:
     - uses: actions/checkout@v3
 
@@ -139,23 +213,48 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
+    - name: Prepare Docker build context
+      run: |
+        cd backend/services/fargate-service
+        # Copy shared lib to build context
+        rm -rf ./lib
+        cp -r ../../lib ./lib
+    
     - name: Build, tag, and push image to ECR
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         ECR_REPOSITORY: ece30861/model_eval_fargate
         IMAGE_TAG: ${{ github.sha }}
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        ARTIFACT_ENCRYPTION_KEY: ${{ secrets.ARTIFACT_ENCRYPTION_KEY }}
       run: |
         cd backend/services/fargate-service
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker build \
+          --build-arg GH_TOKEN=$GH_TOKEN \
+          --build-arg HF_TOKEN=$HF_TOKEN \
+          --build-arg MONGODB_URI=$MONGODB_URI \
+          --build-arg ARTIFACT_ENCRYPTION_KEY=$ARTIFACT_ENCRYPTION_KEY \
+          -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+    
+    - name: Clean up copied lib
+      if: always()
+      run: |
+        cd backend/services/fargate-service
+        rm -rf ./lib
 
+  # Deploy Lambda service using AWS SAM
   deploy-lambda:
-    name: Deploy Lambda Service with API Gateway
+    name: Deploy Lambda Service
     runs-on: ubuntu-latest
     needs: lambda-service
-    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/MONGODB-MIGRATION') && github.event_name == 'push'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Evluation-Initial')
+    env:
+      AWS_REGION: us-east-2
     
     steps:
     - uses: actions/checkout@v3
@@ -166,8 +265,7 @@ jobs:
         python-version: '3.11'
     
     - name: Install AWS SAM CLI
-      run: |
-        pip install aws-sam-cli
+      run: pip install aws-sam-cli
     
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -179,73 +277,20 @@ jobs:
     - name: Build Lambda function
       run: |
         cd backend/services/lambda-service
-        # Copy shared lib directory into lambda-service for packaging
-        # Remove any existing lib symlink/directory first
         rm -rf ./lib
         cp -r ../../lib ./lib
         sam build --use-container
-        # Clean up the copied lib after build (SAM already packaged it)
         rm -rf ./lib
-    
-    - name: Clean up orphaned Lambda resources
-      run: |
-        echo "Checking for orphaned Lambda functions..."
-        # Try to delete the specific Lambda if it exists outside CloudFormation
-        aws lambda delete-function --function-name ece461-model-registry-api --region us-east-2 2>/dev/null || echo "Lambda function does not exist or already managed by stack"
-      continue-on-error: true
-    
-    - name: Check and delete failed stack
-      run: |
-        STACK_STATUS=$(aws cloudformation describe-stacks --stack-name ece461-model-registry-mongodb --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
-        echo "Current stack status: $STACK_STATUS"
-        
-        if [ "$STACK_STATUS" = "DELETE_FAILED" ]; then
-          echo "Stack is in DELETE_FAILED state. Attempting to skip deletion of failed resources..."
-          # Get resources that failed to delete
-          FAILED_RESOURCES=$(aws cloudformation describe-stack-resources --stack-name ece461-model-registry-mongodb --query "StackResources[?ResourceStatus=='DELETE_FAILED'].LogicalResourceId" --output text)
-          echo "Failed resources: $FAILED_RESOURCES"
-          
-          # Try to delete with retain resources option
-          aws cloudformation delete-stack --stack-name ece461-model-registry-mongodb --region us-east-2 --retain-resources $FAILED_RESOURCES || true
-          sleep 10
-          
-          # Check if deletion succeeded
-          NEW_STATUS=$(aws cloudformation describe-stacks --stack-name ece461-model-registry-mongodb --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
-          if [ "$NEW_STATUS" = "DOES_NOT_EXIST" ]; then
-            echo "Stack deleted successfully."
-          else
-            echo "WARNING: Stack still exists. Manual intervention required via AWS Console."
-            echo "Please delete the stack manually: https://us-east-2.console.aws.amazon.com/cloudformation"
-            exit 1
-          fi
-        elif [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ] || [ "$STACK_STATUS" = "CREATE_FAILED" ]; then
-          echo "Stack is in failed state ($STACK_STATUS). Deleting..."
-          aws cloudformation delete-stack --stack-name ece461-model-registry-mongodb --region us-east-2
-          echo "Waiting for stack deletion to complete..."
-          aws cloudformation wait stack-delete-complete --stack-name ece461-model-registry-mongodb --region us-east-2
-          echo "Stack deleted successfully."
-        elif [ "$STACK_STATUS" != "DOES_NOT_EXIST" ]; then
-          echo "Stack exists with status: $STACK_STATUS. Will attempt update."
-        else
-          echo "No existing stack found. Will create new stack."
-        fi
-      continue-on-error: false
-    
-    - name: Create SAM managed S3 bucket if needed
-      run: |
-        BUCKET_NAME="aws-sam-cli-managed-default-samclisourcebucket-zvcnsi0ylnwj"
-        if aws s3 ls "s3://${BUCKET_NAME}" 2>/dev/null; then
-          echo "S3 bucket ${BUCKET_NAME} already exists"
-        else
-          echo "Creating S3 bucket ${BUCKET_NAME}..."
-          aws s3 mb "s3://${BUCKET_NAME}" --region us-east-2
-          echo "S3 bucket created successfully"
-        fi
-      continue-on-error: true
     
     - name: Deploy Lambda with API Gateway
       env:
         MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        ARTIFACT_ENCRYPTION_KEY: ${{ secrets.ARTIFACT_ENCRYPTION_KEY }}
+        CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
+        TASK_DEFINITION: ${{ secrets.TASK_DEFINITION }}
+        CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
+        SUBNET_ID: ${{ secrets.SUBNET_ID }}
+        SECURITY_GROUP: ${{ secrets.SECURITY_GROUP }}
       run: |
         cd backend/services/lambda-service
         sam deploy \
@@ -254,10 +299,64 @@ jobs:
           --capabilities CAPABILITY_IAM \
           --region us-east-2 \
           --resolve-s3 \
-          --parameter-overrides MongoDBUri="${MONGODB_URI}"
+          --parameter-overrides MongoDBUri="${MONGODB_URI}" EncryptionKey="${ARTIFACT_ENCRYPTION_KEY}" ClusterName="${CLUSTER_NAME}" TaskDefinition="${TASK_DEFINITION}" ContainerName="${CONTAINER_NAME}" SubnetId="${SUBNET_ID}" SecurityGroup="${SECURITY_GROUP}"
     
     - name: Get API Gateway URL
       run: |
         cd backend/services/lambda-service
-        echo "API Gateway URL:"
-        aws cloudformation describe-stacks --stack-name ece461-model-registry --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" --output text
+        aws cloudformation describe-stacks \
+          --stack-name ece461-model-registry \
+          --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" \
+          --output text
+
+  # Deploy frontend to AWS Amplify
+  deploy-frontend:
+    name: Deploy Frontend to Amplify
+    runs-on: ubuntu-latest
+    needs: frontend
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Evluation-Initial')
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: frontend-build
+        path: frontend/dist
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
+    
+    - name: Trigger Amplify deployment
+      env:
+        AMPLIFY_APP_ID: ${{ secrets.AMPLIFY_APP_ID }}
+        AMPLIFY_BRANCH: ${{ github.ref_name }}
+      run: |
+        echo "Triggering Amplify deployment for app: $AMPLIFY_APP_ID on branch: $AMPLIFY_BRANCH"
+        
+        # Start a new deployment/build in Amplify
+        BUILD_ID=$(aws amplify start-job \
+          --app-id $AMPLIFY_APP_ID \
+          --branch-name $AMPLIFY_BRANCH \
+          --job-type RELEASE \
+          --query 'jobSummary.jobId' \
+          --output text)
+        
+        echo "Amplify build started with ID: $BUILD_ID"
+        echo "Monitor the deployment at: https://console.aws.amazon.com/amplify/home?region=us-east-2#/$AMPLIFY_APP_ID/$AMPLIFY_BRANCH/$BUILD_ID"
+        
+        # Optional: Wait for deployment to complete
+        echo "Waiting for deployment to complete..."
+        aws amplify get-job \
+          --app-id $AMPLIFY_APP_ID \
+          --branch-name $AMPLIFY_BRANCH \
+          --job-id $BUILD_ID \
+          --query 'job.summary.status' \
+          --output text
+        
+        echo "Frontend deployment triggered successfully!"

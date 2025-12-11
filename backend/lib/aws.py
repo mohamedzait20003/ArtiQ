@@ -20,6 +20,8 @@ class AWSServices:
     _documentdb_database = None
     _s3 = None
     _lambda_client = None
+    _bedrock = None
+    _ecs_client = None
     _region = None
     _database_name = "docdb-ece30861-project"
 
@@ -53,8 +55,24 @@ class AWSServices:
             'MONGODB_URI',
             'mongodb://localhost:27017/'
         )
-        
-        database_name = cls._database_name        # Create MongoDB client
+
+        # Log connection details (mask password)
+        masked_uri = connection_string
+        if '@' in masked_uri:
+            parts = masked_uri.split('@')
+            if ':' in parts[0]:
+                user_pass = parts[0].split('://')
+                if len(user_pass) > 1 and ':' in user_pass[1]:
+                    user = user_pass[1].split(':')[0]
+                    masked_uri = (
+                        f"{user_pass[0]}://{user}:****@{parts[1]}"
+                    )
+        print(f"[MongoDB] Connecting to: {masked_uri}")
+
+        database_name = cls._database_name
+        print(f"[MongoDB] Database name: {database_name}")
+
+        # Create MongoDB client
         cls._documentdb_client = MongoClient(
             connection_string,
             retryWrites=False,
@@ -126,15 +144,44 @@ class AWSServices:
         return cls._lambda_client
 
     @classmethod
+    def get_bedrock(cls):
+        """
+        Get shared Bedrock Runtime client instance
+        Returns:
+            boto3 Bedrock Runtime client
+        """
+        if cls._bedrock is None:
+            cls.initialize()
+            cls._bedrock = boto3.client(
+                'bedrock-runtime',
+                region_name=cls._region
+            )
+        return cls._bedrock
+
+    @classmethod
+    def get_ecs(cls):
+        """
+        Get shared ECS client instance
+        Returns:
+            boto3 ECS client
+        """
+        if cls._ecs_client is None:
+            cls.initialize()
+            cls._ecs_client = boto3.client('ecs', region_name=cls._region)
+        return cls._ecs_client
+
+    @classmethod
     def reset(cls):
         """Reset all clients (useful for testing)"""
         if cls._documentdb_client:
             cls._documentdb_client.close()
-        
+
         cls._documentdb_client = None
         cls._documentdb_database = None
         cls._s3 = None
         cls._lambda_client = None
+        cls._bedrock = None
+        cls._ecs_client = None
         cls._region = None
 
 
@@ -157,3 +204,13 @@ def get_s3():
 def get_lambda():
     """Get Lambda client instance"""
     return AWSServices.get_lambda()
+
+
+def get_bedrock():
+    """Get Bedrock Runtime client instance"""
+    return AWSServices.get_bedrock()
+
+
+def get_ecs():
+    """Get ECS client instance"""
+    return AWSServices.get_ecs()

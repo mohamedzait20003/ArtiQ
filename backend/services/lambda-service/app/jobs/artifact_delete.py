@@ -1,6 +1,5 @@
 import re
-import json
-from app.models.Artifact_Model import Artifact_Model
+from app.models import Artifact_Model
 
 
 def lambda_handler(event, context):
@@ -24,14 +23,20 @@ def lambda_handler(event, context):
 
         valid_types = {'model', 'dataset', 'code'}
         if artifact_type not in valid_types:
-            raise ValueError(f"Invalid artifact type: {artifact_type}. Must be one of {valid_types}")
+            raise ValueError(
+                f"Invalid artifact type: {artifact_type}. "
+                f"Must be one of {valid_types}"
+            )
 
         # Validate artifact_id format (pattern: ^[a-zA-Z0-9\-]+$)
         if not artifact_id:
             raise ValueError("Artifact ID is required")
 
         if not re.match(r'^[a-zA-Z0-9\-]+$', artifact_id):
-            raise ValueError(f"Invalid artifact ID format: {artifact_id}. Must match pattern: ^[a-zA-Z0-9\\-]+$")
+            raise ValueError(
+                f"Invalid artifact ID format: {artifact_id}. "
+                f"Must match pattern: ^[a-zA-Z0-9\\-]+$"
+            )
 
         # Retrieve artifact from database
         artifact = Artifact_Model.get({'id': artifact_id}, load_s3_data=False)
@@ -45,7 +50,12 @@ def lambda_handler(event, context):
         # Verify artifact type matches
         if artifact.artifact_type != artifact_type:
             return (
-                {'errorMessage': f"Artifact type mismatch: expected {artifact_type}, got {artifact.artifact_type}"},
+                {
+                    'errorMessage': (
+                        f"Artifact type mismatch: expected {artifact_type}, "
+                        f"got {artifact.artifact_type}"
+                    )
+                },
                 400
             )
 
@@ -54,17 +64,26 @@ def lambda_handler(event, context):
 
         if not delete_success:
             return (
-                {'errorMessage': "Failed to delete artifact from database and S3"},
+                {
+                    'errorMessage':
+                        "Failed to delete artifact from database and S3"
+                },
                 500
             )
 
-        # Return success (spec says 200 with no specific body, but we'll return a message)
+        # Return success
+        # (spec says 200 with no specific body, but we'll return a message)
         return ({"message": "Artifact is deleted."}, 200)
 
     except ValueError as e:
         # Return 400 response for validation errors
         return (
-            {'errorMessage': f"There is missing field(s) in the artifact_type or artifact_id or invalid: {str(e)}"},
+            {
+                'errorMessage': (
+                    f"There is missing field(s) in the artifact_type or "
+                    f"artifact_id or invalid: {str(e)}"
+                )
+            },
             400
         )
     except Exception as e:
@@ -73,4 +92,3 @@ def lambda_handler(event, context):
             {'errorMessage': f"Error deleting artifact: {str(e)}"},
             500
         )
-

@@ -6,7 +6,8 @@ from app.types.artifact_types import (
     ArtifactData,
     Artifact,
     ArtifactRegEx,
-    SimpleLicenseCheckRequest
+    SimpleLicenseCheckRequest,
+    ModelRating
 )
 from app.jobs import (
     artifacts_list_job,
@@ -14,7 +15,8 @@ from app.jobs import (
     artifact_retrieve_job,
     artifact_update_job,
     artifact_delete_job,
-    artifact_by_regex_job
+    artifact_by_regex_job,
+    model_artifact_rate_job
 )
 
 
@@ -39,7 +41,7 @@ class ArtifactController:
         try:
             # Get user from request state (attached by middleware if present)
             current_user = getattr(request.state, 'user', None)
-            
+
             # Prepare event for handler function
             auth_token = (
                 current_user.session.Token if current_user else None
@@ -57,7 +59,10 @@ class ArtifactController:
             # Check if response is an error
             if status_code != 200:
                 error_message = result.get('errorMessage', 'Unknown error')
-                print(f"POST /artifacts RETURNING: {status_code} - {error_message}")
+                print(
+                    f"POST /artifacts RETURNING: {status_code} - "
+                    f"{error_message}"
+                )
                 raise HTTPException(
                     status_code=status_code,
                     detail=error_message)
@@ -104,7 +109,10 @@ class ArtifactController:
             # Check if response is an error
             if status_code != 201:
                 error_message = result.get('errorMessage', 'Unknown error')
-                print(f"POST /artifact/{artifact_type} RETURNING: {status_code} - {error_message}")
+                print(
+                    f"POST /artifact/{artifact_type} RETURNING: "
+                    f"{status_code} - {error_message}"
+                )
                 raise HTTPException(
                     status_code=status_code,
                     detail=error_message)
@@ -130,7 +138,7 @@ class ArtifactController:
     ):
         """Interact with the artifact with this id (BASELINE)"""
         print(f"GET /artifacts/{artifact_type}/{id} called")
-        
+
         # Prepare event for handler function
         event = {
             'artifact_type': artifact_type,
@@ -238,12 +246,62 @@ class ArtifactController:
     async def model_artifact_rate(
         self,
         id: str = Path(..., description="Artifact ID")
-    ):
+    ) -> ModelRating:
         """Get ratings for this model artifact (BASELINE)"""
         print(f"GET /artifact/model/{id}/rate called")
-        # TODO: Implement logic
-        raise HTTPException(
-            status_code=501, detail="Not implemented")
+
+        try:
+            # Validate artifact_id format
+            if not id or not isinstance(id, str):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid artifact_id format"
+                )
+
+            # Prepare event for job
+            event = {
+                'artifact_id': id
+            }
+
+            # Invoke job
+            result, status_code = model_artifact_rate_job(event, None)
+
+            # Return based on status code
+            if status_code == 200:
+                return result
+            elif status_code == 400:
+                raise HTTPException(
+                    status_code=400,
+                    detail=result.get(
+                        'errorMessage',
+                        'Invalid artifact_id'
+                    )
+                )
+            elif status_code == 404:
+                raise HTTPException(
+                    status_code=404,
+                    detail=result.get(
+                        'errorMessage',
+                        'Artifact does not exist'
+                    )
+                )
+            else:
+                raise HTTPException(
+                    status_code=500,
+                    detail=result.get(
+                        'errorMessage',
+                        'Rating system encountered an error'
+                    )
+                )
+                
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"Error in model_artifact_rate controller: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error invoking model_artifact_rate: {str(e)}"
+            )
 
     async def artifact_cost(
         self,

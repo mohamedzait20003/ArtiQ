@@ -16,7 +16,7 @@ def bootstrap_services() -> None:
     """
     # Register AWS services as singleton
     Container.singleton('AWSServices', lambda: AWSServices())
-    
+
     # Register controllers as singletons
     Container.singleton('AuthController', lambda: AuthController())
     Container.singleton('ArtifactController', lambda: ArtifactController())

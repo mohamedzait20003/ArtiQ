@@ -1,5 +1,5 @@
 import json
-from app.models.Session_Model import Session_Model
+from app.models import Session_Model
 
 
 def lambda_handler(event, context):

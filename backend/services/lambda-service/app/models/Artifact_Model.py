@@ -1,6 +1,8 @@
 import os
 from .Model import Model
+from include import has_one
 from typing import Optional, Dict, Any
+from .Rating_Model import Rating_Model
 
 
 class Artifact_Model(Model):
@@ -52,7 +54,7 @@ class Artifact_Model(Model):
         self.file_size = file_size
         self.license = license
         self.rating = rating or {}
-        
+
         super().__init__(**kwargs)
 
     @classmethod
@@ -70,13 +72,13 @@ class Artifact_Model(Model):
     ):
         """
         Scan artifacts table with optional filters
-        
+
         Args:
             name_filter: Filter by name
             types_filter: List of artifact types to include
             limit: Maximum number of items to return
             exclusive_start_key: Reserved for future pagination support
-            
+
         Returns:
             {
                 'items': [list of artifact instances],
@@ -87,11 +89,11 @@ class Artifact_Model(Model):
             # MongoDB query
             collection = cls.collection()
             query = {}
-            
+
             # Add name filter
             if name_filter and name_filter != "*":
                 query['name'] = name_filter
-            
+
             # Add type filter
             if types_filter and len(types_filter) > 0:
                 valid_types = {'model', 'dataset', 'code'}
@@ -100,10 +102,10 @@ class Artifact_Model(Model):
                 ]
                 if filtered_types:
                     query['artifact_type'] = {'$in': filtered_types}
-            
+
             # Apply limit
             query_limit = limit if limit else 100
-            
+
             # Execute query
             cursor = collection.find(query).limit(query_limit)
             items = []
@@ -112,12 +114,12 @@ class Artifact_Model(Model):
                 if '_id' in doc:
                     del doc['_id']
                 items.append(cls(**doc))
-            
+
             return {
                 'items': items,
                 'last_evaluated_key': None
             }
-            
+
         except Exception as e:
             print(f"Error scanning artifacts: {e}")
             return {
@@ -125,5 +127,74 @@ class Artifact_Model(Model):
                 'last_evaluated_key': None
             }
 
-    # TODO: Add methods based on OpenAPI spec requirements
+    def rating(self):
+        """
+        Get the rating for this artifact (one-to-one relationship)
 
+        Returns:
+            Rating_Model instance or None
+        """
+        from .Rating_Model import Rating_Model
+        return has_one(Rating_Model, 'artifact_id', 'id')(self)
+
+    def delete(self):
+        """
+        Delete artifact and cascade delete related records
+        Cascading deletions:
+        - Delete related ratings from Ratings collection (if exists)
+        Returns:
+            bool: True if deletion successful, False otherwise
+        """
+        try:
+            # CASCADE DELETE: Delete related ratings from Ratings collection
+            rating = Rating_Model.get({'artifact_id': self.id})
+            if rating:
+                print(
+                    f"Cascading delete: Removing rating for "
+                    f"artifact {self.id}"
+                )
+                rating.delete()
+
+            # Call parent delete method to handle S3 files and DB deletion
+            return super().delete()
+        except Exception as e:
+            print(f"Error during cascading delete for artifact {self.id}: {e}")
+            return False
+
+    def update_id(self, new_id: str):
+        """
+        Update artifact ID and cascade update related records
+        Cascading updates:
+        - Update artifact_id in Ratings collection (if exists)
+        Args:
+            new_id: New artifact ID
+        Returns:
+            bool: True if update successful, False otherwise
+        """
+        try:
+            old_id = self.id
+
+            # CASCADE UPDATE: Update artifact_id in Ratings collection
+            from .Rating_Model import Rating_Model
+            rating = Rating_Model.get({'artifact_id': old_id})
+            if rating:
+                print(
+                    f"Cascading update: Updating rating artifact_id "
+                    f"from {old_id} to {new_id}"
+                )
+                rating.artifact_id = new_id
+                rating.save()
+
+            # Delete old record
+            collection = self.collection()
+            collection.delete_one({'id': old_id})
+
+            # Update ID and save as new record
+            self.id = new_id
+            return self.save()
+
+        except Exception as e:
+            print(f"Error during cascading update for artifact {old_id}: {e}")
+            return False
+
+    # TODO: Add methods based on OpenAPI spec requirements
