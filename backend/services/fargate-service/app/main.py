@@ -8,7 +8,7 @@ import sys
 import json
 import logging
 from datetime import datetime
-from include import AWSServices, Pipeline, Parallel
+from include import AWSServices, Pipeline, ParallelGroup
 from app.utils.encryption import decrypt_artifact_id
 from app.utils.artifact import get_artifact_from_db
 from app.jobs import (
@@ -96,11 +96,11 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
             logger.info("     - Dataset Quality")
             logger.info("  4. Aggregate Scores")
             logger.info("  5. Save Ratings")
-            
+
             result = Pipeline(
                 validate_artifact_step,
                 fetch_metadata_step,
-                Parallel(
+                ParallelGroup(
                     evaluate_bus_factor,
                     evaluate_performance,
                     evaluate_rampup,
