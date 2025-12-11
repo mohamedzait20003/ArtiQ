@@ -66,7 +66,7 @@ class BusFactorEvaluator:
         Calculate bus factor from contributor diversity.
 
         Formula: min(1.0, contributors / 5.0)
-        Uses HF metadata for fast estimation without cloning.
+        Uses GitHub data when available, HF estimation otherwise.
 
         Args:
             metadata: Model metadata object
@@ -74,100 +74,126 @@ class BusFactorEvaluator:
         Returns:
             float: Score between 0.0 and 1.0
         """
-        contributors = 0.0
+        contributors = 1.0  # Default baseline
 
-        # Primary: estimate from HF engagement metrics
-        hf_info = getattr(metadata, 'info', None)
-        if hf_info:
-            downloads = getattr(hf_info, 'downloads', 0) or 0
-            likes = getattr(hf_info, 'likes', 0) or 0
-
-            # Get file count from siblings
-            siblings = getattr(hf_info, 'siblings', [])
-            file_count = len(siblings) if siblings else 0
-
-            # Get model ID for organization check
-            model_id = (
-                getattr(hf_info, 'id', '') or getattr(metadata, 'id', '')
+        # Priority 1: Use GitHub contributor data if available
+        repo_contributors = getattr(metadata, "repo_contributors", [])
+        if isinstance(repo_contributors, list) and repo_contributors:
+            # Count contributors with meaningful contributions (> 5 commits)
+            significant_contributors = sum(
+                1 for c in repo_contributors
+                if isinstance(c, dict) and
+                int(c.get("contributions", 0)) > 5
             )
-
-            logger.info(
-                f"[BUS_FACTOR] HF metrics - downloads: {downloads}, "
-                f"likes: {likes}, files: {file_count}, id: {model_id}"
+            
+            # Count all active contributors (> 0 commits)
+            active_contributors = sum(
+                1 for c in repo_contributors
+                if isinstance(c, dict) and
+                int(c.get("contributions", 0)) > 0
             )
-
-            # Multi-factor contributor estimation:
-            # - Downloads indicate usage breadth
-            # - Likes indicate community approval
-            # - File count suggests complexity/maintenance
-            # - Organization tags suggest team involvement
-
-            contributor_signals = 0.0
-
-            # Downloads: signals user base that likely found bugs
-            # Adjusted thresholds to be more generous
-            if downloads > 100000:
-                contributor_signals += 3.0
-            elif downloads > 50000:
-                contributor_signals += 2.5
-            elif downloads > 10000:
-                contributor_signals += 2.0
-            elif downloads > 5000:
-                contributor_signals += 1.5
-            elif downloads > 1000:
-                contributor_signals += 1.0
-            elif downloads > 100:
-                contributor_signals += 0.5
-
-            # Likes: direct community validation
-            # Adjusted thresholds to be more generous
-            if likes > 100:
-                contributor_signals += 2.5
-            elif likes > 50:
-                contributor_signals += 2.0
-            elif likes > 20:
-                contributor_signals += 1.5
-            elif likes > 10:
-                contributor_signals += 1.0
-            elif likes > 5:
-                contributor_signals += 0.5
-
-            # File count: more files = more maintenance burden
-            if file_count > 50:
-                contributor_signals += 1.5
-            elif file_count > 20:
-                contributor_signals += 1.0
-            elif file_count > 10:
-                contributor_signals += 0.5
-
-            # Organization presence: org models usually have teams
-            if model_id and "/" in str(model_id):
-                contributor_signals += 1.5
-
-            logger.info(
-                f"[BUS_FACTOR] Contributor signals: {contributor_signals}"
-            )
-
-            # Convert signals to estimated contributors
-            # Ensure minimum baseline of 2 contributors for any published model
-            contributors = max(2, min(5, contributor_signals))
-
-        # Fallback: use Git analysis if HF data insufficient
-        if contributors == 1:
-            repo_contributors = getattr(metadata, "repo_contributors", [])
-            if isinstance(repo_contributors, list) and repo_contributors:
-                # Count active contributors
-                active_contributors = sum(
-                    1 for c in repo_contributors
-                    if isinstance(c, dict) and
-                    int(c.get("contributions", 0)) > 0
+            
+            if significant_contributors > 0:
+                # Use significant contributors as primary metric
+                contributors = min(5, significant_contributors)
+                logger.info(
+                    f"[BUS_FACTOR] Using GitHub significant contributors "
+                    f"(>5 commits): {significant_contributors}"
                 )
-                if active_contributors > 0:
-                    contributors = min(5, active_contributors)
-                    logger.info(
-                        f"[BUS_FACTOR] Using GitHub contributors: "
-                        f"{active_contributors}"
-                    )
+            elif active_contributors > 0:
+                # Fallback to active contributors
+                contributors = min(5, active_contributors * 0.8)
+                logger.info(
+                    f"[BUS_FACTOR] Using GitHub active contributors: "
+                    f"{active_contributors}"
+                )
+
+        # Priority 2: Estimate from HF engagement metrics if no GitHub data
+        else:
+            hf_info = getattr(metadata, 'info', None)
+            if hf_info:
+                downloads = getattr(hf_info, 'downloads', 0) or 0
+                likes = getattr(hf_info, 'likes', 0) or 0
+
+                # Get file count from siblings
+                siblings = getattr(hf_info, 'siblings', [])
+                file_count = len(siblings) if siblings else 0
+
+                # Get model ID for organization check
+                model_id = (
+                    getattr(hf_info, 'id', '') or getattr(metadata, 'id', '')
+                )
+                
+                # Check for tags indicating community involvement
+                tags = getattr(hf_info, 'tags', []) or []
+
+                logger.info(
+                    f"[BUS_FACTOR] HF metrics - downloads: {downloads}, "
+                    f"likes: {likes}, files: {file_count}, id: {model_id}, "
+                    f"tags: {len(tags)}"
+                )
+
+                # Estimate contributors from multiple signals
+                contributor_estimate = 1.0
+
+                # Downloads indicate community usage
+                if downloads > 1000000:
+                    contributor_estimate += 2.5
+                elif downloads > 500000:
+                    contributor_estimate += 2.0
+                elif downloads > 100000:
+                    contributor_estimate += 1.5
+                elif downloads > 50000:
+                    contributor_estimate += 1.0
+                elif downloads > 10000:
+                    contributor_estimate += 0.7
+                elif downloads > 1000:
+                    contributor_estimate += 0.5
+
+                # Likes indicate community engagement
+                if likes > 500:
+                    contributor_estimate += 2.0
+                elif likes > 200:
+                    contributor_estimate += 1.5
+                elif likes > 100:
+                    contributor_estimate += 1.2
+                elif likes > 50:
+                    contributor_estimate += 1.0
+                elif likes > 20:
+                    contributor_estimate += 0.7
+                elif likes > 5:
+                    contributor_estimate += 0.4
+
+                # File count suggests maintenance activity
+                if file_count > 100:
+                    contributor_estimate += 1.0
+                elif file_count > 50:
+                    contributor_estimate += 0.7
+                elif file_count > 20:
+                    contributor_estimate += 0.5
+
+                # Organization models likely have teams
+                if model_id and "/" in str(model_id):
+                    org_name = str(model_id).split("/")[0]
+                    # Well-known orgs likely have larger teams
+                    if org_name.lower() in [
+                        'meta', 'facebook', 'google', 'microsoft',
+                        'openai', 'huggingface', 'stabilityai',
+                        'anthropic', 'nvidia', 'deepmind'
+                    ]:
+                        contributor_estimate += 2.0
+                    else:
+                        contributor_estimate += 1.0
+
+                contributors = min(5, contributor_estimate)
+                logger.info(
+                    f"[BUS_FACTOR] Estimated contributors from HF metrics: "
+                    f"{contributors:.2f}"
+                )
+
+        # Ensure minimum baseline of 1 for any published model
+        if contributors < 1:
+            contributors = 1.0
 
         # Specification: BusFactor = min(1.0, contributors / 5.0)
         score = min(1.0, contributors / 5.0)

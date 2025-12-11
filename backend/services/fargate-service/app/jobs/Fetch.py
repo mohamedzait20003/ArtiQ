@@ -110,19 +110,62 @@ def fetch_metadata_step(context):
                     f"[FETCH] Failed to fetch dataset: {dataset_id}"
                 )
 
-    # Extract GitHub code link
+    # Extract GitHub code link from multiple sources
     code_link = None
+    
+    # 1. Check artifact's code_repository_url
     if (hasattr(artifact, 'code_repository_url') and
             artifact.code_repository_url):
         code_link = artifact.code_repository_url
+        logger.info(f"[FETCH] Using code_repository_url: {code_link}")
+    
+    # 2. Check if source URL is a GitHub link
     elif 'github.com' in artifact.source_url:
         code_link = artifact.source_url
+        logger.info(f"[FETCH] Using GitHub source URL: {code_link}")
+    
+    # 3. Check HuggingFace model card for GitHub link
+    elif metadata.card and hasattr(metadata.card, '__dict__'):
+        card_dict = (
+            metadata.card if isinstance(metadata.card, dict)
+            else vars(metadata.card)
+        )
+        # Check common fields in model card
+        for field in ['code', 'github', 'repository', 'repo']:
+            if field in card_dict and card_dict[field]:
+                potential_link = str(card_dict[field])
+                if 'github.com' in potential_link:
+                    code_link = potential_link
+                    logger.info(
+                        f"[FETCH] Found GitHub link in card['{field}']: "
+                        f"{code_link}"
+                    )
+                    break
+    
+    # 4. Check HuggingFace model info tags for GitHub references
+    if not code_link and metadata.info:
+        tags = getattr(metadata.info, 'tags', []) or []
+        for tag in tags:
+            tag_str = str(tag).lower()
+            if 'github.com' in tag_str:
+                # Extract URL from tag
+                try:
+                    start = tag_str.find('github.com')
+                    potential_link = 'https://' + tag_str[start:]
+                    code_link = potential_link.split()[0]
+                    logger.info(
+                        f"[FETCH] Found GitHub link in tags: {code_link}"
+                    )
+                    break
+                except Exception:
+                    pass
 
     # Fetch GitHub data if available
     owner, repo = None, None
     if code_link:
         try:
             owner, repo = gh_manager.code_link_to_repo(code_link)
+            logger.info(f"[FETCH] Parsed GitHub repo: {owner}/{repo}")
         except ValueError as e:
             logging.warning(f"Invalid code link provided: {e}")
 
