@@ -5,7 +5,7 @@ Handles interactions with HuggingFace API for models and datasets
 
 import os
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from huggingface_hub import ModelInfo, DatasetInfo
 from lib.huggingface import HuggingFaceAPIManager
 
@@ -15,16 +15,14 @@ class HGAgent:
     HuggingFace Agent for retrieving model and dataset information
     """
 
-    def __init__(self, token: Optional[str] = None):
+    def __init__(self):
         """
         Initialize HuggingFace Agent
         Args:
             token: Optional HuggingFace API token. If not provided,
                    will use HF_TOKEN from environment variables
         """
-        if token is None:
-            token = os.getenv("HF_TOKEN")
-
+        token = os.getenv("HF_TOKEN")
         self.hf_manager = HuggingFaceAPIManager(token=token)
         logging.info("[HGAgent] Initialized HuggingFace Agent")
 

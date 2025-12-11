@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Declare build arguments for tokens
 ARG HF_TOKEN
-ARG GITHUB_TOKEN
+ARG GH_TOKEN
 
 # Copy requirements and install dependencies
 COPY requirements.txt .
@@ -20,7 +20,7 @@ COPY app/ ./app/
 COPY include/ ./include/
 
 # Set environment variables from build args
-ENV GITHUB_TOKEN=${GITHUB_TOKEN}
+ENV GH_TOKEN=${GH_TOKEN}
 ENV HF_TOKEN=${HF_TOKEN}
 
 # Set Python path to include current directory

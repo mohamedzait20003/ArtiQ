@@ -5,16 +5,14 @@ from lib.github import GitHubAPIManager
 
 
 class GHAgent:
-    def __init__(self, token: Optional[str] = None) -> None:
+    def __init__(self) -> None:
         """
         Initialize GitHub Agent
-        
         Args:
             token: Optional GitHub API token. If not provided,
                    will use GITHUB_TOKEN from environment variables
         """
-        if token is None:
-            token = os.environ.get("GITHUB_TOKEN")
+        token = os.environ.get("GH_TOKEN")
         self.api = GitHubAPIManager(token)
 
     def get_repo_metadata(self, repo_url: str) -> Dict:
