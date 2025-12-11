@@ -57,6 +57,13 @@ def invoke_fargate_task(artifact_id: str) -> Dict[str, Any]:
     encryption_key = os.environ.get('ARTIFACT_ENCRYPTION_KEY', '')
     aws_region = os.environ.get('AWS_REGION', 'us-east-2')
 
+    # Debug logging
+    print(f"[LAMBDA] Passing environment variables to Fargate:")
+    print(f"[LAMBDA]   MONGODB_URI: {'SET' if mongodb_uri else 'EMPTY'}")
+    print(f"[LAMBDA]   ARTIFACT_ENCRYPTION_KEY: "
+          f"{'SET' if encryption_key else 'EMPTY'}")
+    print(f"[LAMBDA]   AWS_REGION: {aws_region}")
+
     try:
         # Run Fargate task
         response = ecs_client.run_task(

@@ -26,6 +26,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 os.environ.setdefault("AWS_REGION", "us-east-2")
+
+# Debug: Log environment variables
+logger.info("[DEBUG] Environment variables:")
+logger.info(f"  AWS_REGION: {os.environ.get('AWS_REGION', 'NOT SET')}")
+logger.info(f"  MONGODB_URI: {'SET' if os.environ.get('MONGODB_URI') else 'NOT SET'}")
+logger.info(f"  ARTIFACT_ENCRYPTION_KEY: {'SET' if os.environ.get('ARTIFACT_ENCRYPTION_KEY') else 'NOT SET'}")
+logger.info(f"  GH_TOKEN: {'SET' if os.environ.get('GH_TOKEN') else 'NOT SET'}")
+logger.info(f"  HF_TOKEN: {'SET' if os.environ.get('HF_TOKEN') else 'NOT SET'}")
+
 AWSServices.initialize(region=os.environ.get("AWS_REGION"))
 
 

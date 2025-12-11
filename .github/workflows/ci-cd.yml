@@ -228,8 +228,6 @@ jobs:
         IMAGE_TAG: ${{ github.sha }}
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        ARTIFACT_ENCRYPTION_KEY: ${{ secrets.ARTIFACT_ENCRYPTION_KEY }}
       run: |
         cd backend/services/fargate-service
         docker build \
