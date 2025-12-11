@@ -75,38 +75,48 @@ def lambda_handler(event, context):
         )
         rating_obj = artifact.rating()
 
-        # If rating not found, wait and retry once
-        # (evaluation might be in progress)
+        # If rating not found, poll until available or timeout
+        # (evaluation might be in progress in Fargate service)
         if not rating_obj:
-            logger.warning(
-                f"[RATE] No rating found for artifact {artifact_id} "
-                "on first attempt. Waiting 2 seconds and retrying..."
-            )
-            time.sleep(2)
-
-            # Retry fetching the rating
             logger.info(
-                f"[RATE] Retrying rating fetch for artifact {artifact_id}"
+                f"[RATE] No rating found for artifact {artifact_id}. "
+                "Polling until rating is available (max 120s)..."
             )
-            rating_obj = artifact.rating()
+
+            max_retries = 40  # 40 retries * 3 seconds = 120 seconds total
+            retry_interval = 3  # seconds between retries
+
+            for attempt in range(1, max_retries + 1):
+                logger.info(
+                    f"[RATE] Retry attempt {attempt}/{max_retries} "
+                    f"for artifact {artifact_id}"
+                )
+
+                time.sleep(retry_interval)
+
+                rating_obj = artifact.rating()
+
+                if rating_obj:
+                    logger.info(
+                        f"[RATE] Rating found on attempt {attempt} "
+                        f"for artifact {artifact_id}"
+                    )
+                    break
 
             if not rating_obj:
                 logger.warning(
                     f"[RATE] No rating found for artifact {artifact_id} "
-                    "after retry"
+                    f"after {max_retries} retries (120s timeout)"
                 )
                 return (
                     {
                         'errorMessage':
                             f'No rating found for artifact {artifact_id}. '
-                            'The artifact may not have been evaluated yet.'
+                            'The artifact evaluation may still be in progress '
+                            'or has failed. Please try again later.'
                     },
                     404
                 )
-
-            logger.info(
-                f"[RATE] Rating found on retry for artifact {artifact_id}"
-            )
 
         logger.info(
             f"[RATE] Rating found - net_score: "
