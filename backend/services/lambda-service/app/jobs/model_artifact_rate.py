@@ -69,51 +69,67 @@ def lambda_handler(event, context):
                 400
             )
 
-        # Get rating via relationship with retry logic
+        # Get rating via relationship with optimized retry logic
         logger.info(
             f"[RATE] Fetching rating for artifact {artifact_id}"
         )
         rating_obj = artifact.rating()
 
-        # If rating not found, poll until available or timeout
-        # (evaluation might be in progress in Fargate service)
+        # Optimized polling: exponential backoff + early termination
+        # Fast checks initially, slower as time progresses
         if not rating_obj:
             logger.info(
                 f"[RATE] No rating found for artifact {artifact_id}. "
-                "Polling until rating is available (max 120s)..."
+                "Starting optimized polling..."
             )
 
-            max_retries = 40  # 40 retries * 3 seconds = 120 seconds total
-            retry_interval = 3  # seconds between retries
-
-            for attempt in range(1, max_retries + 1):
-                logger.info(
-                    f"[RATE] Retry attempt {attempt}/{max_retries} "
-                    f"for artifact {artifact_id}"
-                )
-
-                time.sleep(retry_interval)
-
+            # Aggressive polling for first 10s (most evals complete quickly)
+            for attempt in range(1, 11):  # 10 attempts * 1s = 10s
+                time.sleep(1)
                 rating_obj = artifact.rating()
-
                 if rating_obj:
                     logger.info(
-                        f"[RATE] Rating found on attempt {attempt} "
-                        f"for artifact {artifact_id}"
+                        f"[RATE] Rating found after {attempt}s "
+                        f"(fast polling)"
                     )
                     break
 
+            # Medium polling for next 20s
+            if not rating_obj:
+                for attempt in range(1, 11):  # 10 attempts * 2s = 20s
+                    time.sleep(2)
+                    rating_obj = artifact.rating()
+                    if rating_obj:
+                        logger.info(
+                            f"[RATE] Rating found after {10 + attempt * 2}s "
+                            f"(medium polling)"
+                        )
+                        break
+
+            # Slow polling for remaining time (up to 3 minutes total)
+            if not rating_obj:
+                for attempt in range(1, 27):  # 26 attempts * 5s = 130s
+                    time.sleep(5)
+                    rating_obj = artifact.rating()
+                    if rating_obj:
+                        logger.info(
+                            f"[RATE] Rating found after "
+                            f"{30 + attempt * 5}s (slow polling)"
+                        )
+                        break
+
+            # Final check - if still not available
             if not rating_obj:
                 logger.warning(
                     f"[RATE] No rating found for artifact {artifact_id} "
-                    f"after {max_retries} retries (120s timeout)"
+                    f"after 3 minutes of polling"
                 )
                 return (
                     {
                         'errorMessage':
                             f'No rating found for artifact {artifact_id}. '
-                            'The artifact evaluation may still be in progress '
-                            'or has failed. Please try again later.'
+                            'The artifact evaluation is taking longer than '
+                            'expected. Please try again in a few minutes.'
                     },
                     404
                 )

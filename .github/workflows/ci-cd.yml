@@ -235,8 +235,6 @@ jobs:
         docker build \
           --build-arg GH_TOKEN=$GH_TOKEN \
           --build-arg HF_TOKEN=$HF_TOKEN \
-          --build-arg MONGODB_URI=$MONGODB_URI \
-          --build-arg ARTIFACT_ENCRYPTION_KEY=$ARTIFACT_ENCRYPTION_KEY \
           -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
