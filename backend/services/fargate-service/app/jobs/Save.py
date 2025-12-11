@@ -47,7 +47,11 @@ def save_ratings_step(context):
         # Generate rating ID (use artifact_id as rating id for uniqueness)
         rating_id = f"rating_{artifact.id}"
 
-        # Create or update rating with proper schema
+        # Log which metrics were evaluated
+        logger.info(f"[SAVE] Available metrics: {list(scores.keys())}")
+        
+        # Create or update rating with only evaluated metrics
+        # Set defaults to 0.0 for metrics not in the current pipeline
         rating = Rating_Model(
             id=rating_id,
             artifact_id=artifact.id,
@@ -55,13 +59,13 @@ def save_ratings_step(context):
                 'value': net_score,
                 'latency': net_latency
             },
-            ramp_up_time=metric_dict('ramp_up'),
-            bus_factor=metric_dict('bus_factor'),
-            performance_claims=metric_dict('performance'),
-            license=metric_dict('license'),
-            dataset_and_code_score=metric_dict('availability'),
-            dataset_quality=metric_dict('dataset_quality'),
-            code_quality=metric_dict('code_quality'),
+            ramp_up_time=metric_dict('ramp_up', 0.0),
+            bus_factor=metric_dict('bus_factor', 0.0),
+            performance_claims=metric_dict('performance', 0.0),
+            license=metric_dict('license', 0.0),
+            dataset_and_code_score=metric_dict('availability', 0.0),
+            dataset_quality=metric_dict('dataset_quality', 0.0),
+            code_quality=metric_dict('code_quality', 0.0),
             reproducibility={'value': 0.0, 'latency': 0.0},
             reviewedness={'value': 0.0, 'latency': 0.0},
             tree_score={'value': 0.0, 'latency': 0.0},
