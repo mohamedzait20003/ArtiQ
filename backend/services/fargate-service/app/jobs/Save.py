@@ -79,7 +79,7 @@ def save_ratings_step(context):
         rating.save()
         logger.info(f"[SAVE] Ratings saved for artifact {artifact.id}")
         print(f"[PIPELINE] Ratings saved for artifact {artifact.id}")
-        
+
         # Rating is now accessible via artifact.rating() relationship
         logger.info(
             f"[SAVE] Rating can be accessed via relationship for "
