@@ -27,7 +27,9 @@ class GHAgent:
             token: Optional GitHub API token. If not provided,
                    will use GITHUB_TOKEN from environment variables
         """
-        token = os.environ.get("GH_TOKEN")
+        token = os.environ.get("GITHUB_TOKEN")
+        if not token:
+            token = os.environ.get("GH_TOKEN")
         self.api = GitHubAPIManager(token)
 
         # Laravel-style caches with TTL support

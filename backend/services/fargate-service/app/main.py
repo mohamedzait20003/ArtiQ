@@ -8,14 +8,17 @@ import sys
 import json
 import logging
 from datetime import datetime
-from include import AWSServices, Pipeline
+from include import AWSServices, Pipeline, parallel
 from app.bootstrap import bootstrap_agents
 from app.utils.encryption import decrypt_artifact_id
 from app.utils.artifact import get_artifact_from_db
 from app.jobs import (
     validate_artifact_step, fetch_metadata_step,
     aggregate_scores_step, save_ratings_step,
-    evaluate_bus_factor
+    evaluate_bus_factor, evaluate_performance,
+    evaluate_rampup, evaluate_size, evaluate_license,
+    evaluate_availability, evaluate_code_quality,
+    evaluate_dataset_quality
 )
 
 # Configure logging for CloudWatch
@@ -116,7 +119,16 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
             result = Pipeline(
                 validate_artifact_step,
                 fetch_metadata_step,
-                evaluate_bus_factor,
+                parallel(
+                    evaluate_bus_factor,
+                    evaluate_performance,
+                    evaluate_rampup,
+                    evaluate_size, # Size evaluation is causing issues
+                    evaluate_license,
+                    evaluate_availability,
+                    evaluate_code_quality,
+                    evaluate_dataset_quality
+                ),
                 aggregate_scores_step,
                 save_ratings_step
             ).start(artifact)

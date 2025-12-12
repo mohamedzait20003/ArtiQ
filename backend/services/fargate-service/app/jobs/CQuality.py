@@ -46,6 +46,14 @@ class CodeQualityEvaluator:
             logger.info(
                 f"[CODE_QUALITY] Found {len(repo_contents)} repo items"
             )
+            logger.info(
+                f"[CODE_QUALITY] repo_contents type: {type(repo_contents)}"
+            )
+            if repo_contents and len(repo_contents) > 0:
+                logger.info(
+                    f"[CODE_QUALITY] First 3 items: "
+                    f"{repo_contents[:3]}"
+                )
 
             if not isinstance(repo_contents, list):
                 logger.warning(
@@ -158,6 +166,13 @@ class CodeQualityEvaluator:
                 repo_summary.append(f"{item_type}: {name}")
 
         repo_text = "\n".join(repo_summary)
+        
+        logger.info(
+            f"[CODE_QUALITY] Repo summary lines: {len(repo_summary)}"
+        )
+        logger.info(
+            f"[CODE_QUALITY] Repo text preview: {repo_text[:200]}..."
+        )
 
         prompt = (
             "CRITICAL: You MUST respond with ONLY valid JSON. "

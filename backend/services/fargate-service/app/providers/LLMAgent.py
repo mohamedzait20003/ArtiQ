@@ -5,6 +5,7 @@ Handles interactions with AWS Bedrock models for AI-powered tasks
 
 import os
 import json
+import time
 from include import get_bedrock
 from typing import Dict, Any, Optional
 
@@ -24,7 +25,7 @@ class LLMAgent:
         self.bedrock_client = get_bedrock()
         self.model_id = model_id or os.environ.get(
             'LLM_MODEL_ID',
-            'anthropic.claude-3-5-sonnet-20241022-v2:0'
+            'us.anthropic.claude-3-5-haiku-20241022-v1:0'
         )
         print(f"[LLMAgent] Initialized with model: {self.model_id}")
 
@@ -34,77 +35,109 @@ class LLMAgent:
         system_prompt: Optional[str] = None,
         max_tokens: int = 4096,
         temperature: float = 0.7,
+        max_retries: int = 5,
         **kwargs
     ) -> Dict[str, Any]:
         """
-        Send a prompt to the LLM model
+        Send a prompt to the LLM model with exponential backoff
 
         Args:
             prompt: The user prompt/question
             system_prompt: Optional system prompt for context
             max_tokens: Maximum tokens in response
             temperature: Sampling temperature (0.0 - 1.0)
+            max_retries: Maximum retry attempts for rate limiting
             **kwargs: Additional model-specific parameters
 
         Returns:
             Response dictionary with 'content' and metadata
         """
-        try:
-            # Build messages
-            messages = [
-                {
-                    "role": "user",
-                    "content": prompt
+        
+        for attempt in range(max_retries):
+            try:
+                # Build messages
+                messages = [
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+
+                # Build request body based on model type
+                if 'anthropic.claude' in self.model_id:
+                    request_body = {
+                        "anthropic_version": "bedrock-2023-05-31",
+                        "max_tokens": max_tokens,
+                        "temperature": temperature,
+                        "messages": messages
+                    }
+
+                    # Add system prompt if provided
+                    if system_prompt:
+                        request_body["system"] = system_prompt
+
+                    # Add any additional parameters
+                    request_body.update(kwargs)
+
+                else:
+                    # Generic format for other models
+                    request_body = {
+                        "prompt": prompt,
+                        "max_tokens": max_tokens,
+                        "temperature": temperature,
+                        **kwargs
+                    }
+
+                # Invoke model
+                response = self.bedrock_client.invoke_model(
+                    modelId=self.model_id,
+                    body=json.dumps(request_body),
+                    contentType="application/json",
+                    accept="application/json"
+                )
+
+                # Parse response
+                response_body = json.loads(response['body'].read())
+
+                return self.process_response(response_body)
+
+            except Exception as e:
+                error_str = str(e)
+                
+                # Check if it's a throttling error
+                is_throttling = (
+                    'ThrottlingException' in error_str or
+                    'Too many requests' in error_str or
+                    'Rate exceeded' in error_str
+                )
+                
+                if is_throttling and attempt < max_retries - 1:
+                    # Exponential backoff: 2^attempt seconds + jitter
+                    wait_time = (2 ** attempt) + (attempt * 0.5)
+                    print(
+                        f"[LLMAgent] Rate limited. "
+                        f"Retrying in {wait_time:.1f}s "
+                        f"(attempt {attempt + 1}/{max_retries})"
+                    )
+                    time.sleep(wait_time)
+                    continue
+                
+                # Non-throttling error or final attempt
+                print(f"[LLMAgent] Error sending prompt: {e}")
+                import traceback
+                traceback.print_exc()
+                return {
+                    "success": False,
+                    "error": str(e),
+                    "content": None
                 }
-            ]
-
-            # Build request body based on model type
-            if 'anthropic.claude' in self.model_id:
-                request_body = {
-                    "anthropic_version": "bedrock-2023-05-31",
-                    "max_tokens": max_tokens,
-                    "temperature": temperature,
-                    "messages": messages
-                }
-
-                # Add system prompt if provided
-                if system_prompt:
-                    request_body["system"] = system_prompt
-
-                # Add any additional parameters
-                request_body.update(kwargs)
-
-            else:
-                # Generic format for other models
-                request_body = {
-                    "prompt": prompt,
-                    "max_tokens": max_tokens,
-                    "temperature": temperature,
-                    **kwargs
-                }
-
-            # Invoke model
-            response = self.bedrock_client.invoke_model(
-                modelId=self.model_id,
-                body=json.dumps(request_body),
-                contentType="application/json",
-                accept="application/json"
-            )
-
-            # Parse response
-            response_body = json.loads(response['body'].read())
-
-            return self.process_response(response_body)
-
-        except Exception as e:
-            print(f"[LLMAgent] Error sending prompt: {e}")
-            import traceback
-            traceback.print_exc()
-            return {
-                "success": False,
-                "error": str(e),
-                "content": None
-            }
+        
+        # All retries exhausted
+        return {
+            "success": False,
+            "error": f"Max retries ({max_retries}) exceeded due to rate limiting",
+            "content": None
+        }
 
     def process_response(
         self,

@@ -49,6 +49,12 @@ class DatasetQualityEvaluator:
                 f"[DATASET_QUALITY] Found {len(dataset_cards)} cards, "
                 f"{len(dataset_infos)} infos"
             )
+            logger.info(
+                f"[DATASET_QUALITY] Card keys: {list(dataset_cards.keys())}"
+            )
+            logger.info(
+                f"[DATASET_QUALITY] Info keys: {list(dataset_infos.keys())}"
+            )
 
             if not dataset_cards and not dataset_infos:
                 logger.warning(
@@ -62,6 +68,10 @@ class DatasetQualityEvaluator:
             logger.info(
                 f"[DATASET_QUALITY] Composed text length: "
                 f"{len(dataset_text)}"
+            )
+            logger.info(
+                f"[DATASET_QUALITY] Text preview: "
+                f"{dataset_text[:300]}..."
             )
 
             if not dataset_text.strip():
@@ -87,6 +97,13 @@ class DatasetQualityEvaluator:
             logger.info(
                 f"[DATASET_QUALITY] LLM response parsed: "
                 f"{parsed_result}"
+            )
+            logger.info(
+                f"[DATASET_QUALITY] Breakdown - "
+                f"comprehensive_card: {parsed_result.get('has_comprehensive_card')}, "
+                f"data_source: {parsed_result.get('has_clear_data_source')}, "
+                f"preprocessing: {parsed_result.get('has_preprocessing_info')}, "
+                f"large_size: {parsed_result.get('has_large_size')}"
             )
 
             # Calculate score

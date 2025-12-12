@@ -239,11 +239,11 @@ class AvailabilityEvaluator:
         """Calculate final score from parsed result"""
         score = 0.0
         if parsed_result["lists_training_datasets"]:
-            score += 0.3
+            score += 0.45
         if parsed_result["links_to_huggingface_datasets"]:
-            score += 0.3
+            score += 0.1
         if parsed_result["links_to_code_repo"]:
-            score += 0.4
+            score += 0.45
 
         return min(1.0, score)
 

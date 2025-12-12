@@ -45,17 +45,31 @@ def aggregate_scores_step(context):
             metric_name = result.get('metric_name', 'unknown')
             score = result.get('score', 0.0)
             latency = result.get('latency', 0.0)
-
-            scores[metric_name] = score
-            latencies[metric_name] = latency
-            total_score += score
-            count += 1
-            logger.info(
-                f"[AGGREGATE] {metric_name}: {score:.3f} "
-                f"(latency: {latency:.3f}s)"
-            )
-            print(f"[PIPELINE]   {metric_name}: {score} "
-                  f"(latency: {latency}s)")
+            
+            # Handle size metric specially (nested dict with average)
+            if metric_name == 'size' and isinstance(score, dict):
+                score_value = score.get('average', 0.0)
+                scores[metric_name] = score  # Keep full nested structure
+                latencies[metric_name] = latency
+                total_score += score_value  # Use average for net score
+                count += 1
+                logger.info(
+                    f"[AGGREGATE] {metric_name}: {score_value:.3f} "
+                    f"(latency: {latency:.3f}s)"
+                )
+                print(f"[PIPELINE]   {metric_name}: {score_value} "
+                      f"(latency: {latency}s)")
+            else:
+                scores[metric_name] = score
+                latencies[metric_name] = latency
+                total_score += score
+                count += 1
+                logger.info(
+                    f"[AGGREGATE] {metric_name}: {score:.3f} "
+                    f"(latency: {latency:.3f}s)"
+                )
+                print(f"[PIPELINE]   {metric_name}: {score} "
+                      f"(latency: {latency}s)")
 
     # Calculate net score (average)
     net_score = total_score / count if count > 0 else 0.0

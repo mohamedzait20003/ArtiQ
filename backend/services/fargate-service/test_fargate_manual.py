@@ -16,8 +16,8 @@ API_BASE_URL = "https://besp7zaxqg.execute-api.us-east-2.amazonaws.com"
 AUTH_TOKEN = ""
 
 # Test data
-MODEL_NAME = "crangana-trained-gender"
-MODEL_URL = "https://huggingface.co/crangana/trained-gender"
+MODEL_NAME = "bert-base-uncased"
+MODEL_URL = "https://huggingface.co/google-bert/bert-base-uncased"
 
 HEADERS = {
     "X-Authorization": AUTH_TOKEN,
@@ -206,7 +206,6 @@ def main():
     if artifact:
         artifact_id = artifact["id"]
     
-    '''
     # Step 2: Delete if exists, then create fresh
     if artifact:
         artifact_type = artifact.get("type", "model")
@@ -224,7 +223,7 @@ def main():
     if not artifact_id:
         print("\n✗ Failed to create artifact. Exiting.")
         sys.exit(1)
-    '''
+    
     # Step 4: Get rating (wait for evaluation to complete)
     rating = get_rating(artifact_id)
     
