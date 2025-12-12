@@ -45,8 +45,10 @@ class SizeEvaluator:
                     "[SizeEvaluator] Warning: "
                     "repo_metadata is not a dictionary"
                 )
+                latency = time.time() - start_time
                 return self._create_error_result(
-                    "repo_metadata is not a dictionary"
+                    "repo_metadata is not a dictionary",
+                    latency
                 )
 
             # Parse size value
@@ -204,14 +206,16 @@ class SizeEvaluator:
 
         return {
             'metric_name': 'size',
-            'score': size_score,
+            'score': {
+                'raspberry_pi': round(r_pi, 3),
+                'jetson_nano': round(j_nano, 3),
+                'desktop_pc': round(d_pc, 3),
+                'aws_server': round(aws, 3),
+                'average': round(size_score, 3)  # Include average for aggregate
+            },
             'latency': round(latency, 3),
             'details': {
                 'derived_size_mb': size_mb,
-                'raspberry_pi_score': round(r_pi, 3),
-                'jetson_nano_score': round(j_nano, 3),
-                'desktop_pc_score': round(d_pc, 3),
-                'aws_cloud_score': round(aws, 3),
                 'evaluator': 'SizeEvaluator'
             }
         }
