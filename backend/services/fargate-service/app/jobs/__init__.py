@@ -6,6 +6,7 @@ Contains all pipeline jobs and evaluation metrics
 # Pipeline step jobs
 from .Validate import validate_artifact_step
 from .Fetch import fetch_metadata_step
+from .Download import download_and_upload_step
 from .Aggregate import aggregate_scores_step
 from .Save import save_ratings_step
 
@@ -22,6 +23,7 @@ from .DQuality import evaluate_dataset_quality
 __all__ = [
     'validate_artifact_step',
     'fetch_metadata_step',
+    'download_and_upload_step',
     'aggregate_scores_step',
     'save_ratings_step',
     'evaluate_bus_factor',

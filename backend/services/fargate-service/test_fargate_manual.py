@@ -191,6 +191,61 @@ def get_rating(artifact_id: str) -> Optional[Dict[str, Any]]:
         return None
 
 
+def get_cost(artifact_id: str, artifact_type: str = "model", dependency: bool = False) -> Optional[Dict[str, Any]]:
+    """
+    Get cost for an artifact using GET /artifact/{artifact_type}/{id}/cost.
+    
+    Returns:
+        Cost data if successful, None otherwise
+    """
+    print_section(f"Step 4: Getting cost for artifact ID '{artifact_id}'")
+    
+    url = f"{API_BASE_URL}/artifact/{artifact_type}/{artifact_id}/cost"
+    if dependency:
+        url += "?dependency=true"
+    
+    print(f"GET {url}")
+    
+    try:
+        response = requests.get(url, headers=HEADERS)
+        print(f"Status Code: {response.status_code}")
+        
+        if response.status_code == 200:
+            cost = response.json()
+            print(f"\n✓ Cost retrieved successfully!")
+            print(f"\nFull Response:")
+            print(json.dumps(cost, indent=2))
+            
+            # Extract the cost value
+            if artifact_id in cost:
+                total_cost = cost[artifact_id].get("total_cost")
+                standalone_cost = cost[artifact_id].get("standalone_cost")
+                
+                print(f"\nCost Summary:")
+                if standalone_cost is not None:
+                    print(f"  Standalone Cost: {standalone_cost} MB")
+                print(f"  Total Cost: {total_cost} MB")
+            
+            return cost
+            
+        elif response.status_code == 404:
+            print(f"\n✗ Artifact not found (404)")
+            print(f"Response: {response.text}")
+            return None
+                
+        elif response.status_code == 500:
+            print(f"Error: Cost calculator encountered an error")
+            print(f"Response: {response.text}")
+            return None
+        else:
+            print(f"Error: {response.text}")
+            return None
+            
+    except Exception as e:
+        print(f"Error getting cost: {e}")
+        return None
+
+
 def main():
     """Main test workflow."""
     print("\n" + "="*60)
@@ -227,14 +282,28 @@ def main():
     # Step 4: Get rating (wait for evaluation to complete)
     rating = get_rating(artifact_id)
     
-    if rating:
-        print_section("Test Completed Successfully!")
-        print(f"✓ Artifact '{MODEL_NAME}' (ID: {artifact_id}) has been rated")
-        print(f"✓ Net Score: {rating.get('net_score', 'N/A')}")
-        sys.exit(0)
-    else:
+    if not rating:
         print_section("Test Failed")
         print(f"✗ Could not retrieve rating for artifact '{MODEL_NAME}' (ID: {artifact_id})")
+        sys.exit(1)
+    
+    # Step 5: Get cost
+    cost = get_cost(artifact_id, artifact_type="model", dependency=False)
+    
+    if cost:
+        print_section("Test Completed Successfully!")
+        print(f"✓ Artifact '{MODEL_NAME}' (ID: {artifact_id}) has been rated and cost calculated")
+        print(f"✓ Net Score: {rating.get('net_score', 'N/A')}")
+        
+        if artifact_id in cost:
+            total_cost = cost[artifact_id].get("total_cost")
+            print(f"✓ Total Cost: {total_cost} MB")
+        
+        sys.exit(0)
+    else:
+        print_section("Test Partially Successful")
+        print(f"✓ Artifact '{MODEL_NAME}' (ID: {artifact_id}) has been rated")
+        print(f"✗ Could not retrieve cost")
         sys.exit(1)
 
 
