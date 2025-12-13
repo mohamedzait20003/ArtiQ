@@ -17,7 +17,8 @@ from app.jobs import (
     artifact_delete_job,
     artifact_by_regex_job,
     model_artifact_rate_job,
-    artifact_cost_job
+    artifact_cost_job,
+    artifact_license_check_job
 )
 
 
@@ -385,10 +386,37 @@ class ArtifactController:
         Assess license compatibility for fine-tune and
         inference usage (BASELINE)
         """
-        print(f"POST /artifact/model/{id}/license-check called")
-        # TODO: Implement logic
-        raise HTTPException(
-            status_code=501, detail="Not implemented")
+        print(f"POST /artifact/model/{id}/license-check called with github_url={request.github_url}")
+        
+        try:
+            # Call the lambda handler
+            response_data, status_code = artifact_license_check_job(
+                event={
+                    'artifact_id': id,
+                    'github_url': request.github_url
+                },
+                context=None
+            )
+            
+            # Return response based on status code
+            if status_code == 200:
+                return JSONResponse(content=response_data, status_code=200)
+            elif status_code == 404:
+                raise HTTPException(status_code=404, detail=response_data.get('errorMessage', 'Artifact or GitHub project could not be found'))
+            elif status_code == 400:
+                raise HTTPException(status_code=400, detail=response_data.get('errorMessage', 'License check request is malformed'))
+            elif status_code == 502:
+                raise HTTPException(status_code=502, detail=response_data.get('errorMessage', 'External license information could not be retrieved'))
+            else:
+                raise HTTPException(status_code=500, detail=response_data.get('errorMessage', 'Internal server error'))
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"Error in artifact_license_check controller: {str(e)}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"The license check request is malformed: {str(e)}"
+            )
 
     async def artifact_by_regex_get(
         self,

@@ -248,6 +248,14 @@ def extract_repo_info(url: str) -> dict:
                     "owner": parts[0],
                     "repo": parts[1]
                 }
+            elif len(parts) == 1:
+                # Model without owner prefix
+                return {
+                    "platform": "huggingface",
+                    "type": "model",
+                    "owner": None,
+                    "repo": parts[0]
+                }
 
         elif 'github.com' in hostname and len(parts) >= 2:
             return {
