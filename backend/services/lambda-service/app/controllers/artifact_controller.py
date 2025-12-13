@@ -16,7 +16,8 @@ from app.jobs import (
     artifact_update_job,
     artifact_delete_job,
     artifact_by_regex_job,
-    model_artifact_rate_job
+    model_artifact_rate_job,
+    artifact_cost_job
 )
 
 
@@ -312,10 +313,36 @@ class ArtifactController:
             False, description="Include dependencies")
     ):
         """Get the cost of an artifact (BASELINE)"""
-        print(f"GET /artifact/{artifact_type}/{id}/cost called")
-        # TODO: Implement logic
-        raise HTTPException(
-            status_code=501, detail="Not implemented")
+        print(f"GET /artifact/{artifact_type}/{id}/cost called with dependency={dependency}")
+        
+        try:
+            # Call the lambda handler
+            response_data, status_code = artifact_cost_job(
+                event={
+                    'artifact_type': artifact_type,
+                    'artifact_id': id,
+                    'dependency': dependency
+                },
+                context=None
+            )
+            
+            # Return response based on status code
+            if status_code == 200:
+                return JSONResponse(content=response_data, status_code=200)
+            elif status_code == 404:
+                raise HTTPException(status_code=404, detail=response_data.get('errorMessage', 'Artifact does not exist'))
+            elif status_code == 400:
+                raise HTTPException(status_code=400, detail=response_data.get('errorMessage', 'Invalid request'))
+            else:
+                raise HTTPException(status_code=500, detail=response_data.get('errorMessage', 'Internal server error'))
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"Error in artifact_cost controller: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"The artifact cost calculator encountered an error: {str(e)}"
+            )
 
     async def artifact_by_name_get(
         self,

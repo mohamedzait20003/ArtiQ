@@ -43,6 +43,15 @@ def aggregate_scores_step(context):
     for result in results_list:
         if result and isinstance(result, dict):
             metric_name = result.get('metric_name', 'unknown')
+            
+            # Skip non-metric results (e.g., download_upload job)
+            if metric_name == 'unknown' or not metric_name:
+                job_name = result.get('job_name', 'unknown')
+                logger.info(
+                    f"[AGGREGATE] Skipping non-metric result: {job_name}"
+                )
+                continue
+            
             score = result.get('score', 0.0)
             latency = result.get('latency', 0.0)
             
