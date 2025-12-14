@@ -16,7 +16,7 @@ class TestUrlToArtifactName:
         "https://github.com/google-research/bert":
             "google-research-bert",
         "https://huggingface.co/parvk11/audience_classifier_model":
-            "parvk11-audience_classifier_model",
+            "audience_classifier_model",
         "https://huggingface.co/distilbert-base-uncased-distilled-squad":
             "distilbert-base-uncased-distilled-squad",
         "https://huggingface.co/caidas/swin2SR-lightweight-x2-64":
@@ -37,11 +37,11 @@ class TestUrlToArtifactName:
             ("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"),
         "https://huggingface.co/microsoft/resnet-50":
-            "microsoft-resnet-50",
+            "resnet-50",
         "https://huggingface.co/crangana/trained-gender":
-            "crangana-trained-gender",
+            "trained-gender",
         "https://huggingface.co/onnx-community/trained-gender-ONNX":
-            "onnx-community-trained-gender-ONNX",
+            "trained-gender-ONNX",
         "https://huggingface.co/datasets/rajpurkar/squad":
             "rajpurkar-squad",
         "https://www.kaggle.com/datasets/hliang001/flickr2k":
@@ -49,7 +49,7 @@ class TestUrlToArtifactName:
         "https://github.com/zalandoresearch/fashion-mnist":
             "fashion-mnist",
         "https://huggingface.co/datasets/lerobot/pusht":
-            "pusht",
+            "lerobot-pusht",
         "https://huggingface.co/datasets/ILSVRC/imagenet-1k":
             "imagenet-1k",
         "https://huggingface.co/datasets/HuggingFaceM4/FairFace":
@@ -62,7 +62,7 @@ class TestUrlToArtifactName:
         "https://github.com/mv-lab/swin2sr":
             "mv-lab-swin2sr",
         "https://github.com/vikhyat/moondream":
-            "vikhyat-moondream",
+            "moondream",
         "https://github.com/microsoft/git":
             "microsoft-git",
         "https://github.com/patrickjohncyh/fashion-clip":
@@ -71,7 +71,7 @@ class TestUrlToArtifactName:
             "lerobot",
         ("https://github.com/Parth1811/"
          "ptm-recommendation-with-transformers.git"):
-            "Parth1811-ptm-recommendation-with-transformers",
+            "ptm-recommendation-with-transformers",
         "https://github.com/KaimingHe/deep-residual-networks":
             "KaimingHe-deep-residual-networks",
     }
@@ -172,7 +172,7 @@ class TestUrlToArtifactName:
             "ptm-recommendation-with-transformers.git"
         )
         result = url_to_artifact_name(url)
-        assert result == "Parth1811-ptm-recommendation-with-transformers"
+        assert result == "ptm-recommendation-with-transformers"
 
     def test_kaggle_dataset(self):
         """Test Kaggle dataset URL"""

@@ -2,8 +2,10 @@
 Save Ratings Job
 Saves ratings to database
 """
+import uuid
 import logging
 from app.models.Rating_Model import Rating_Model
+from app.models.Artifact_Model import Artifact_Model
 
 # Configure logger for CloudWatch
 logger = logging.getLogger(__name__)
@@ -32,6 +34,27 @@ def save_ratings_step(context):
         print("[PIPELINE] Warning: No artifact found, skipping save")
         return aggregated_data
 
+    # Validate artifact exists in database
+    logger.info(
+        f"[SAVE] Validating artifact existence in database: {artifact.id}"
+    )
+    db_artifact = Artifact_Model.get({'id': artifact.id})
+
+    if not db_artifact:
+        logger.error(
+            f"[SAVE] Artifact not found in database: {artifact.id}"
+        )
+        print(
+            f"[PIPELINE] Error: Artifact {artifact.id} not found in database"
+        )
+        raise ValueError(
+            f"Artifact not found in database: {artifact.id}"
+        )
+
+    logger.info(
+        f"[SAVE] Artifact validated in database: {artifact.id}"
+    )
+
     logger.info(
         f"[SAVE] Saving ratings for artifact: {artifact.id} ({artifact.name})"
     )
@@ -45,8 +68,8 @@ def save_ratings_step(context):
                 'latency': latencies.get(metric_name, 0.0)
             }
 
-        # Generate rating ID (use artifact_id as rating id for uniqueness)
-        rating_id = f"rating_{artifact.id}"
+        # Generate unique rating ID
+        rating_id = str(uuid.uuid4())
 
         # Log which metrics were evaluated
         logger.info(f"[SAVE] Available metrics: {list(scores.keys())}")
