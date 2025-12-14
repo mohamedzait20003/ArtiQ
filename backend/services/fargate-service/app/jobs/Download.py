@@ -122,7 +122,9 @@ class DownloadUploader:
                                     value = float(size_parts[0])
                                     unit = size_parts[1].upper()
                                     if unit in ['MB', 'M']:
-                                        total_size_bytes = int(value * 1024 * 1024)
+                                        total_size_bytes = int(
+                                            value * 1024 * 1024
+                                        )
                                     elif unit in ['GB', 'G']:
                                         total_size_bytes = int(
                                             value * 1024 * 1024

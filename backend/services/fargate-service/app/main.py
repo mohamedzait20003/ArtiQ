@@ -18,7 +18,8 @@ from app.jobs import (
     evaluate_bus_factor, evaluate_performance,
     evaluate_rampup, evaluate_size, evaluate_license,
     evaluate_availability, evaluate_code_quality,
-    evaluate_dataset_quality, evaluate_reviewedness
+    evaluate_dataset_quality, evaluate_reviewedness,
+    evaluate_lineage, evaluate_tree_score
 )
 
 # Configure logging for CloudWatch
@@ -115,8 +116,10 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
             logger.info("     - Dataset Quality")
             logger.info("     - Reviewedness")
             logger.info("     - Download & Upload (parallel)")
-            logger.info("  4. Aggregate Scores")
-            logger.info("  5. Save Ratings")
+            logger.info("  4. Lineage Extraction")
+            logger.info("  5. Tree Score Calculation")
+            logger.info("  6. Aggregate Scores")
+            logger.info("  7. Save Ratings")
 
             result = Pipeline(
                 validate_artifact_step,
@@ -133,6 +136,8 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
                     evaluate_reviewedness,
                     download_and_upload_step
                 ),
+                evaluate_lineage,
+                evaluate_tree_score,
                 aggregate_scores_step,
                 save_ratings_step
             ).start(artifact)

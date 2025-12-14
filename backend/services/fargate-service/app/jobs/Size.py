@@ -2,6 +2,8 @@
 Size Evaluation Job
 Evaluates repository size for deployment feasibility across device types
 """
+import re
+import math
 import time
 import logging
 from typing import Dict, Any
@@ -34,41 +36,33 @@ class SizeEvaluator:
             logger.info("[SIZE] Starting evaluation")
             print("[SizeEvaluator] Starting evaluation...")
 
-            # Extract size from metadata
-            repo_metadata = getattr(metadata, 'repo_metadata', None)
+            # Estimate model size in GB
+            estimated_size_gb = self._estimate_model_size(metadata)
+            logger.info(
+                f"[SIZE] Estimated size: {estimated_size_gb:.3f} GB"
+            )
 
-            if not isinstance(repo_metadata, dict):
-                logger.warning(
-                    "[SIZE] repo_metadata is not a dictionary"
-                )
-                print(
-                    "[SizeEvaluator] Warning: "
-                    "repo_metadata is not a dictionary"
-                )
-                latency = time.time() - start_time
-                return self._create_error_result(
-                    "repo_metadata is not a dictionary",
-                    latency
-                )
+            # Calculate device-specific scores with configurable limits
+            size_limits = {
+                'raspberry_pi': 2.0,
+                'jetson_nano': 8.0,
+                'desktop_pc': 32.0,
+                'aws_server': 128.0
+            }
 
-            # Parse size value
-            size_mb = self._extract_size_mb(repo_metadata)
-            logger.info(f"[SIZE] Extracted size: {size_mb:.2f} MB")
+            r_pi = self._calculate_device_score(
+                estimated_size_gb, size_limits['raspberry_pi']
+            )
+            j_nano = self._calculate_device_score(
+                estimated_size_gb, size_limits['jetson_nano']
+            )
+            d_pc = self._calculate_device_score(
+                estimated_size_gb, size_limits['desktop_pc']
+            )
+            aws = self._calculate_device_score(
+                estimated_size_gb, size_limits['aws_server']
+            )
 
-            # Calculate device-specific scores
-            # Thresholds: (excellent, good, fair, poor) in MB
-            r_pi = self._size_metric(
-                self._size_band_mb(size_mb, 200, 500, 1500, 2000)
-            )
-            j_nano = self._size_metric(
-                self._size_band_mb(size_mb, 400, 1500, 4000, 6000)
-            )
-            d_pc = self._size_metric(
-                self._size_band_mb(size_mb, 2000, 7000, 20000, 40000)
-            )
-            aws = self._size_metric(
-                self._size_band_mb(size_mb, 40000, 60000, 120000, 240000)
-            )
             logger.info(
                 f"[SIZE] Device scores - RPi: {r_pi:.3f}, "
                 f"Nano: {j_nano:.3f}, PC: {d_pc:.3f}, AWS: {aws:.3f}"
@@ -84,7 +78,13 @@ class SizeEvaluator:
                 f"[SIZE] Evaluation complete (latency: {latency:.3f}s)"
             )
             return self._create_success_result(
-                size_score, size_mb, r_pi, j_nano, d_pc, aws, latency
+                size_score,
+                estimated_size_gb,
+                r_pi,
+                j_nano,
+                d_pc,
+                aws,
+                latency
             )
 
         except Exception as e:
@@ -98,89 +98,185 @@ class SizeEvaluator:
             latency = time.time() - start_time
             return self._create_error_result(str(e), latency)
 
-    def _extract_size_mb(self, repo_metadata: dict) -> float:
-        """
-        Extract and parse size value from repo metadata
-        Args:
-            repo_metadata: Repository metadata dictionary
-        Returns:
-            float: Size in megabytes
-        Raises:
-            ValueError: If size format is invalid
-        """
-        s = repo_metadata.get("size_mb") or repo_metadata.get("size")
-
-        if s is None:
-            return 0.0
-
-        size_mb = 0.0
-
-        if isinstance(s, str):
-            if s.lower().endswith("gb"):
-                try:
-                    size_mb = float(s[:-2]) * 1024.0
-                except (ValueError, TypeError) as e:
-                    print(
-                        f"[SizeEvaluator] "
-                        f"Failed to parse GB size '{s}': {e}"
-                    )
-                    raise ValueError(f"Invalid GB size format: {s}") from e
-            else:
-                try:
-                    size_mb = float(s)
-                except (ValueError, TypeError) as e:
-                    print(
-                        f"[SizeEvaluator] "
-                        f"Failed to parse MB size '{s}': {e}"
-                    )
-                    raise ValueError(f"Invalid MB size format: {s}") from e
-        elif isinstance(s, (int, float)):
-            size_mb = float(s)
-
-        return size_mb
-
-    def _size_band_mb(
-        self, x: float, a: float, b: float, c: float, d: float
+    def _calculate_device_score(
+        self, model_size_gb: float, limit_gb: float
     ) -> float:
         """
-        Calculate size band score based on thresholds
+        Calculate normalized score versus device limit using sigmoid curve
 
         Args:
-            x: Size in MB
-            a: Excellent threshold
-            b: Good threshold
-            c: Fair threshold
-            d: Poor threshold
+            model_size_gb: Model size in GB
+            limit_gb: Device memory limit in GB
 
         Returns:
-            float: Band score
+            float: Score between 0.0 and 1.0
         """
-        if x <= a:
-            return 1.0
-        if x <= b:
-            return 0.75
-        if x <= c:
+        if limit_gb <= 0:
+            return 0.0
+
+        ratio = model_size_gb / limit_gb
+        softness = 1.2  # Controls curve steepness
+        score = 1.0 / (1.0 + math.pow(ratio, softness))
+        return round(score, 3)
+
+    def _estimate_model_size(self, metadata) -> float:
+        """
+        Estimate model size from various sources in GB
+
+        Args:
+            metadata: Model metadata object
+
+        Returns:
+            float: Estimated size in GB
+        """
+        # Try to extract from model name/URL
+        model_name = ""
+        source_url = getattr(metadata, 'source_url', '')
+        if source_url:
+            model_name = source_url.lower()
+
+        if not model_name:
+            model_name = getattr(metadata, 'name', '').lower()
+
+        if not model_name:
+            logger.warning("[SIZE] No model name found, using default")
             return 0.5
-        if x <= d:
-            return 0.25
-        return 0.1
 
-    def _size_metric(self, x: float) -> float:
-        """
-        Clamp metric to [0.0, 1.0] range
+        # Model size mappings for known models
+        model_size_mappings = {
+            'bert-base-uncased': 0.44,
+            'whisper-tiny': 0.075,
+            'audience-classifier': 0.1,
+            'gemma-3-270m': 0.54,
+        }
 
-        Args:
-            x: Input value
+        # Check for exact model matches
+        model_name_clean = (
+            model_name.lower().replace('_', '-').replace(' ', '-')
+        )
+        for model_key, size in model_size_mappings.items():
+            if model_key in model_name_clean:
+                logger.info(
+                    f"[SIZE] Matched model '{model_key}': {size} GB"
+                )
+                return size
 
-        Returns:
-            float: Clamped value
-        """
-        return 0.0 if x < 0.0 else 1.0 if x > 1.0 else x
+        # Billion parameters patterns
+        b_patterns = [
+            r'(\d+(?:\.\d+)?)b(?:-|_|$|\s)',
+            r'(\d+(?:\.\d+)?)-?billion',
+        ]
+
+        for pattern in b_patterns:
+            match = re.search(pattern, model_name)
+            if match:
+                param_count = float(match.group(1))
+                # 2GB per billion parameters for 16-bit models
+                size = param_count * 2.0
+                logger.info(
+                    f"[SIZE] Detected {param_count}B params: {size} GB"
+                )
+                return size
+
+        # Million parameters patterns
+        m_patterns = [
+            r'(\d+(?:\.\d+)?)m(?:-|_|$|\s)',
+            r'(\d+(?:\.\d+)?)-?million',
+        ]
+
+        for pattern in m_patterns:
+            match = re.search(pattern, model_name)
+            if match:
+                param_count = float(match.group(1))
+                # 2MB per million parameters
+                size = param_count * 0.002
+                logger.info(
+                    f"[SIZE] Detected {param_count}M params: {size} GB"
+                )
+                return size
+
+        # Direct GB size patterns
+        gb_patterns = [
+            r'(\d+(?:\.\d+)?)gb',
+            r'(\d+(?:\.\d+)?)g(?:-|_|$|\s)',
+        ]
+
+        for pattern in gb_patterns:
+            match = re.search(pattern, model_name)
+            if match:
+                size = float(match.group(1))
+                logger.info(f"[SIZE] Detected direct size: {size} GB")
+                return size
+
+        # Architecture-specific heuristics
+        architecture_sizes = {
+            ('bert-large',): 1.3,
+            ('bert-base',): 0.44,
+            ('distilbert',): 0.26,
+            ('whisper-tiny',): 0.075,
+            ('whisper-small',): 0.24,
+            ('whisper-base',): 0.29,
+            ('whisper-medium',): 1.53,
+            ('whisper-large',): 3.09,
+            ('t5-small',): 0.24,
+            ('t5-base',): 0.89,
+            ('t5-large',): 3.0,
+            ('gpt2',): 0.5,
+            ('gpt2-medium',): 1.4,
+            ('gpt2-large',): 3.2,
+            ('mini', 'tiny', 'nano'): 0.1,
+            ('small',): 0.3,
+            ('base', 'medium'): 0.8,
+            ('large', 'big'): 2.5,
+            ('xl', 'extra-large'): 4.0,
+            ('xxl', 'ultra', 'giant'): 12.0,
+        }
+
+        for keywords, size in architecture_sizes.items():
+            if any(keyword in model_name for keyword in keywords):
+                logger.info(
+                    f"[SIZE] Matched architecture pattern: {size} GB"
+                )
+                return size
+
+        # Try HuggingFace file info
+        hf_info = getattr(metadata, 'hf_info', None)
+        if isinstance(hf_info, dict) and hf_info.get('files'):
+            total_size_gb = 0.0
+            model_files = 0
+
+            for file_path in hf_info['files']:
+                if file_path.endswith(('.bin', '.safetensors')):
+                    file_info = hf_info.get('file_info', {}).get(
+                        file_path, {}
+                    )
+                    if 'size' in file_info:
+                        total_size_gb += file_info['size'] / (1024**3)
+                    else:
+                        total_size_gb += 0.25
+                    model_files += 1
+                elif file_path.endswith('.h5'):
+                    total_size_gb += 0.8
+                    model_files += 1
+                elif file_path.endswith(
+                    ('.json', '.txt', '.md', '.py', '.gitignore')
+                ):
+                    total_size_gb += 0.001
+
+            if model_files > 0:
+                logger.info(
+                    f"[SIZE] Calculated from files: {total_size_gb} GB"
+                )
+                return max(total_size_gb, 0.01)
+
+        # Default fallback
+        logger.info("[SIZE] Using default fallback: 0.5 GB")
+        return 0.5
 
     def _create_success_result(
         self,
         size_score: float,
-        size_mb: float,
+        size_gb: float,
         r_pi: float,
         j_nano: float,
         d_pc: float,
@@ -192,7 +288,7 @@ class SizeEvaluator:
 
         Args:
             size_score: Final averaged size score
-            size_mb: Size in megabytes
+            size_gb: Size in gigabytes
             r_pi: Raspberry Pi score
             j_nano: Jetson Nano score
             d_pc: Desktop PC score
@@ -203,7 +299,7 @@ class SizeEvaluator:
             dict: Standardized result dictionary
         """
         print(f"[SizeEvaluator] Size Score: {size_score}")
-        print(f"[SizeEvaluator] Size: {size_mb:.2f} MB")
+        print(f"[SizeEvaluator] Size: {size_gb:.3f} GB")
 
         return {
             'metric_name': 'size',
@@ -216,7 +312,7 @@ class SizeEvaluator:
             },
             'latency': round(latency, 3),
             'details': {
-                'derived_size_mb': size_mb,
+                'derived_size_gb': round(size_gb, 3),
                 'evaluator': 'SizeEvaluator'
             }
         }

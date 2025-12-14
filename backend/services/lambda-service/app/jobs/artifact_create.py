@@ -54,7 +54,7 @@ def lambda_handler(event, context):
         # Invoke Fargate task for model artifacts
         if artifact_type == 'model':
             invoke_fargate_task(artifact_id)
-            time.sleep(20)
+            time.sleep(25)
 
         response_data = {
             'metadata': {

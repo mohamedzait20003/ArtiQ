@@ -52,6 +52,33 @@ def aggregate_scores_step(context):
                 )
                 continue
 
+            # Handle lineage specially (not a score metric)
+            if metric_name == 'lineage':
+                lineage_graph = result.get('lineage_graph', {})
+                scores['lineage'] = lineage_graph
+                latencies['lineage'] = result.get('latency', 0.0)
+                logger.info(
+                    f"[AGGREGATE] lineage: "
+                    f"{len(lineage_graph.get('parents', []))} parent(s)"
+                )
+                continue
+
+            # Handle tree_score specially (included in net score)
+            if metric_name == 'tree_score':
+                score = result.get('score', 0.0)
+                latency = result.get('latency', 0.0)
+                scores[metric_name] = score
+                latencies[metric_name] = latency
+                total_score += score
+                count += 1
+                logger.info(
+                    f"[AGGREGATE] {metric_name}: {score:.4f} "
+                    f"(latency: {latency:.3f}s)"
+                )
+                print(f"[PIPELINE]   {metric_name}: {score} "
+                      f"(latency: {latency}s)")
+                continue
+
             score = result.get('score', 0.0)
             latency = result.get('latency', 0.0)
 

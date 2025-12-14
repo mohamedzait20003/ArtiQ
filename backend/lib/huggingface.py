@@ -34,9 +34,23 @@ class HuggingFaceAPIManager:
     @staticmethod
     def model_link_to_id(model_link: str) -> str:
         """Converts a Hugging Face model link to a model ID."""
-        match = re.search(r"huggingface\.co/([^/]+/[^/]+)", model_link)
+        # Strip whitespace and trailing slashes
+        model_link = model_link.strip().rstrip('/')
+        
+        # Try pattern with owner/repo format first
+        match = re.search(
+            r"huggingface\.co/([^/]+/[^/?#\s]+)", model_link
+        )
         if match:
             return match.group(1)
+        
+        # Try pattern for legacy single-name models (no owner)
+        match = re.search(
+            r"huggingface\.co/([^/?#\s]+)", model_link
+        )
+        if match:
+            return match.group(1)
+        
         raise ValueError(f"Invalid model link: {model_link}")
 
     @staticmethod

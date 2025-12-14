@@ -31,7 +31,7 @@ def validate_artifact_step(context):
     if not hasattr(artifact, 'artifact_type'):
         logger.error("[VALIDATE] Artifact missing artifact_type")
         raise ValueError("Artifact missing artifact_type")
-    
+
     logger.info(
         f"[VALIDATE] Validating artifact: {artifact.name} "
         f"(type: {artifact.artifact_type})"
@@ -43,7 +43,7 @@ def validate_artifact_step(context):
             f"[VALIDATE] Checking database for artifact ID: {artifact.id}"
         )
         db_artifact = Artifact_Model.get({'id': artifact.id})
-        
+
         if not db_artifact:
             logger.error(
                 f"[VALIDATE] Artifact not found in database: {artifact.id}"
@@ -51,7 +51,7 @@ def validate_artifact_step(context):
             raise ValueError(
                 f"Artifact not found in database: {artifact.id}"
             )
-        
+
         logger.info(
             f"[VALIDATE] Artifact found in database: {artifact.id}"
         )

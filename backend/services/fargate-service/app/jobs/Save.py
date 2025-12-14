@@ -93,7 +93,8 @@ def save_ratings_step(context):
             code_quality=metric_dict('code_quality', 0.0),
             reproducibility={'value': 0.0, 'latency': 0.0},
             reviewedness=metric_dict('reviewedness', -1.0),
-            tree_score={'value': 0.0, 'latency': 0.0},
+            tree_score=metric_dict('tree_score', 0.0),
+            lineage_graph=scores.get('lineage', {'parents': []}),
             size_score={
                 'value': scores.get('size', {
                     'raspberry_pi': 0.0,
