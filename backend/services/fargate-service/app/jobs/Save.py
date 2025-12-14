@@ -51,7 +51,7 @@ def save_ratings_step(context):
         # Log which metrics were evaluated
         logger.info(f"[SAVE] Available metrics: {list(scores.keys())}")
         logger.info(f"[SAVE] Scores values: {scores}")
-        
+
         # Create or update rating with evaluated metrics
         # All metrics in parallel pipeline should be present
         rating = Rating_Model(
@@ -69,7 +69,7 @@ def save_ratings_step(context):
             dataset_quality=metric_dict('dataset_quality', 0.0),
             code_quality=metric_dict('code_quality', 0.0),
             reproducibility={'value': 0.0, 'latency': 0.0},
-            reviewedness={'value': 0.0, 'latency': 0.0},
+            reviewedness=metric_dict('reviewedness', -1.0),
             tree_score={'value': 0.0, 'latency': 0.0},
             size_score={
                 'value': scores.get('size', {

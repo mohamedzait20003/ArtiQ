@@ -100,9 +100,12 @@ class DatasetQualityEvaluator:
             )
             logger.info(
                 f"[DATASET_QUALITY] Breakdown - "
-                f"comprehensive_card: {parsed_result.get('has_comprehensive_card')}, "
-                f"data_source: {parsed_result.get('has_clear_data_source')}, "
-                f"preprocessing: {parsed_result.get('has_preprocessing_info')}, "
+                f"comprehensive_card: "
+                f"{parsed_result.get('has_comprehensive_card')}, "
+                f"data_source: "
+                f"{parsed_result.get('has_clear_data_source')}, "
+                f"preprocessing: "
+                f"{parsed_result.get('has_preprocessing_info')}, "
                 f"large_size: {parsed_result.get('has_large_size')}"
             )
 
@@ -285,13 +288,17 @@ class DatasetQualityEvaluator:
         """Calculate final score from parsed result"""
         score = 0.0
         if parsed_result["has_comprehensive_card"]:
-            score += 0.4
+            score += 0.35
         if parsed_result["has_clear_data_source"]:
-            score += 0.2
+            score += 0.25
         if parsed_result["has_preprocessing_info"]:
-            score += 0.2
+            score += 0.25
         if parsed_result["has_large_size"]:
-            score += 0.2
+            score += 0.15
+
+        # Give base score for any dataset information
+        if score > 0:
+            score = max(0.3, score)
 
         return min(1.0, score)
 

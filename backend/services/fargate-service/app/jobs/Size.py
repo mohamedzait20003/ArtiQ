@@ -57,13 +57,13 @@ class SizeEvaluator:
 
             # Calculate device-specific scores
             r_pi = self._size_metric(
-                self._size_band_mb(size_mb, 200, 500, 1500, 2000)
+                self._size_band_mb(size_mb, 300, 800, 2000, 3000)
             )
             j_nano = self._size_metric(
-                self._size_band_mb(size_mb, 400, 1500, 4000, 6000)
+                self._size_band_mb(size_mb, 600, 2000, 6000, 10000)
             )
             d_pc = self._size_metric(
-                self._size_band_mb(size_mb, 2000, 7000, 20000, 40000)
+                self._size_band_mb(size_mb, 3000, 10000, 30000, 60000)
             )
             aws = self._size_metric(
                 self._size_band_mb(size_mb, 40000, 60000, 120000, 240000)
@@ -157,12 +157,12 @@ class SizeEvaluator:
         if x <= a:
             return 1.0
         if x <= b:
-            return 0.6
+            return 0.75
         if x <= c:
-            return 0.3
+            return 0.5
         if x <= d:
-            return 0.1
-        return 0.0
+            return 0.25
+        return 0.1
 
     def _size_metric(self, x: float) -> float:
         """
@@ -211,7 +211,7 @@ class SizeEvaluator:
                 'jetson_nano': round(j_nano, 3),
                 'desktop_pc': round(d_pc, 3),
                 'aws_server': round(aws, 3),
-                'average': round(size_score, 3)  # Include average for aggregate
+                'average': round(size_score, 3)
             },
             'latency': round(latency, 3),
             'details': {

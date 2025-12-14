@@ -18,7 +18,7 @@ from app.jobs import (
     evaluate_bus_factor, evaluate_performance,
     evaluate_rampup, evaluate_size, evaluate_license,
     evaluate_availability, evaluate_code_quality,
-    evaluate_dataset_quality
+    evaluate_dataset_quality, evaluate_reviewedness
 )
 
 # Configure logging for CloudWatch
@@ -104,7 +104,7 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
             logger.info("Pipeline stages:")
             logger.info("  1. Validate Artifact")
             logger.info("  2. Fetch Metadata")
-            logger.info("  3. Parallel Evaluation (8 metrics + download)")
+            logger.info("  3. Parallel Evaluation (9 metrics + download)")
             logger.info("     - Bus Factor")
             logger.info("     - Performance Claims")
             logger.info("     - Ramp-up Time")
@@ -113,6 +113,7 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
             logger.info("     - Availability")
             logger.info("     - Code Quality")
             logger.info("     - Dataset Quality")
+            logger.info("     - Reviewedness")
             logger.info("     - Download & Upload (parallel)")
             logger.info("  4. Aggregate Scores")
             logger.info("  5. Save Ratings")
@@ -129,6 +130,7 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
                     evaluate_availability,
                     evaluate_code_quality,
                     evaluate_dataset_quality,
+                    evaluate_reviewedness,
                     download_and_upload_step
                 ),
                 aggregate_scores_step,

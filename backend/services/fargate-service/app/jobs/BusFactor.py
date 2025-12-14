@@ -196,7 +196,12 @@ class BusFactorEvaluator:
             contributors = 1.0
 
         # Specification: BusFactor = min(1.0, contributors / 5.0)
-        score = min(1.0, contributors / 5.0)
+        # Apply smoother scaling for better distribution
+        if contributors <= 2:
+            score = 0.3 + (contributors - 1) * 0.2
+        else:
+            score = min(1.0, 0.5 + (contributors - 2) / 6.0)
+        
         logger.info(
             f"[BUS_FACTOR] Final calculation - "
             f"contributors: {contributors}, score: {score}"

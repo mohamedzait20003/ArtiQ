@@ -16,7 +16,7 @@ def aggregate_scores_step(context):
     metric_results = (
         context.get('last') if isinstance(context, dict) else context
     )
-    
+
     # Get metadata from pipeline context
     # results[0] = validate, results[1] = fetch_metadata, results[2] = metrics
     if isinstance(context, dict):
@@ -43,7 +43,7 @@ def aggregate_scores_step(context):
     for result in results_list:
         if result and isinstance(result, dict):
             metric_name = result.get('metric_name', 'unknown')
-            
+
             # Skip non-metric results (e.g., download_upload job)
             if metric_name == 'unknown' or not metric_name:
                 job_name = result.get('job_name', 'unknown')
@@ -51,10 +51,10 @@ def aggregate_scores_step(context):
                     f"[AGGREGATE] Skipping non-metric result: {job_name}"
                 )
                 continue
-            
+
             score = result.get('score', 0.0)
             latency = result.get('latency', 0.0)
-            
+
             # Handle size metric specially (nested dict with average)
             if metric_name == 'size' and isinstance(score, dict):
                 score_value = score.get('average', 0.0)

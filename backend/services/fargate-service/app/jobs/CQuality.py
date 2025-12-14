@@ -267,12 +267,18 @@ class CodeQualityEvaluator:
         """Calculate final score from analysis results"""
         score = 0.0
         if has_tests:
-            score += 0.4
+            score += 0.35
 
         if llm_analysis["shows_good_structure"]:
-            score += 0.3
+            score += 0.30
         if has_dependency_mgmt:
-            score += 0.3
+            score += 0.25
+        if llm_analysis["has_documentation"]:
+            score += 0.10
+
+        # Give base score for basic code quality indicators
+        if has_dependency_mgmt or llm_analysis["shows_good_structure"]:
+            score = max(0.4, score)
 
         return min(1.0, score)
 

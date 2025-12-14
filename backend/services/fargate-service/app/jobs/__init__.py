@@ -19,6 +19,7 @@ from .Size import evaluate_size
 from .Availability import evaluate_availability
 from .CQuality import evaluate_code_quality
 from .DQuality import evaluate_dataset_quality
+from .Review import evaluate_reviewedness
 
 __all__ = [
     'validate_artifact_step',
@@ -34,4 +35,5 @@ __all__ = [
     'evaluate_availability',
     'evaluate_code_quality',
     'evaluate_dataset_quality',
+    'evaluate_reviewedness',
 ]
