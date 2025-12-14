@@ -27,6 +27,12 @@ def aggregate_scores_step(context):
 
     logger.info("[AGGREGATE] Starting score aggregation")
     print("[PIPELINE] Step 4: Aggregating scores...")
+    
+    logger.info(f"[AGGREGATE] Raw metric_results type: {type(metric_results)}")
+    logger.info(
+        f"[AGGREGATE] Raw metric_results length: "
+        f"{len(metric_results) if isinstance(metric_results, list) else 'N/A'}"
+    )
 
     scores = {}
     latencies = {}
@@ -115,6 +121,8 @@ def aggregate_scores_step(context):
         f"[AGGREGATE] Net Score: {net_score:.3f} "
         f"(total latency: {net_latency:.3f}s)"
     )
+    logger.info(f"[AGGREGATE] Final scores dict keys: {list(scores.keys())}")
+    logger.info(f"[AGGREGATE] Final scores dict: {scores}")
     print(f"[PIPELINE] Net Score: {net_score}")
     print(f"[PIPELINE] Total Latency: {net_latency}s")
 

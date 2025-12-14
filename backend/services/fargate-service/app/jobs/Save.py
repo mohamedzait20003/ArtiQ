@@ -74,6 +74,14 @@ def save_ratings_step(context):
         # Log which metrics were evaluated
         logger.info(f"[SAVE] Available metrics: {list(scores.keys())}")
         logger.info(f"[SAVE] Scores values: {scores}")
+        
+        # Log lineage specifically
+        lineage_data = scores.get('lineage', {'parents': []})
+        logger.info(f"[SAVE] Lineage data: {lineage_data}")
+        logger.info(
+            f"[SAVE] Lineage parent count: "
+            f"{len(lineage_data.get('parents', []))}"
+        )
 
         # Create or update rating with evaluated metrics
         # All metrics in parallel pipeline should be present
@@ -108,6 +116,9 @@ def save_ratings_step(context):
 
         rating.save()
         logger.info(f"[SAVE] Ratings saved for artifact {artifact.id}")
+        logger.info(
+            f"[SAVE] Saved lineage_graph: {rating.lineage_graph}"
+        )
         print(f"[PIPELINE] Ratings saved for artifact {artifact.id}")
 
         # Rating is now accessible via artifact.rating() relationship
