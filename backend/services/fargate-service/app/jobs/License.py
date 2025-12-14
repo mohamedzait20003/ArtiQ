@@ -93,87 +93,98 @@ class LicenseEvaluator:
         # DEBUG: Log metadata structure
         logger.info(f"[LICENSE] Metadata type: {type(metadata)}")
         logger.info(f"[LICENSE] Metadata attributes: {dir(metadata)}")
-        
+
         # Priority 1: Check HuggingFace info.license (most common)
         hf_info = getattr(metadata, "info", None)
         logger.info(f"[LICENSE] info object: {hf_info}")
         logger.info(f"[LICENSE] info type: {type(hf_info)}")
-        
+
         if hf_info:
             logger.info(f"[LICENSE] info attributes: {dir(hf_info)}")
-            
+
             # Try different ways to access license
             license_field = None
-            
+
             # Method 1: Direct attribute
             if hasattr(hf_info, "license"):
                 license_field = getattr(hf_info, "license", None)
                 logger.info(f"[LICENSE] Found via hasattr: {license_field}")
-            
+
             # Method 2: Dict access if info is dict-like
             if not license_field and isinstance(hf_info, dict):
                 license_field = hf_info.get("license")
                 logger.info(f"[LICENSE] Found via dict.get: {license_field}")
-            
+
             # Method 3: Try to access as property
             if not license_field:
                 try:
                     license_field = hf_info.license
-                    logger.info(f"[LICENSE] Found via property: {license_field}")
+                    logger.info(
+                        f"[LICENSE] Found via property: {license_field}"
+                    )
                 except AttributeError:
                     logger.info("[LICENSE] No license property on info")
-            
+
             if license_field:
-                logger.info(f"[LICENSE] Found in info.license: {license_field}")
+                logger.info(
+                    f"[LICENSE] Found in info.license: {license_field}"
+                )
                 license_info.append(f"license: {license_field}")
 
         # Priority 2: Check direct license attribute
         direct_license = getattr(metadata, "license", None)
         if direct_license:
-            logger.info(f"[LICENSE] Found in direct attribute: {direct_license}")
+            logger.info(
+                f"[LICENSE] Found in direct attribute: {direct_license}"
+            )
             license_info.append(f"license: {direct_license}")
 
         # Priority 3: Check model card for license information
         card_obj = getattr(metadata, "card", None)
         logger.info(f"[LICENSE] card object: {card_obj}")
         logger.info(f"[LICENSE] card type: {type(card_obj)}")
-        
+
         if card_obj:
             # Try multiple ways to access card data
             card_dict = None
-            
+
             # Method 1: If it's already a dict
             if isinstance(card_obj, dict):
                 card_dict = card_obj
                 logger.info("[LICENSE] Card is dict")
-            
+
             # Method 2: If it has a to_dict method
             elif hasattr(card_obj, 'to_dict'):
                 card_dict = card_obj.to_dict()
                 logger.info("[LICENSE] Card converted via to_dict()")
-            
+
             # Method 3: If it's a ModelCard/CardData object with data attribute
             elif hasattr(card_obj, 'data'):
                 card_dict = card_obj.data
                 logger.info("[LICENSE] Card accessed via .data")
-            
+
             # Method 4: Try accessing as dict-like object
             elif hasattr(card_obj, '__getitem__'):
                 try:
                     license_val = card_obj['license']
                     if license_val:
-                        logger.info(f"[LICENSE] Found via card['license']: {license_val}")
+                        logger.info(
+                            f"[LICENSE] Found via card['license']: "
+                            f"{license_val}"
+                        )
                         license_info.append(f"license: {license_val}")
                 except (KeyError, TypeError):
                     pass
-            
+
             # Method 5: Try as object attributes
             if hasattr(card_obj, 'license'):
                 license_val = getattr(card_obj, 'license', None)
                 if license_val:
-                    logger.info(f"[LICENSE] Found via card.license: {license_val}")
+                    logger.info(
+                        f"[LICENSE] Found via card.license: {license_val}"
+                    )
                     license_info.append(f"license: {license_val}")
-            
+
             # Process card_dict if we got one
             if card_dict and isinstance(card_dict, dict):
                 license_fields = [
@@ -182,7 +193,10 @@ class LicenseEvaluator:
                 ]
                 for field in license_fields:
                     if field in card_dict and card_dict[field]:
-                        logger.info(f"[LICENSE] Found in card_dict.{field}: {card_dict[field]}")
+                        logger.info(
+                            f"[LICENSE] Found in card_dict.{field}: "
+                            f"{card_dict[field]}"
+                        )
                         license_info.append(f"{field}: {card_dict[field]}")
 
                 # Check description for license mentions
@@ -210,11 +224,14 @@ class LicenseEvaluator:
                             f"{license_name} ({license_key})"
                         )
                         license_info.append(
-                            f"repo_license: {license_name} ({license_key})"
+                            f"repo_license: {license_name} "
+                            f"({license_key})"
                         )
                 else:
                     # Simple license string
-                    logger.info(f"[LICENSE] Found in repo_metadata: {repo_license}")
+                    logger.info(
+                        f"[LICENSE] Found in repo_metadata: {repo_license}"
+                    )
                     license_info.append(f"repo_license: {repo_license}")
 
         if not license_info:
