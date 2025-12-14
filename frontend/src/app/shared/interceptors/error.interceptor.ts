@@ -8,8 +8,8 @@ import {
 } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
-import { LoaderService } from '../services/loader.service';
-import { ToastService } from '../services/toast.service';
+import { LoaderService } from '../../core/services/loader.service';
+import { ToastService } from '../../core/services/toast.service';
 
 export interface ErrorResponse {
   status: number;
