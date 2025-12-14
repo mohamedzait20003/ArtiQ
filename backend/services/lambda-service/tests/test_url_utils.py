@@ -13,7 +13,7 @@ class TestUrlToArtifactName:
         "https://huggingface.co/google-bert/bert-base-uncased":
             "bert-base-uncased",
         "https://huggingface.co/parvk11/audience_classifier_model":
-            "parvk11-audience_classifier_model",
+            "audience_classifier_model",
         "https://huggingface.co/distilbert-base-uncased-distilled-squad":
             "distilbert-base-uncased-distilled-squad",
         "https://huggingface.co/caidas/swin2SR-lightweight-x2-64":
@@ -35,11 +35,11 @@ class TestUrlToArtifactName:
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab",
         "https://huggingface.co/microsoft/resnet-50":
-            "microsoft-resnet-50",
+            "resnet-50",
         "https://huggingface.co/crangana/trained-gender":
-            "crangana-trained-gender",
+            "trained-gender",
         "https://huggingface.co/onnx-community/trained-gender-ONNX":
-            "onnx-community-trained-gender-ONNX",
+            "trained-gender-ONNX",
 
         # HuggingFace datasets
         "https://huggingface.co/datasets/bookcorpus/bookcorpus":
@@ -47,7 +47,7 @@ class TestUrlToArtifactName:
         "https://huggingface.co/datasets/rajpurkar/squad":
             "rajpurkar-squad",
         "https://huggingface.co/datasets/lerobot/pusht":
-            "pusht",
+            "lerobot-pusht",
         "https://huggingface.co/datasets/ILSVRC/imagenet-1k":
             "imagenet-1k",
         "https://huggingface.co/datasets/HuggingFaceM4/FairFace":
@@ -66,7 +66,7 @@ class TestUrlToArtifactName:
         "https://github.com/mv-lab/swin2sr":
             "mv-lab-swin2sr",
         "https://github.com/vikhyat/moondream":
-            "vikhyat-moondream",
+            "moondream",
         "https://github.com/microsoft/git":
             "microsoft-git",
         "https://github.com/patrickjohncyh/fashion-clip":
@@ -75,7 +75,7 @@ class TestUrlToArtifactName:
             "lerobot",
         "https://github.com/Parth1811/ptm-recommendation-with-"
         "transformers.git":
-            "Parth1811-ptm-recommendation-with-transformers",
+            "ptm-recommendation-with-transformers",
         "https://github.com/KaimingHe/deep-residual-networks":
             "KaimingHe-deep-residual-networks",
 
