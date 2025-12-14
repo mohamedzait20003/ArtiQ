@@ -1,9 +1,11 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { selectUser } from '../../../../store/auth.selectors';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { ApiService } from '../../../../core/services/api.service';
+import { ArtifactMetadata } from '../../../../core/services/api.types';
 
 @Component({
   selector: 'app-overview',
@@ -14,26 +16,17 @@ import { Observable } from 'rxjs';
   styleUrls: ['./overview.component.css']
 })
 
-export class OverviewComponent {
+export class OverviewComponent implements OnInit {
   user$: Observable<any>;
 
-  recentModels = [
-    { id: 1, name: 'GPT-4-Turbo', type: 'Language Model', updated: '2 days ago', downloads: '1.2M' },
-    { id: 2, name: 'DALL-E-3', type: 'Image Generation', updated: '5 days ago', downloads: '856K' },
-    { id: 3, name: 'Whisper-Large', type: 'Speech Recognition', updated: '1 week ago', downloads: '634K' }
-  ];
-
-  recentDatasets = [
-    { id: 1, name: 'ImageNet-2024', type: 'Computer Vision', size: '150GB', updated: '1 day ago' },
-    { id: 2, name: 'CommonCrawl-Q4', type: 'Text Corpus', size: '2.3TB', updated: '3 days ago' },
-    { id: 3, name: 'AudioSet-Extended', type: 'Audio Classification', size: '89GB', updated: '1 week ago' }
-  ];
+  recentModels$ = new BehaviorSubject<any[]>([]);
+  recentDatasets$ = new BehaviorSubject<any[]>([]);
 
   quickStats = [
-    { label: 'Total Models', value: '1,247', change: '+12%', trend: 'up' },
-    { label: 'Total Datasets', value: '3,891', change: '+8%', trend: 'up' },
-    { label: 'Active Users', value: '45.2K', change: '+23%', trend: 'up' },
-    { label: 'Downloads', value: '2.1M', change: '+15%', trend: 'up' }
+    { label: 'Total Models', value: '0', change: '--', trend: 'up' },
+    { label: 'Total Datasets', value: '0', change: '--', trend: 'up' },
+    { label: 'Total Code', value: '0', change: '--', trend: 'up' },
+    { label: 'Total Artifacts', value: '0', change: '--', trend: 'up' }
   ];
 
   trackByStat(_index: number, item: any) {
@@ -44,7 +37,70 @@ export class OverviewComponent {
     return item?.id ?? _index;
   }
 
-  constructor(private store: Store) {
+  constructor(private store: Store, private apiService: ApiService, private router: Router) {
     this.user$ = this.store.select(selectUser);
+  }
+
+  ngOnInit(): void {
+    this.fetchArtifacts();
+  }
+
+  private fetchArtifacts(): void {
+    // Fetch all artifacts
+    this.apiService.getAllArtifacts().subscribe({
+      next: (artifacts: ArtifactMetadata[]) => {
+        // Separate by type
+        const models = artifacts.filter(a => a.type === 'model').slice(0, 3);
+        const datasets = artifacts.filter(a => a.type === 'dataset').slice(0, 3);
+
+        // Transform to display format
+        const displayModels = models.map((m, idx) => ({
+          id: idx + 1,
+          name: m.name,
+          type: m.type,
+          updated: 'recently',
+          downloads: '--'
+        }));
+
+        const displayDatasets = datasets.map((d, idx) => ({
+          id: idx + 1,
+          name: d.name,
+          type: d.type,
+          size: '--',
+          updated: 'recently'
+        }));
+
+        this.recentModels$.next(displayModels);
+        this.recentDatasets$.next(displayDatasets);
+
+        // Update stats
+        const modelCount = artifacts.filter(a => a.type === 'model').length;
+        const datasetCount = artifacts.filter(a => a.type === 'dataset').length;
+        const codeCount = artifacts.filter(a => a.type === 'code').length;
+
+        this.quickStats = [
+          { label: 'Total Models', value: modelCount.toString(), change: '--', trend: 'up' },
+          { label: 'Total Datasets', value: datasetCount.toString(), change: '--', trend: 'up' },
+          { label: 'Total Code', value: codeCount.toString(), change: '--', trend: 'up' },
+          { label: 'Total Artifacts', value: artifacts.length.toString(), change: '--', trend: 'up' }
+        ];
+      },
+      error: (err: any) => {
+        console.error('Error fetching artifacts:', err);
+        // Keep default empty data on error
+      }
+    });
+  }
+
+  browseModels(): void {
+    this.router.navigate(['/dashboard/models']);
+  }
+
+  goToDocumentation(): void {
+    this.router.navigate(['/']);
+  }
+
+  joinCommunity(): void {
+    this.router.navigate(['/']);
   }
 }

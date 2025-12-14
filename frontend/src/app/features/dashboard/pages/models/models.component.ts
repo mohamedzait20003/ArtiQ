@@ -1,6 +1,8 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-models',
@@ -84,6 +86,14 @@ export class ModelsComponent {
   ];
 
   searchQuery = '';
+  private modelsSubject = new BehaviorSubject(this.models);
+  filteredModels$: Observable<any[]>;
+
+  constructor() {
+    this.filteredModels$ = this.modelsSubject.asObservable().pipe(
+      map(models => this.getFilteredModels(models))
+    );
+  }
 
   trackByModel(_index: number, item: any) {
     return item?.id ?? _index;
@@ -91,6 +101,29 @@ export class ModelsComponent {
 
   selectCategory(category: string) {
     this.selectedCategory = category;
+    this.modelsSubject.next(this.models);
+  }
+
+  onSearchChange(): void {
+    this.modelsSubject.next(this.models);
+  }
+
+  private getFilteredModels(models: any[]): any[] {
+    let filtered = models;
+    
+    if (this.selectedCategory !== 'All') {
+      filtered = filtered.filter(m => m.category === this.selectedCategory);
+    }
+    
+    if (this.searchQuery) {
+      filtered = filtered.filter(m => 
+        m.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        m.description.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        m.tags.some((tag: string) => tag.toLowerCase().includes(this.searchQuery.toLowerCase()))
+      );
+    }
+    
+    return filtered;
   }
 
   get filteredModels() {
@@ -104,7 +137,7 @@ export class ModelsComponent {
       filtered = filtered.filter(m => 
         m.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
         m.description.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        m.tags.some(tag => tag.toLowerCase().includes(this.searchQuery.toLowerCase()))
+        m.tags.some((tag: string) => tag.toLowerCase().includes(this.searchQuery.toLowerCase()))
       );
     }
     
