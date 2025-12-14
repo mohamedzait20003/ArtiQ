@@ -14,7 +14,7 @@ LINK_TO_NAME_MAP = {
     "https://github.com/google-research/bert":
         "google-research-bert",
     "https://huggingface.co/parvk11/audience_classifier_model":
-        "audience_classifier_model",
+        "parvk11-audience_classifier_model",
     "https://huggingface.co/distilbert-base-uncased-distilled-squad":
         "distilbert-base-uncased-distilled-squad",
     "https://huggingface.co/caidas/swin2SR-lightweight-x2-64":
@@ -35,11 +35,11 @@ LINK_TO_NAME_MAP = {
         ("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"),
     "https://huggingface.co/microsoft/resnet-50":
-        "resnet-50",
+        "microsoft-resnet-50",
     "https://huggingface.co/crangana/trained-gender":
-        "trained-gender",
+        "crangana-trained-gender",
     "https://huggingface.co/onnx-community/trained-gender-ONNX":
-        "trained-gender-ONNX",
+        "onnx-community-trained-gender-ONNX",
     "https://huggingface.co/datasets/rajpurkar/squad":
         "rajpurkar-squad",
     "https://www.kaggle.com/datasets/hliang001/flickr2k":
@@ -47,7 +47,7 @@ LINK_TO_NAME_MAP = {
     "https://github.com/zalandoresearch/fashion-mnist":
         "fashion-mnist",
     "https://huggingface.co/datasets/lerobot/pusht":
-        "lerobot-pusht",
+        "pusht",
     "https://huggingface.co/datasets/ILSVRC/imagenet-1k":
         "imagenet-1k",
     "https://huggingface.co/datasets/HuggingFaceM4/FairFace":
@@ -60,7 +60,7 @@ LINK_TO_NAME_MAP = {
     "https://github.com/mv-lab/swin2sr":
         "mv-lab-swin2sr",
     "https://github.com/vikhyat/moondream":
-        "moondream",
+        "vikhyat-moondream",
     "https://github.com/microsoft/git":
         "microsoft-git",
     "https://github.com/patrickjohncyh/fashion-clip":
@@ -69,7 +69,7 @@ LINK_TO_NAME_MAP = {
         "lerobot",
     ("https://github.com/Parth1811/"
      "ptm-recommendation-with-transformers.git"):
-        "ptm-recommendation-with-transformers",
+        "Parth1811-ptm-recommendation-with-transformers",
     "https://github.com/KaimingHe/deep-residual-networks":
         "KaimingHe-deep-residual-networks",
 }
