@@ -56,14 +56,15 @@ class SizeEvaluator:
             logger.info(f"[SIZE] Extracted size: {size_mb:.2f} MB")
 
             # Calculate device-specific scores
+            # Thresholds: (excellent, good, fair, poor) in MB
             r_pi = self._size_metric(
-                self._size_band_mb(size_mb, 300, 800, 2000, 3000)
+                self._size_band_mb(size_mb, 200, 500, 1500, 2000)
             )
             j_nano = self._size_metric(
-                self._size_band_mb(size_mb, 600, 2000, 6000, 10000)
+                self._size_band_mb(size_mb, 400, 1500, 4000, 6000)
             )
             d_pc = self._size_metric(
-                self._size_band_mb(size_mb, 3000, 10000, 30000, 60000)
+                self._size_band_mb(size_mb, 2000, 7000, 20000, 40000)
             )
             aws = self._size_metric(
                 self._size_band_mb(size_mb, 40000, 60000, 120000, 240000)

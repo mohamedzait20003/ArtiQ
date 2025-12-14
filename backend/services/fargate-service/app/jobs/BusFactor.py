@@ -85,7 +85,7 @@ class BusFactorEvaluator:
                 if isinstance(c, dict) and
                 int(c.get("contributions", 0)) > 5
             )
-            
+
             # Count all active contributors (> 0 commits)
             active_contributors = sum(
                 1 for c in repo_contributors
@@ -123,7 +123,7 @@ class BusFactorEvaluator:
                 model_id = (
                     getattr(hf_info, 'id', '') or getattr(metadata, 'id', '')
                 )
-                
+
                 # Check for tags indicating community involvement
                 tags = getattr(hf_info, 'tags', []) or []
 
@@ -196,12 +196,8 @@ class BusFactorEvaluator:
             contributors = 1.0
 
         # Specification: BusFactor = min(1.0, contributors / 5.0)
-        # Apply smoother scaling for better distribution
-        if contributors <= 2:
-            score = 0.3 + (contributors - 1) * 0.2
-        else:
-            score = min(1.0, 0.5 + (contributors - 2) / 6.0)
-        
+        score = min(1.0, contributors / 5.0)
+
         logger.info(
             f"[BUS_FACTOR] Final calculation - "
             f"contributors: {contributors}, score: {score}"

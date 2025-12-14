@@ -54,9 +54,7 @@ def lambda_handler(event, context):
         # Invoke Fargate task for model artifacts
         if artifact_type == 'model':
             invoke_fargate_task(artifact_id)
-
-        # Wait for maximum time to ensure artifact is saved
-        time.sleep(20)
+            time.sleep(20)
 
         response_data = {
             'metadata': {

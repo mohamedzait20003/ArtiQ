@@ -166,7 +166,7 @@ class CodeQualityEvaluator:
                 repo_summary.append(f"{item_type}: {name}")
 
         repo_text = "\n".join(repo_summary)
-        
+
         logger.info(
             f"[CODE_QUALITY] Repo summary lines: {len(repo_summary)}"
         )
@@ -267,18 +267,12 @@ class CodeQualityEvaluator:
         """Calculate final score from analysis results"""
         score = 0.0
         if has_tests:
-            score += 0.35
+            score += 0.4
 
         if llm_analysis["shows_good_structure"]:
-            score += 0.30
+            score += 0.3
         if has_dependency_mgmt:
-            score += 0.25
-        if llm_analysis["has_documentation"]:
-            score += 0.10
-
-        # Give base score for basic code quality indicators
-        if has_dependency_mgmt or llm_analysis["shows_good_structure"]:
-            score = max(0.4, score)
+            score += 0.3
 
         return min(1.0, score)
 

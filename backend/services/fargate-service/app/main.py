@@ -148,7 +148,7 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
             logger.info("Individual Scores:")
             for metric, score in result.get('scores', {}).items():
                 logger.info(f"  - {metric}: {score}")
-            
+
             total_duration = (datetime.now() - start_time).total_seconds()
             logger.info(f"Total Processing Time: {total_duration:.2f} seconds")
             logger.info("=" * 60)
@@ -190,7 +190,7 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
         import traceback
         logger.error(traceback.format_exc())
         logger.error("=" * 60)
-        
+
         return {
             'success': False,
             'encrypted_artifact_id': encrypted_artifact_id,
@@ -218,14 +218,14 @@ def handler(event, context=None):
     logger.info("*" * 70)
     logger.info("*** FARGATE SERVICE HANDLER INVOKED ***")
     logger.info("*" * 70)
-    
+
     event_str = json.dumps(event) if isinstance(event, dict) else str(event)
     logger.info(f"Event Type: {type(event).__name__}")
     if len(event_str) > 200:
         logger.info(f"Event Data: {event_str[:200]}...")
     else:
         logger.info(f"Event Data: {event_str}")
-    
+
     if context:
         logger.info("Lambda Context Information:")
         request_id = getattr(context, 'aws_request_id', 'N/A')
@@ -276,7 +276,7 @@ def handler(event, context=None):
         if k not in ['ratings', 'error_type']
     }
     logger.info(f"Result Summary: {json.dumps(result_summary, indent=2)}")
-    
+
     return result
 
 

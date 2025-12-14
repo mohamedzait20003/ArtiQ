@@ -288,17 +288,13 @@ class DatasetQualityEvaluator:
         """Calculate final score from parsed result"""
         score = 0.0
         if parsed_result["has_comprehensive_card"]:
-            score += 0.35
+            score += 0.4
         if parsed_result["has_clear_data_source"]:
-            score += 0.25
+            score += 0.2
         if parsed_result["has_preprocessing_info"]:
-            score += 0.25
+            score += 0.2
         if parsed_result["has_large_size"]:
-            score += 0.15
-
-        # Give base score for any dataset information
-        if score > 0:
-            score = max(0.3, score)
+            score += 0.2
 
         return min(1.0, score)
 

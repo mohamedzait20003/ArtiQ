@@ -51,7 +51,7 @@ def fetch_metadata_step(context):
             )
             metadata.id = hf_manager.model_link_to_id(artifact.source_url)
             logger.info(f"[FETCH] Model ID: {metadata.id}")
-            
+
             metadata.info = hf_manager.get_model_info(metadata.id)
             metadata.card = (
                 metadata.info.card_data if metadata.info else None
@@ -79,28 +79,34 @@ def fetch_metadata_step(context):
             if isinstance(artifact.dataset_links, list)
             else [artifact.dataset_links]
         )
-    
+
     # Also extract datasets from model card if available
     if metadata.card:
         logger.info("[FETCH] Checking card for dataset references")
         logger.info(f"[FETCH] Card type: {type(metadata.card)}")
-        
+
         card_dict = (
             metadata.card if isinstance(metadata.card, dict)
-            else (vars(metadata.card) if hasattr(metadata.card, '__dict__') else {})
+            else (
+                vars(metadata.card)
+                if hasattr(metadata.card, '__dict__')
+                else {}
+            )
         )
-        
+
         logger.info(f"[FETCH] Card dict type: {type(card_dict)}")
         logger.info(f"[FETCH] Card dict keys: {list(card_dict.keys())}")
-        
+
         # Check 'datasets' field in card
         if 'datasets' in card_dict:
             card_datasets = card_dict['datasets']
             logger.info(f"[FETCH] Found datasets field: {card_datasets}")
             logger.info(f"[FETCH] Datasets type: {type(card_datasets)}")
-            
+
             if isinstance(card_datasets, list):
-                logger.info(f"[FETCH] Found {len(card_datasets)} datasets in card")
+                logger.info(
+                    f"[FETCH] Found {len(card_datasets)} datasets in card"
+                )
                 for ds in card_datasets:
                     if isinstance(ds, str):
                         # Strip whitespace and newlines
@@ -109,14 +115,20 @@ def fetch_metadata_step(context):
                             continue
                         # Add HuggingFace prefix if not a URL
                         if not ds.startswith('http'):
-                            dataset_links.append(f"https://huggingface.co/datasets/{ds}")
+                            dataset_links.append(
+                                f"https://huggingface.co/datasets/{ds}"
+                            )
                         else:
                             dataset_links.append(ds)
-                        logger.info(f"[FETCH] Added dataset from card: {ds}")
+                        logger.info(
+                            f"[FETCH] Added dataset from card: {ds}"
+                        )
         else:
             logger.info("[FETCH] No 'datasets' field in card")
 
-    logger.info(f"[FETCH] Total dataset links to process: {len(dataset_links)}")
+    logger.info(
+        f"[FETCH] Total dataset links to process: {len(dataset_links)}"
+    )
 
     for dataset_link in dataset_links:
         try:
@@ -134,7 +146,7 @@ def fetch_metadata_step(context):
         dataset_infos_batch = hf_manager.get_multiple_dataset_info(
             metadata.dataset_ids
         )
-        
+
         for dataset_id, dataset_info in dataset_infos_batch.items():
             if dataset_info:
                 metadata.dataset_infos[dataset_id] = dataset_info
@@ -150,27 +162,27 @@ def fetch_metadata_step(context):
 
     # Extract GitHub code link from multiple sources
     code_link = None
-    
+
     logger.info("[FETCH] Starting GitHub link extraction")
     logger.info(f"[FETCH] Card type: {type(metadata.card)}")
     if metadata.card:
         logger.info(f"[FETCH] Card preview: {str(metadata.card)[:200]}")
-    
+
     # 1. Check artifact's code_repository_url
     if (hasattr(artifact, 'code_repository_url') and
             artifact.code_repository_url):
         code_link = artifact.code_repository_url
         logger.info(f"[FETCH] Using code_repository_url: {code_link}")
-    
+
     # 2. Check if source URL is a GitHub link
     elif 'github.com' in artifact.source_url:
         code_link = artifact.source_url
         logger.info(f"[FETCH] Using GitHub source URL: {code_link}")
-    
+
     # 3. Check ModelInfo for GitHub link in various places
     elif metadata.info:
         logger.info("[FETCH] Checking ModelInfo for GitHub link")
-        
+
         # 3a. Check if model_index has repository info
         model_index = getattr(metadata.info, 'model_index', None)
         if model_index and isinstance(model_index, list):
@@ -179,16 +191,20 @@ def fetch_metadata_step(context):
                     for key, value in entry.items():
                         if isinstance(value, str) and 'github.com' in value:
                             code_link = value
-                            logger.info(f"[FETCH] Found in model_index: {code_link}")
+                            logger.info(
+                                f"[FETCH] Found in model_index: {code_link}"
+                            )
                             break
                 if code_link:
                     break
-        
+
         # 3b. Check siblings for .git references
         if not code_link:
             siblings = getattr(metadata.info, 'siblings', None)
-            logger.info(f"[FETCH] Siblings: {siblings[:3] if siblings else None}")
-        
+            logger.info(
+                f"[FETCH] Siblings: {siblings[:3] if siblings else None}"
+            )
+
         # 3c. Check tags for github references
         if not code_link:
             tags = getattr(metadata.info, 'tags', []) or []
@@ -204,17 +220,21 @@ def fetch_metadata_step(context):
                         break
                     except Exception:
                         pass
-        
+
         # 3d. Try common attributes on ModelInfo
         if not code_link:
-            for attr in ['repository', 'repository_url', 'code_url', 'github_url']:
+            for attr in [
+                'repository', 'repository_url', 'code_url', 'github_url'
+            ]:
                 if hasattr(metadata.info, attr):
                     val = getattr(metadata.info, attr)
                     if val and isinstance(val, str) and 'github.com' in val:
                         code_link = val
-                        logger.info(f"[FETCH] Found in info.{attr}: {code_link}")
+                        logger.info(
+                            f"[FETCH] Found in info.{attr}: {code_link}"
+                        )
                         break
-    
+
     # 4. Check HuggingFace model card for GitHub link
     if not code_link and metadata.card and hasattr(metadata.card, '__dict__'):
         logger.info("[FETCH] Checking card for GitHub link")
@@ -223,7 +243,7 @@ def fetch_metadata_step(context):
             else vars(metadata.card)
         )
         logger.info(f"[FETCH] Card dict keys: {list(card_dict.keys())}")
-        
+
         # Check common fields in model card
         for field in ['code', 'github', 'repository', 'repo', 'base_model']:
             if field in card_dict and card_dict[field]:
@@ -236,7 +256,7 @@ def fetch_metadata_step(context):
                         f"{code_link}"
                     )
                     break
-    
+
     # 5. Parse README content for GitHub links as last resort
     if not code_link and metadata.readme_path:
         try:
@@ -245,15 +265,20 @@ def fetch_metadata_step(context):
                 if 'github.com' in readme_content:
                     import re
                     # Look for markdown or plain GitHub URLs
-                    pattern = r'https?://github\.com/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+'
+                    pattern = (
+                        r'https?://github\.com/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+'
+                    )
                     matches = re.findall(pattern, readme_content)
                     if matches:
                         code_link = matches[0]
-                        logger.info(f"[FETCH] Found in README: {code_link}")
+                        logger.info(
+                            f"[FETCH] Found in README: {code_link}"
+                        )
         except Exception as e:
             logger.warning(f"[FETCH] Failed to check README: {e}")
-    
-    # 6. Check HuggingFace model info tags for GitHub references (legacy fallback)
+
+    # 6. Check HuggingFace model info tags for GitHub references
+    # (legacy fallback)
     if not code_link and metadata.info:
         tags = getattr(metadata.info, 'tags', []) or []
         for tag in tags:
@@ -277,13 +302,17 @@ def fetch_metadata_step(context):
         logger.info(f"[FETCH] Found code link: {code_link}")
         try:
             owner, repo = gh_manager.code_link_to_repo(code_link)
-            logger.info(f"[FETCH] Parsed GitHub repo: {owner}/{repo}")
+            logger.info(
+                f"[FETCH] Parsed GitHub repo: {owner}/{repo}"
+            )
         except ValueError as e:
             logging.warning(f"Invalid code link provided: {e}")
     else:
         logger.info("[FETCH] No GitHub repository link found")
 
-    logger.info(f"[FETCH] Calling _fetch_github_data with owner={owner}, repo={repo}")
+    logger.info(
+        f"[FETCH] Calling _fetch_github_data with owner={owner}, repo={repo}"
+    )
     _fetch_github_data(metadata, gh_manager, owner, repo)
 
     # Log cache statistics for performance monitoring
@@ -301,8 +330,10 @@ def _fetch_github_data(metadata, gh_manager, owner, repo):
     Helper function to fetch GitHub repository data
     Uses agent's cached methods for efficient data retrieval
     """
-    logger.info(f"[FETCH] _fetch_github_data called with owner={owner}, repo={repo}")
-    
+    logger.info(
+        f"[FETCH] _fetch_github_data called with owner={owner}, repo={repo}"
+    )
+
     if not (owner and repo):
         logger.info("[FETCH] No owner/repo, skipping GitHub fetch")
         metadata.repo_metadata = {}
@@ -319,7 +350,7 @@ def _fetch_github_data(metadata, gh_manager, owner, repo):
         metadata.repo_contents = full_data.get('contents', [])
         metadata.repo_contributors = full_data.get('contributors', [])
         metadata.repo_commit_history = full_data.get('commits', [])
-        
+
         logger.info(
             f"[FETCH] Successfully fetched GitHub data: "
             f"contents={len(metadata.repo_contents)} items, "
