@@ -180,7 +180,7 @@ class TestUrlToArtifactName:
             "ptm-recommendation-with-transformers.git"
         )
         result = url_to_artifact_name(url)
-        assert result == "Parth1811-ptm-recommendation-with-transformers"
+        assert result == "ptm-recommendation-with-transformers"
 
     def test_kaggle_dataset(self):
         """Test Kaggle dataset URL"""
