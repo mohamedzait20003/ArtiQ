@@ -3,12 +3,18 @@ import { createAction, props } from '@ngrx/store';
 export interface LoginPayload {
   email: string;
   password: string;
-  isAdmin: boolean;
+}
+
+export interface RegisterPayload {
+  name: string;
+  email: string;
+  password: string;
+  confirm_password: string;
 }
 
 export interface LoginSuccessPayload {
   token: string;
-  role: 'admin' | 'user';
+  role: string;
   user: {
     id: string;
     email: string;
@@ -29,6 +35,22 @@ export const loginSuccess = createAction(
 
 export const loginFailure = createAction(
   '[Auth] Login Failure',
+  props<{ error: string }>()
+);
+
+// Register Actions
+export const register = createAction(
+  '[Auth] Register',
+  props<RegisterPayload>()
+);
+
+export const registerSuccess = createAction(
+  '[Auth] Register Success',
+  props<LoginSuccessPayload>()
+);
+
+export const registerFailure = createAction(
+  '[Auth] Register Failure',
   props<{ error: string }>()
 );
 

@@ -1,196 +1,168 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { map, switchMap, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { DashboardService, Model } from '../../services/dashboard.service';
 import { ToastService } from '../../../../core/services/toast.service';
 
-export type SortOption = 'name' | 'downloads' | 'likes' | 'recent';
+export type SortOption = 'name' | 'size';
 
 @Component({
-  selector: 'app-models',
+  selector: 'app-dashboard-models',
   standalone: true,
   imports: [CommonModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './models.component.html',
   styleUrls: ['./models.component.css']
 })
-export class ModelsComponent {
-  categories = ['All', 'Language Models', 'Image Generation', 'Speech Recognition', 'Computer Vision', 'Audio'];
-  sortOptions: SortOption[] = ['name', 'downloads', 'likes', 'recent'];
+export class ModelsComponent implements OnInit {
+  sortOptions: SortOption[] = ['name', 'size'];
   
-  selectedCategory = 'All';
-  sortBy: SortOption = 'recent';
+  sortBy: SortOption = 'name';
   viewMode: 'grid' | 'list' = 'grid';
 
-  models = [
-    {
-      id: 1,
-      name: 'GPT-4-Turbo',
-      author: 'OpenAI',
-      category: 'Language Models',
-      description: 'Most advanced language model with improved reasoning and extended context',
-      downloads: 1200000,
-      likes: 45000,
-      updated: '2 days ago',
-      tags: ['NLP', 'Chat', 'Generation']
-    },
-    {
-      id: 2,
-      name: 'DALL-E-3',
-      author: 'OpenAI',
-      category: 'Image Generation',
-      description: 'Generate high-quality images from text descriptions',
-      downloads: 856000,
-      likes: 38000,
-      updated: '5 days ago',
-      tags: ['Image', 'Generation', 'Creative']
-    },
-    {
-      id: 3,
-      name: 'Whisper-Large',
-      author: 'OpenAI',
-      category: 'Speech Recognition',
-      description: 'Robust speech recognition with multilingual support',
-      downloads: 634000,
-      likes: 29000,
-      updated: '1 week ago',
-      tags: ['Audio', 'Speech', 'Transcription']
-    },
-    {
-      id: 4,
-      name: 'CLIP-ViT',
-      author: 'OpenAI',
-      category: 'Computer Vision',
-      description: 'Connect text and images for zero-shot classification',
-      downloads: 512000,
-      likes: 24000,
-      updated: '3 days ago',
-      tags: ['Vision', 'Classification', 'Embedding']
-    },
-    {
-      id: 5,
-      name: 'Stable Diffusion XL',
-      author: 'Stability AI',
-      category: 'Image Generation',
-      description: 'Advanced text-to-image model with superior quality',
-      downloads: 923000,
-      likes: 41000,
-      updated: '1 week ago',
-      tags: ['Image', 'Generation', 'Diffusion']
-    },
-    {
-      id: 6,
-      name: 'LLaMA-2-70B',
-      author: 'Meta',
-      category: 'Language Models',
-      description: 'Open-source large language model for various NLP tasks',
-      downloads: 789000,
-      likes: 35000,
-      updated: '4 days ago',
-      tags: ['NLP', 'Open Source', 'Chat']
-    }
-  ];
-
   searchQuery = '';
-  private modelsSubject = new BehaviorSubject(this.models);
-  filteredModels$: Observable<any[]>;
+  private searchSubject = new Subject<string>();
+  private modelsSubject = new BehaviorSubject<Model[]>([]);
+  filteredModels$: Observable<Model[]>;
 
-  constructor(private toastService: ToastService) {
+  editingModel: Model | null = null;
+  showEditModal = false;
+  showDeleteModal = false;
+  modelToDelete: Model | null = null;
+
+  constructor(
+    private dashboardService: DashboardService,
+    private toastService: ToastService
+  ) {
     this.filteredModels$ = this.modelsSubject.asObservable().pipe(
-      map(models => this.getFilteredAndSortedModels(models))
+      map(models => this.filterAndSort(models))
     );
+
+    // Set up search with debounce
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(query => this.dashboardService.searchModels(query))
+    ).subscribe(models => {
+      this.modelsSubject.next(models);
+    });
   }
 
-  trackByModel(_index: number, item: any) {
-    return item?.id ?? _index;
+  ngOnInit(): void {
+    // Load initial models
+    this.loadModels();
   }
 
-  selectCategory(category: string): void {
-    this.selectedCategory = category;
-    this.modelsSubject.next(this.models);
+  private loadModels(): void {
+    this.dashboardService.getModels().subscribe({
+      next: (models) => {
+        this.modelsSubject.next(models);
+      },
+      error: (error) => {
+        this.toastService.error('Failed to load models');
+        console.error('Error loading models:', error);
+      }
+    });
   }
 
-  setSortBy(sort: SortOption): void {
+  private filterAndSort(models: Model[]): Model[] {
+    return this.sortModels(models);
+  }
+
+  private sortModels(models: Model[]): Model[] {
+    return [...models].sort((a, b) => {
+      switch (this.sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'size':
+          return b.size - a.size;
+        default:
+          return 0;
+      }
+    });
+  }
+
+  onSortChange(sort: SortOption): void {
     this.sortBy = sort;
-    this.modelsSubject.next(this.models);
+    this.updateFilters();
+  }
+
+  onSearchChange(): void {
+    this.searchSubject.next(this.searchQuery);
   }
 
   toggleViewMode(): void {
     this.viewMode = this.viewMode === 'grid' ? 'list' : 'grid';
   }
 
-  onSearchChange(): void {
-    this.modelsSubject.next(this.models);
+  private updateFilters(): void {
+    // Trigger re-filtering of current models
+    const currentModels = this.modelsSubject.getValue();
+    this.modelsSubject.next([...currentModels]);
   }
 
-  likeModel(model: any): void {
-    model.likes += 1;
-    this.toastService.success(`Liked ${model.name}!`, 2000);
+  openEditModal(model: Model): void {
+    this.editingModel = { ...model };
+    this.showEditModal = true;
   }
 
-  downloadModel(model: any): void {
-    this.toastService.info(`Downloading ${model.name}...`, 2000);
+  closeEditModal(): void {
+    this.showEditModal = false;
+    this.editingModel = null;
   }
 
-  private getFilteredAndSortedModels(models: any[]): any[] {
-    let filtered = this.filterModels(models);
-    return this.sortModels(filtered);
+  saveModel(): void {
+    if (!this.editingModel) return;
+
+    this.dashboardService.updateModel(this.editingModel.id, {
+      name: this.editingModel.name,
+      description: this.editingModel.description
+    }).subscribe({
+      next: () => {
+        this.toastService.success('Model updated successfully');
+        this.closeEditModal();
+        this.loadModels();
+      },
+      error: (error) => {
+        this.toastService.error('Failed to update model');
+        console.error('Error updating model:', error);
+      }
+    });
   }
 
-  private filterModels(models: any[]): any[] {
-    let filtered = models;
-    
-    if (this.selectedCategory !== 'All') {
-      filtered = filtered.filter(m => m.category === this.selectedCategory);
+  openDeleteModal(model: Model): void {
+    this.modelToDelete = model;
+    this.showDeleteModal = true;
+  }
+
+  closeDeleteModal(): void {
+    this.showDeleteModal = false;
+    this.modelToDelete = null;
+  }
+
+  confirmDelete(): void {
+    if (!this.modelToDelete) return;
+
+    this.dashboardService.deleteModel(this.modelToDelete.id).subscribe({
+      next: () => {
+        this.toastService.success('Model deleted successfully');
+        this.closeDeleteModal();
+        this.loadModels();
+      },
+      error: (error) => {
+        this.toastService.error('Failed to delete model');
+        console.error('Error deleting model:', error);
+      }
+    });
+  }
+
+  formatSize(sizeInBytes: number): string {
+    const mb = sizeInBytes / (1024 * 1024);
+    if (mb >= 1000) {
+      return (mb / 1024).toFixed(1) + ' GB';
     }
-    
-    if (this.searchQuery) {
-      const query = this.searchQuery.toLowerCase();
-      filtered = filtered.filter(m => 
-        m.name.toLowerCase().includes(query) ||
-        m.author.toLowerCase().includes(query) ||
-        m.description.toLowerCase().includes(query) ||
-        m.tags.some((tag: string) => tag.toLowerCase().includes(query))
-      );
-    }
-    
-    return filtered;
-  }
-
-  private sortModels(models: any[]): any[] {
-    const sorted = [...models];
-    
-    switch (this.sortBy) {
-      case 'name':
-        sorted.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case 'downloads':
-        sorted.sort((a, b) => b.downloads - a.downloads);
-        break;
-      case 'likes':
-        sorted.sort((a, b) => b.likes - a.likes);
-        break;
-      case 'recent':
-      default:
-        // Keep original order (most recent)
-        break;
-    }
-    
-    return sorted;
-  }
-
-  get filteredModels() {
-    return this.getFilteredAndSortedModels(this.models);
-  }
-
-  formatNumber(num: number): string {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    }
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
+    return mb.toFixed(1) + ' MB';
   }
 }

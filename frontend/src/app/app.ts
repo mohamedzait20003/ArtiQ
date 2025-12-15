@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { selectIsAuthenticated } from './store/auth.selectors';
+import { selectIsAuthenticated, selectRole } from './store/auth.selectors';
 import { CommonModule } from '@angular/common';
 import { Observable } from 'rxjs';
 import * as AuthActions from './store/auth.actions';
@@ -20,12 +20,14 @@ import { NavigationService } from './core/services/navigation.service';
 export class App {
   protected readonly title = signal('frontend');
   isAuthenticated$: Observable<boolean>;
+  role$: Observable<string | null>;
 
   constructor(
     private store: Store,
     private navigationService: NavigationService
   ) {
     this.isAuthenticated$ = this.store.select(selectIsAuthenticated);
+    this.role$ = this.store.select(selectRole);
   }
 
   logout(): void {

@@ -1,6 +1,6 @@
 export interface AuthState {
   token: string | null;
-  role: 'admin' | 'user' | null;
+  role: string | null;
   user: {
     id: string;
     email: string;

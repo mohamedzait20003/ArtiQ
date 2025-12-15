@@ -1,6 +1,6 @@
 from fastapi import HTTPException, Request
 from app.types.user_types import CreateUserRequest, UserResponse
-from app.jobs import create_user_job
+from app.jobs import create_user_job, user_list_job
 
 
 class AdminController:
@@ -69,3 +69,42 @@ class AdminController:
                     status_code=500,
                     detail=f"Error creating user: {error_str}"
                 )
+
+    async def list_users(self):
+        """
+        Get all users with their role, name, and email (admin only)
+
+        Returns:
+            List of user objects with id, name, email, role
+
+        Raises:
+            HTTPException: 500 on error
+        """
+        print("GET /admin/users called")
+        try:
+            # Call the handler function directly
+            result, status_code = user_list_job({}, None)
+
+            # Check if response is an error
+            if status_code != 200:
+                error_message = result.get('errorMessage', 'Unknown error')
+                print(
+                    f"GET /admin/users RETURNING: "
+                    f"{status_code} - {error_message}"
+                )
+                raise HTTPException(
+                    status_code=status_code,
+                    detail=error_message
+                )
+
+            print(f"GET /admin/users RETURNING: 200 - {len(result)} users")
+            return result
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"GET /admin/users RETURNING: 500 - Exception: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error retrieving users: {str(e)}"
+            )

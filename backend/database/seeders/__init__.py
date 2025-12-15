@@ -8,12 +8,20 @@ from database.seeders.roles_seeder import RolesSeeder  # noqa: E402
 from database.seeders.admin_seeder import (  # noqa: E402
     DefaultAdminSeeder
 )
+from database.seeders.admins_seeder import (  # noqa: E402
+    AdminsSeeder
+)
+from database.seeders.managers_seeder import (  # noqa: E402
+    ManagersSeeder
+)
 
 
 # Register all seeders here (order matters - run in sequence)
 SEEDERS = {
     'RolesSeeder': RolesSeeder,
     'DefaultAdminSeeder': DefaultAdminSeeder,
+    'AdminsSeeder': AdminsSeeder,
+    'ManagersSeeder': ManagersSeeder,
 }
 
 

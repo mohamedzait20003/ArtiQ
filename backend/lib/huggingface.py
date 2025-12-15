@@ -36,21 +36,21 @@ class HuggingFaceAPIManager:
         """Converts a Hugging Face model link to a model ID."""
         # Strip whitespace and trailing slashes
         model_link = model_link.strip().rstrip('/')
-        
+
         # Try pattern with owner/repo format first
         match = re.search(
             r"huggingface\.co/([^/]+/[^/?#\s]+)", model_link
         )
         if match:
             return match.group(1)
-        
+
         # Try pattern for legacy single-name models (no owner)
         match = re.search(
             r"huggingface\.co/([^/?#\s]+)", model_link
         )
         if match:
             return match.group(1)
-        
+
         raise ValueError(f"Invalid model link: {model_link}")
 
     @staticmethod
@@ -58,21 +58,21 @@ class HuggingFaceAPIManager:
         """Converts a Hugging Face dataset link to a dataset ID."""
         # Strip whitespace and newlines
         dataset_link = dataset_link.strip()
-        
+
         # Try pattern with owner/repo format first
         match = re.search(
             r"huggingface\.co/datasets/([^/]+/[^/?#\s]+)", dataset_link
         )
         if match:
             return match.group(1)
-        
+
         # Try pattern for legacy single-name datasets (no owner)
         match = re.search(
             r"huggingface\.co/datasets/([^/?#\s]+)", dataset_link
         )
         if match:
             return match.group(1)
-        
+
         raise ValueError(f"Invalid dataset link: {dataset_link}")
 
     def get_model_info(self, model_id: str) -> ModelInfo:

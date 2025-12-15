@@ -16,6 +16,9 @@ from app.jobs import (
     artifact_update_job,
     artifact_delete_job,
     artifact_by_regex_job,
+    artifact_by_name_job,
+    artifact_by_type_and_name_job,
+    artifact_first_ten_by_type_job,
     model_artifact_rate_job,
     artifact_cost_job,
     artifact_license_check_job,
@@ -368,11 +371,148 @@ class ArtifactController:
         self,
         name: str = Path(..., description="Artifact name")
     ):
-        """List artifact metadata for this name (NON-BASELINE)"""
+        """
+        List artifact metadata for this name (NON-BASELINE)
+        Supports fuzzy matching - case-insensitive and partial matches
+        """
         print(f"GET /artifact/byName/{name} called")
-        # TODO: Implement logic
-        raise HTTPException(
-            status_code=501, detail="Not implemented")
+        try:
+            # Prepare event for handler function
+            event = {
+                'name': name
+            }
+
+            # Call the handler function directly
+            result, status_code = artifact_by_name_job(event, None)
+
+            # Check if response is an error
+            if status_code != 200:
+                error_message = result.get('errorMessage', 'Unknown error')
+                print(
+                    f"GET /artifact/byName/{name} RETURNING: "
+                    f"{status_code} - {error_message}"
+                )
+                raise HTTPException(
+                    status_code=status_code,
+                    detail=error_message
+                )
+
+            print(f"GET /artifact/byName/{name} RETURNING: 200 - success")
+            return result
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(
+                f"GET /artifact/byName/{name} RETURNING: 500 - "
+                f"Exception: {str(e)}"
+            )
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error searching artifacts by name: {str(e)}"
+            )
+
+    async def artifact_by_type_and_name_get(
+        self,
+        artifact_type: str = Path(
+            ..., description="Type of artifact (model, dataset, code)"),
+        name: str = Path(..., description="Artifact name")
+    ):
+        """
+        Get artifacts by type and name with fuzzy matching (NON-BASELINE)
+        Returns artifacts matching both the exact type and fuzzy name match
+        """
+        print(
+            f"GET /artifact/{artifact_type}/byName/{name} called"
+        )
+        try:
+            # Prepare event for handler function
+            event = {
+                'artifact_type': artifact_type,
+                'name': name
+            }
+
+            # Call the handler function directly
+            result, status_code = artifact_by_type_and_name_job(event, None)
+
+            # Check if response is an error
+            if status_code != 200:
+                error_message = result.get('errorMessage', 'Unknown error')
+                print(
+                    f"GET /artifact/{artifact_type}/byName/{name} "
+                    f"RETURNING: {status_code} - {error_message}"
+                )
+                raise HTTPException(
+                    status_code=status_code,
+                    detail=error_message
+                )
+
+            print(
+                f"GET /artifact/{artifact_type}/byName/{name} "
+                f"RETURNING: 200 - success"
+            )
+            return result
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(
+                f"GET /artifact/{artifact_type}/byName/{name} "
+                f"RETURNING: 500 - Exception: {str(e)}"
+            )
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error searching artifacts by type and name: {str(e)}"
+            )
+
+    async def artifact_first_ten_by_type_get(
+        self,
+        artifact_type: str = Path(
+            ..., description="Type of artifact (model, dataset, code)")
+    ):
+        """
+        Get the first 10 artifacts of a specific type (NON-BASELINE)
+        Returns up to 10 artifacts matching the specified type
+        """
+        print(f"GET /artifact/{artifact_type}/first10 called")
+        try:
+            # Prepare event for handler function
+            event = {
+                'artifact_type': artifact_type
+            }
+
+            # Call the handler function directly
+            result, status_code = artifact_first_ten_by_type_job(event, None)
+
+            # Check if response is an error
+            if status_code != 200:
+                error_message = result.get('errorMessage', 'Unknown error')
+                print(
+                    f"GET /artifact/{artifact_type}/first10 "
+                    f"RETURNING: {status_code} - {error_message}"
+                )
+                raise HTTPException(
+                    status_code=status_code,
+                    detail=error_message
+                )
+
+            print(
+                f"GET /artifact/{artifact_type}/first10 "
+                f"RETURNING: 200 - success"
+            )
+            return result
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(
+                f"GET /artifact/{artifact_type}/first10 "
+                f"RETURNING: 500 - Exception: {str(e)}"
+            )
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error fetching first 10 artifacts: {str(e)}"
+            )
 
     async def artifact_audit_get(
         self,

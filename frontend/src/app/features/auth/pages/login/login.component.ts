@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { LoginService } from '../../services/login.service';
+import { AuthService } from '../../services/auth.service';
 import { selectAuthLoading, selectAuthError } from '../../../../store/auth.selectors';
 import { Observable } from 'rxjs';
 
@@ -21,7 +21,7 @@ export class LoginComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private loginService: LoginService,
+    private authService: AuthService,
     private store: Store
   ) {
     this.loading$ = this.store.select(selectAuthLoading);
@@ -31,16 +31,14 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      isAdmin: [false],
-      rememberMe: [false]
+      password: ['', [Validators.required, Validators.minLength(6)]]
     });
   }
 
   onSubmit(): void {
     if (this.loginForm.valid) {
-      const { email, password, isAdmin } = this.loginForm.value;
-      this.loginService.login(email, password, isAdmin);
+      const { email, password } = this.loginForm.value;
+      this.authService.login(email, password);
     }
   }
 }

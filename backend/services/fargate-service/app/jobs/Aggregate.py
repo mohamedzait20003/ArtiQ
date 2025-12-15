@@ -14,7 +14,7 @@ def aggregate_scores_step(context):
     Step 4: Aggregate metric scores into final rating
     """
     # Get the parallel results from context (index 2: after validate and fetch)
-    # context['results'] = [validate, fetch, parallel_metrics, lineage, 
+    # context['results'] = [validate, fetch, parallel_metrics, lineage,
     # tree_score]
     if isinstance(context, dict):
         all_results = context.get('results', [])

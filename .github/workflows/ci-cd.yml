@@ -79,6 +79,7 @@ jobs:
         MONGODB_URI: mongodb://mock:27017/
         ARTIFACT_ENCRYPTION_KEY: ${{ secrets.ARTIFACT_ENCRYPTION_KEY }}
         PASSWORD_SALT: ${{ secrets.PASSWORD_SALT }}
+        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
       run: |
         cd backend/services/lambda-service
         python -m pytest -v --tb=short tests
@@ -289,6 +290,7 @@ jobs:
         SUBNET_ID: ${{ secrets.SUBNET_ID }}
         SECURITY_GROUP: ${{ secrets.SECURITY_GROUP }}
         PASSWORD_SALT: ${{ secrets.PASSWORD_SALT }}
+        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
       run: |
         cd backend/services/lambda-service
         sam deploy \
@@ -299,6 +301,7 @@ jobs:
           --region us-east-2 \
           --resolve-s3 \
           --parameter-overrides MongoDBUri="${MONGODB_URI}" EncryptionKey="${ARTIFACT_ENCRYPTION_KEY}" ClusterName="${CLUSTER_NAME}" TaskDefinition="${TASK_DEFINITION}" ContainerName="${CONTAINER_NAME}" SubnetId="${SUBNET_ID}" SecurityGroup="${SECURITY_GROUP}" PasswordSalt="${PASSWORD_SALT}"
+           JWTSecretKey="${JWT_SECRET_KEY}"
     
     - name: Get API Gateway URL
       run: |

@@ -10,16 +10,30 @@ import * as AuthActions from './auth.actions';
 
 interface LoginResponse {
   token: string;
+  role: string;
+  userData: {
+    name: string;
+  };
 }
 
 interface LoginRequest {
-  user: {
+  email: string;
+  password: string;
+}
+
+interface RegisterResponse {
+  token: string;
+  role: string;
+  userData: {
     name: string;
-    isAdmin: boolean;
   };
-  secret: {
-    password: string;
-  };
+}
+
+interface RegisterRequest {
+  name: string;
+  email: string;
+  password: string;
+  confirm_password: string;
 }
 
 @Injectable()
@@ -34,46 +48,79 @@ export class AuthEffects {
   login$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.login),
-      switchMap(({ email, password, isAdmin }) => {
+      switchMap(({ email, password }) => {
         if (!isPlatformBrowser(this.platformId)) {
           return EMPTY;
         }
 
         const requestBody: LoginRequest = {
-          user: {
-            name: email,
-            isAdmin: isAdmin
-          },
-          secret: {
-            password: password
-          }
+          email: email,
+          password: password
         };
 
-        return this.http.put<string>(`${this.API_URL}/authenticate`, requestBody).pipe(
-          map((bearerToken: string) => {
-            // Extract token from "bearer <token>" format
-            const token = bearerToken.replace('bearer ', '');
-            
+        return this.http.post<LoginResponse>(`${this.API_URL}/login`, requestBody).pipe(
+          map((response: LoginResponse) => {
             return AuthActions.loginSuccess({
-              token: token,
-              role: isAdmin ? 'admin' : 'user',
+              token: response.token,
+              role: response.role,
               user: {
-                id: token,
+                id: response.token,
                 email: email,
-                name: email
+                name: response.userData.name
               }
             });
           }),
           catchError((error) => {
             let errorMessage = 'Login failed';
-            if (error.status === 400) {
-              errorMessage = 'Missing or invalid fields in request';
+            if (error.error?.detail) {
+              errorMessage = error.error.detail;
+            } else if (error.status === 400) {
+              errorMessage = 'Missing field(s) in the login request';
             } else if (error.status === 401) {
-              errorMessage = 'Invalid username or password';
-            } else if (error.status === 501) {
-              errorMessage = 'Authentication not supported';
+              errorMessage = 'Invalid email or password';
             }
             return of(AuthActions.loginFailure({ error: errorMessage }));
+          })
+        );
+      })
+    )
+  );
+
+  register$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.register),
+      switchMap(({ name, email, password, confirm_password }) => {
+        if (!isPlatformBrowser(this.platformId)) {
+          return EMPTY;
+        }
+
+        const requestBody: RegisterRequest = {
+          name: name,
+          email: email,
+          password: password,
+          confirm_password: confirm_password
+        };
+
+        return this.http.post<RegisterResponse>(`${this.API_URL}/register`, requestBody).pipe(
+          map((response: RegisterResponse) => {
+            return AuthActions.registerSuccess({
+              token: response.token,
+              role: response.role,
+              user: {
+                id: response.token,
+                email: email,
+                name: response.userData.name
+              }
+            });
+          }),
+          catchError((error) => {
+            let errorMessage = 'Registration failed';
+            if (error.error?.detail) {
+              errorMessage = error.error.detail;
+            } else if (error.status === 400) {
+              errorMessage = 'Missing field(s) or passwords do not match';
+            }
+            return of(AuthActions.registerFailure({ error: errorMessage }));
           })
         );
       })
@@ -84,10 +131,48 @@ export class AuthEffects {
     () =>
       this.actions$.pipe(
         ofType(AuthActions.loginSuccess),
-        tap(() => {
+        tap(({ role }) => {
           if (isPlatformBrowser(this.platformId)) {
-            // Navigate to dashboard
-            this.router.navigate(['/dashboard']);
+            // Navigate based on role
+            switch (role) {
+              case 'Admin':
+                this.router.navigate(['/admin']);
+                break;
+              case 'Manager':
+                this.router.navigate(['/dashboard']);
+                break;
+              case 'Visitor':
+                this.router.navigate(['/visitor']);
+                break;
+              default:
+                this.router.navigate(['/']);
+            }
+          }
+        })
+      ),
+    { dispatch: false }
+  );
+
+  registerSuccess$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(AuthActions.registerSuccess),
+        tap(({ role }) => {
+          if (isPlatformBrowser(this.platformId)) {
+            // Navigate based on role (registration creates Visitor by default)
+            switch (role) {
+              case 'Admin':
+                this.router.navigate(['/admin']);
+                break;
+              case 'Manager':
+                this.router.navigate(['/dashboard']);
+                break;
+              case 'Visitor':
+                this.router.navigate(['/visitor']);
+                break;
+              default:
+                this.router.navigate(['/']);
+            }
           }
         })
       ),

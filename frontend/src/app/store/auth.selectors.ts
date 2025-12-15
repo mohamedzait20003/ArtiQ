@@ -41,10 +41,12 @@ export const selectStartUrl = createSelector(
     if (!isAuthenticated) return '/';
     
     switch (role) {
-      case 'admin':
-        return '/dashboard/admin';
-      case 'user':
-        return '/dashboard/user';
+      case 'Admin':
+        return '/admin';
+      case 'Manager':
+        return '/dashboard';
+      case 'Visitor':
+        return '/visitor';
       default:
         return '/';
     }

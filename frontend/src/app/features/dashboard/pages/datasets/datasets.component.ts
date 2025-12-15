@@ -1,15 +1,15 @@
 import { Component, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BehaviorSubject } from 'rxjs';
-import { ApiService } from '../../../../core/services/api.service';
-import { ArtifactMetadata } from '../../../../core/services/api.types';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { map, switchMap, debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { DashboardService, Dataset } from '../../services/dashboard.service';
 import { ToastService } from '../../../../core/services/toast.service';
 
-export type SortOption = 'name' | 'size' | 'downloads' | 'recent';
+export type SortOption = 'name' | 'size';
 
 @Component({
-  selector: 'app-datasets',
+  selector: 'app-dashboard-datasets',
   standalone: true,
   imports: [CommonModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -17,156 +17,152 @@ export type SortOption = 'name' | 'size' | 'downloads' | 'recent';
   styleUrls: ['./datasets.component.css']
 })
 export class DatasetsComponent implements OnInit {
-  categories = ['All'];
-  sortOptions: SortOption[] = ['name', 'size', 'downloads', 'recent'];
+  sortOptions: SortOption[] = ['name', 'size'];
   
-  selectedCategory = 'All';
-  sortBy: SortOption = 'recent';
+  sortBy: SortOption = 'name';
   viewMode: 'grid' | 'list' = 'grid';
 
-  datasets$ = new BehaviorSubject<any[]>([]);
-  filteredDatasets$ = new BehaviorSubject<any[]>([]);
-
   searchQuery = '';
-  isLoading = true;
+  private searchSubject = new Subject<string>();
+  private datasetsSubject = new BehaviorSubject<Dataset[]>([]);
+  filteredDatasets$: Observable<Dataset[]>;
 
-  trackByDataset(_index: number, item: any) {
-    return item?.id ?? _index;
-  }
+  editingDataset: Dataset | null = null;
+  showEditModal = false;
+  showDeleteModal = false;
+  datasetToDelete: Dataset | null = null;
 
   constructor(
-    private apiService: ApiService,
+    private dashboardService: DashboardService,
     private toastService: ToastService
-  ) {}
+  ) {
+    this.filteredDatasets$ = this.datasetsSubject.asObservable().pipe(
+      map(datasets => this.filterAndSort(datasets))
+    );
 
-  ngOnInit(): void {
-    this.fetchDatasets();
+    // Set up search with debounce
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(query => this.dashboardService.searchDatasets(query))
+    ).subscribe(datasets => {
+      this.datasetsSubject.next(datasets);
+    });
   }
 
-  private fetchDatasets(): void {
-    this.isLoading = true;
-    this.apiService.getArtifactsByType('dataset').subscribe({
-      next: (artifacts: ArtifactMetadata[]) => {
-        // Transform artifact metadata to display format
-        const displayDatasets = artifacts.map((artifact, idx) => ({
-          id: idx + 1,
-          name: artifact.name,
-          author: 'Unknown',
-          category: 'Dataset',
-          description: `Artifact ID: ${artifact.id}`,
-          size: Math.floor(Math.random() * 5000) + 100, // MB
-          downloads: Math.floor(Math.random() * 50000),
-          likes: Math.floor(Math.random() * 5000),
-          updated: 'recently',
-          tags: [artifact.type],
-          artifactId: artifact.id,
-          artifactType: artifact.type
-        }));
+  ngOnInit(): void {
+    // Load initial datasets
+    this.loadDatasets();
+  }
 
-        this.datasets$.next(displayDatasets);
-        this.applyFilters();
-        this.isLoading = false;
+  private loadDatasets(): void {
+    this.dashboardService.getDatasets().subscribe({
+      next: (datasets) => {
+        this.datasetsSubject.next(datasets);
       },
-      error: (err: any) => {
-        console.error('Error fetching datasets:', err);
+      error: (error) => {
         this.toastService.error('Failed to load datasets');
-        this.isLoading = false;
-        this.datasets$.next([]);
-        this.filteredDatasets$.next([]);
+        console.error('Error loading datasets:', error);
       }
     });
   }
 
-  selectCategory(category: string): void {
-    this.selectedCategory = category;
-    this.applyFilters();
+  private filterAndSort(datasets: Dataset[]): Dataset[] {
+    return this.sortDatasets(datasets);
   }
 
-  setSortBy(sort: SortOption): void {
+  private sortDatasets(datasets: Dataset[]): Dataset[] {
+    return [...datasets].sort((a, b) => {
+      switch (this.sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'size':
+          return b.size - a.size;
+        default:
+          return 0;
+      }
+    });
+  }
+
+  onSortChange(sort: SortOption): void {
     this.sortBy = sort;
-    this.applyFilters();
+    this.updateFilters();
+  }
+
+  onSearchChange(): void {
+    this.searchSubject.next(this.searchQuery);
   }
 
   toggleViewMode(): void {
     this.viewMode = this.viewMode === 'grid' ? 'list' : 'grid';
   }
 
-  onSearchChange(): void {
-    this.applyFilters();
+  private updateFilters(): void {
+    // Trigger re-filtering of current datasets
+    const currentDatasets = this.datasetsSubject.getValue();
+    this.datasetsSubject.next([...currentDatasets]);
   }
 
-  likeDataset(dataset: any): void {
-    dataset.likes += 1;
-    this.toastService.success(`Liked ${dataset.name}!`, 2000);
+  openEditModal(dataset: Dataset): void {
+    this.editingDataset = { ...dataset };
+    this.showEditModal = true;
   }
 
-  downloadDataset(dataset: any): void {
-    this.toastService.info(`Downloading ${dataset.name}...`, 2000);
+  closeEditModal(): void {
+    this.showEditModal = false;
+    this.editingDataset = null;
   }
 
-  private applyFilters(): void {
-    const datasets = this.datasets$.value;
-    let filtered = this.filterDatasets(datasets);
-    filtered = this.sortDatasets(filtered);
-    this.filteredDatasets$.next(filtered);
+  saveDataset(): void {
+    if (!this.editingDataset) return;
+
+    this.dashboardService.updateDataset(this.editingDataset.id, {
+      name: this.editingDataset.name,
+      description: this.editingDataset.description
+    }).subscribe({
+      next: () => {
+        this.toastService.success('Dataset updated successfully');
+        this.closeEditModal();
+        this.loadDatasets();
+      },
+      error: (error) => {
+        this.toastService.error('Failed to update dataset');
+        console.error('Error updating dataset:', error);
+      }
+    });
   }
 
-  private filterDatasets(datasets: any[]): any[] {
-    let filtered = datasets;
+  openDeleteModal(dataset: Dataset): void {
+    this.datasetToDelete = dataset;
+    this.showDeleteModal = true;
+  }
 
-    if (this.selectedCategory !== 'All') {
-      filtered = filtered.filter(d => d.category === this.selectedCategory);
+  closeDeleteModal(): void {
+    this.showDeleteModal = false;
+    this.datasetToDelete = null;
+  }
+
+  confirmDelete(): void {
+    if (!this.datasetToDelete) return;
+
+    this.dashboardService.deleteDataset(this.datasetToDelete.id).subscribe({
+      next: () => {
+        this.toastService.success('Dataset deleted successfully');
+        this.closeDeleteModal();
+        this.loadDatasets();
+      },
+      error: (error) => {
+        this.toastService.error('Failed to delete dataset');
+        console.error('Error deleting dataset:', error);
+      }
+    });
+  }
+
+  formatSize(sizeInBytes: number): string {
+    const mb = sizeInBytes / (1024 * 1024);
+    if (mb >= 1000) {
+      return (mb / 1024).toFixed(1) + ' GB';
     }
-
-    if (this.searchQuery) {
-      const query = this.searchQuery.toLowerCase();
-      filtered = filtered.filter(d => 
-        d.name.toLowerCase().includes(query) ||
-        d.author.toLowerCase().includes(query) ||
-        d.description.toLowerCase().includes(query) ||
-        d.tags.some((tag: string) => tag.toLowerCase().includes(query))
-      );
-    }
-
-    return filtered;
-  }
-
-  private sortDatasets(datasets: any[]): any[] {
-    const sorted = [...datasets];
-    
-    switch (this.sortBy) {
-      case 'name':
-        sorted.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case 'size':
-        sorted.sort((a, b) => b.size - a.size);
-        break;
-      case 'downloads':
-        sorted.sort((a, b) => b.downloads - a.downloads);
-        break;
-      case 'recent':
-      default:
-        // Keep original order
-        break;
-    }
-    
-    return sorted;
-  }
-
-  formatSize(mb: number): string {
-    if (mb >= 1024) {
-      return (mb / 1024).toFixed(2) + ' GB';
-    }
-    return mb.toFixed(0) + ' MB';
-  }
-
-  formatNumber(num: number): string {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    }
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
+    return mb.toFixed(1) + ' MB';
   }
 }

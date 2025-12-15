@@ -1,36 +1,41 @@
-<div class="min-h-screen flex items-center justify-center bg-linear-to-br from-yellow-50 via-orange-50 to-pink-50 py-12 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-md w-full">
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+  <!-- Animated Background Elements -->
+  <div class="absolute inset-0 overflow-hidden">
+    <div class="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full opacity-20 blur-3xl animate-pulse"></div>
+    <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-full opacity-20 blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+  </div>
+
+  <div class="max-w-md w-full relative z-10">
     <!-- Logo and Header -->
     <div class="text-center mb-8">
       <div class="flex justify-center mb-4">
-        <div
-          class="w-16 h-16 bg-linear-to-br from-yellow-400 via-orange-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+        <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/50">
           <span class="text-white font-bold text-3xl">AI</span>
         </div>
       </div>
-      <h2 class="text-3xl font-extrabold text-gray-900 mb-2">Welcome back</h2>
-      <p class="text-gray-600">Sign in to your ModelHub account</p>
+      <h2 class="text-3xl font-extrabold text-white mb-2">Welcome back</h2>
+      <p class="text-slate-400">Sign in to your ModelHub account</p>
     </div>
 
     <!-- Login Card -->
-    <div class="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+    <div class="bg-slate-800/80 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-slate-700">
       <!-- Error Message -->
       @if (error$ | async; as error) {
-      <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-        <p class="text-sm text-red-600">{{ error }}</p>
+      <div class="mb-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg backdrop-blur-sm">
+        <p class="text-sm text-red-400">{{ error }}</p>
       </div>
       }
 
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
         <!-- Email Field -->
         <div>
-          <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">Email address</label>
+          <label for="email" class="block text-sm font-semibold text-slate-300 mb-2">Email address</label>
           <input id="email" type="email" formControlName="email"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition placeholder-gray-400"
+            class="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition placeholder-slate-500 text-white"
             [class.border-red-500]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
             placeholder="you@example.com" />
           @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
-          <p class="mt-1 text-sm text-red-600">
+          <p class="mt-1 text-sm text-red-400">
             Please enter a valid email address
           </p>
           }
@@ -38,37 +43,28 @@
 
         <!-- Password Field -->
         <div>
-          <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+          <label for="password" class="block text-sm font-semibold text-slate-300 mb-2">Password</label>
           <input id="password" type="password" formControlName="password"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition placeholder-gray-400"
+            class="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition placeholder-slate-500 text-white"
             [class.border-red-500]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
             placeholder="Enter your password" />
           @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
-          <p class="mt-1 text-sm text-red-600">
+          <p class="mt-1 text-sm text-red-400">
             Password must be at least 6 characters
           </p>
           }
         </div>
 
-        <!-- Login as Admin Checkbox -->
-        <div class="flex items-center">
-          <input id="is-admin" type="checkbox" formControlName="isAdmin"
-            class="h-4 w-4 text-yellow-500 focus:ring-yellow-500 border-gray-300 rounded cursor-pointer" />
-          <label for="is-admin" class="ml-2 block text-sm text-gray-700 cursor-pointer">
-            Login as administrator
-          </label>
-        </div>
-
         <!-- Remember Me & Forgot Password -->
         <div class="flex items-center justify-between">
-          <a routerLink="/auth/reset" class="text-sm font-medium text-yellow-600 hover:text-yellow-700 transition">
+          <a routerLink="/auth/reset" class="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition">
             Forgot password?
           </a>
         </div>
 
         <!-- Sign In Button -->
         <button type="submit" [disabled]="loginForm.invalid || (loading$ | async)"
-          class="w-full bg-linear-to-r from-yellow-400 via-orange-500 to-pink-500 text-white font-bold py-3 px-4 rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+          class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-indigo-500/50 transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
           @if (!(loading$ | async)) {
           <span>Sign in</span>
           }
@@ -80,17 +76,17 @@
         <!-- Divider -->
         <div class="relative my-6">
           <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-gray-300"></div>
+            <div class="w-full border-t border-slate-700"></div>
           </div>
           <div class="relative flex justify-center text-sm">
-            <span class="px-4 bg-white text-gray-500">Or continue with</span>
+            <span class="px-4 bg-slate-800 text-slate-400">Or continue with</span>
           </div>
         </div>
 
         <!-- Social Login Buttons -->
         <div class="grid grid-cols-2 gap-4">
           <button type="button"
-            class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700">
+            class="flex items-center justify-center px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg hover:bg-slate-700 transition font-medium text-slate-300">
             <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
               <path fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -104,7 +100,7 @@
             Google
           </button>
           <button type="button"
-            class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700">
+            class="flex items-center justify-center px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg hover:bg-slate-700 transition font-medium text-slate-300">
             <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
               <path
                 d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
@@ -113,7 +109,16 @@
           </button>
         </div>
       </form>
-    </div>
 
+      <!-- Sign Up Link -->
+      <div class="mt-6 text-center">
+        <p class="text-sm text-slate-400">
+          Don't have an account?
+          <a routerLink="/auth/register" class="font-semibold text-indigo-400 hover:text-indigo-300 transition">
+            Sign up
+          </a>
+        </p>
+      </div>
+    </div>
   </div>
 </div>

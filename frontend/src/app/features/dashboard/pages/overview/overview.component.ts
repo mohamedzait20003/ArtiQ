@@ -4,8 +4,6 @@ import { RouterLink, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { selectUser } from '../../../../store/auth.selectors';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { ApiService } from '../../../../core/services/api.service';
-import { ArtifactMetadata } from '../../../../core/services/api.types';
 
 @Component({
   selector: 'app-overview',
@@ -37,7 +35,7 @@ export class OverviewComponent implements OnInit {
     return item?.id ?? _index;
   }
 
-  constructor(private store: Store, private apiService: ApiService, private router: Router) {
+  constructor(private store: Store, private router: Router) {
     this.user$ = this.store.select(selectUser);
   }
 
@@ -46,50 +44,30 @@ export class OverviewComponent implements OnInit {
   }
 
   private fetchArtifacts(): void {
-    // Fetch all artifacts
-    this.apiService.getAllArtifacts().subscribe({
-      next: (artifacts: ArtifactMetadata[]) => {
-        // Separate by type
-        const models = artifacts.filter(a => a.type === 'model').slice(0, 3);
-        const datasets = artifacts.filter(a => a.type === 'dataset').slice(0, 3);
+    // TODO: Implement NgRx store actions for fetching artifacts
+    // For now, using placeholder data
+    const mockModels = [
+      { id: 1, name: 'GPT-4 Model', type: 'model', updated: 'recently', downloads: '1.2K' },
+      { id: 2, name: 'BERT Classifier', type: 'model', updated: 'recently', downloads: '850' },
+      { id: 3, name: 'ResNet-50', type: 'model', updated: 'recently', downloads: '2.3K' }
+    ];
 
-        // Transform to display format
-        const displayModels = models.map((m, idx) => ({
-          id: idx + 1,
-          name: m.name,
-          type: m.type,
-          updated: 'recently',
-          downloads: '--'
-        }));
+    const mockDatasets = [
+      { id: 1, name: 'ImageNet', type: 'dataset', size: '150 GB', updated: 'recently' },
+      { id: 2, name: 'COCO Dataset', type: 'dataset', size: '25 GB', updated: 'recently' },
+      { id: 3, name: 'WikiText-103', type: 'dataset', size: '1.2 GB', updated: 'recently' }
+    ];
 
-        const displayDatasets = datasets.map((d, idx) => ({
-          id: idx + 1,
-          name: d.name,
-          type: d.type,
-          size: '--',
-          updated: 'recently'
-        }));
+    this.recentModels$.next(mockModels);
+    this.recentDatasets$.next(mockDatasets);
 
-        this.recentModels$.next(displayModels);
-        this.recentDatasets$.next(displayDatasets);
-
-        // Update stats
-        const modelCount = artifacts.filter(a => a.type === 'model').length;
-        const datasetCount = artifacts.filter(a => a.type === 'dataset').length;
-        const codeCount = artifacts.filter(a => a.type === 'code').length;
-
-        this.quickStats = [
-          { label: 'Total Models', value: modelCount.toString(), change: '--', trend: 'up' },
-          { label: 'Total Datasets', value: datasetCount.toString(), change: '--', trend: 'up' },
-          { label: 'Total Code', value: codeCount.toString(), change: '--', trend: 'up' },
-          { label: 'Total Artifacts', value: artifacts.length.toString(), change: '--', trend: 'up' }
-        ];
-      },
-      error: (err: any) => {
-        console.error('Error fetching artifacts:', err);
-        // Keep default empty data on error
-      }
-    });
+    // Update stats with mock data
+    this.quickStats = [
+      { label: 'Total Models', value: '12', change: '+3', trend: 'up' },
+      { label: 'Total Datasets', value: '8', change: '+2', trend: 'up' },
+      { label: 'Total Code', value: '5', change: '+1', trend: 'up' },
+      { label: 'Total Artifacts', value: '25', change: '+6', trend: 'up' }
+    ];
   }
 
   browseModels(): void {
