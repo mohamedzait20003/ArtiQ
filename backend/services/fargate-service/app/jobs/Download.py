@@ -2,9 +2,8 @@
 Download and Upload Job
 Downloads artifact files from HuggingFace and uploads to S3
 """
-import logging
-import requests
 import time
+import logging
 from typing import Dict, Any
 
 # Configure logger for CloudWatch
@@ -24,21 +23,19 @@ class DownloadUploader:
     def download_and_upload(self, metadata) -> Dict[str, Any]:
         """
         Main method to download files from HuggingFace and upload to S3
-        
         Args:
             metadata: Metadata object containing artifact and HuggingFace info
-            
         Returns:
             dict: Result with success status and file information
         """
         start_time = time.time()
-        
+
         try:
             logger.info("[DOWNLOAD] Starting download and upload process")
             print("[DownloadUploader] Starting download and upload...")
-            
+
             artifact = metadata.artifact
-            
+
             # Validate artifact type
             if artifact.artifact_type.lower() != 'model':
                 logger.info(
@@ -50,7 +47,7 @@ class DownloadUploader:
                     "Only model artifacts are downloaded",
                     latency
                 )
-            
+
             # Get model info from metadata
             info = metadata.info
             if not info:
@@ -60,30 +57,31 @@ class DownloadUploader:
                     "No HuggingFace model info available",
                     latency
                 )
-            
+
             # First try: Sum up all file sizes from siblings
             total_size_bytes = 0
             siblings = getattr(info, 'siblings', [])
             files_with_size = []
-            
+
             for sibling in siblings:
                 rfilename = getattr(sibling, 'rfilename', '')
                 if not rfilename or rfilename.endswith('/'):
                     continue
-                    
+
                 # Check blob_id or lfs to see if size info might be in LFS
                 lfs_info = getattr(sibling, 'lfs', None)
                 if lfs_info and hasattr(lfs_info, 'size'):
                     size = lfs_info.size
                     total_size_bytes += size
                     files_with_size.append(rfilename)
-            
+
             if files_with_size:
                 logger.info(
-                    f"[DOWNLOAD] Summed size from {len(files_with_size)} LFS files: "
+                    f"[DOWNLOAD] Summed size from "
+                    f"{len(files_with_size)} LFS files: "
                     f"{total_size_bytes / (1024*1024):.2f} MB"
                 )
-            
+
             # Fallback: Use SafeTensors parameter count estimate
             if total_size_bytes == 0:
                 safetensors_info = getattr(info, 'safetensors', None)
@@ -97,7 +95,7 @@ class DownloadUploader:
                             f"{param_count:,} params = "
                             f"{total_size_bytes / (1024*1024):.2f} MB"
                         )
-            
+
             # If no size yet, try to get from repo metadata size field
             if total_size_bytes == 0:
                 repo_metadata = metadata.repo_metadata
@@ -114,19 +112,23 @@ class DownloadUploader:
                                 total_size_bytes = int(size_value)
                                 logger.info(
                                     f"[DOWNLOAD] Using size as bytes: "
-                                    f"{total_size_bytes / (1024*1024):.2f} MB"
+                                    f"{total_size_bytes / (1024*1024):.2f} "
+                                    f"MB"
                                 )
-                            # Handle if it's a string (e.g., "420 MB", "1.2 GB")
+                            # Handle if it's a string
                             elif isinstance(size_value, str):
                                 size_parts = size_value.strip().split()
                                 if len(size_parts) == 2:
                                     value = float(size_parts[0])
                                     unit = size_parts[1].upper()
                                     if unit in ['MB', 'M']:
-                                        total_size_bytes = int(value * 1024 * 1024)
+                                        total_size_bytes = int(
+                                            value * 1024 * 1024
+                                        )
                                     elif unit in ['GB', 'G']:
                                         total_size_bytes = int(
-                                            value * 1024 * 1024 * 1024
+                                            value * 1024 * 1024
+                                            * 1024
                                         )
                                     elif unit in ['KB', 'K']:
                                         total_size_bytes = int(value * 1024)
@@ -134,18 +136,19 @@ class DownloadUploader:
                                         total_size_bytes = int(value)
                                     logger.info(
                                         f"[DOWNLOAD] Parsed size: "
-                                        f"{total_size_bytes / (1024*1024):.2f} MB"
+                                        f"{total_size_bytes / (1024*1024):.2f}"
+                                        f"MB"
                                     )
                         except Exception as parse_error:
                             logger.warning(
-                                f"[DOWNLOAD] Failed to parse size '{size_value}': "
-                                f"{parse_error}"
+                                f"[DOWNLOAD] Failed to parse size "
+                                f"'{size_value}': {parse_error}"
                             )
-            
+
             # If still no size, count siblings that exist
             if total_size_bytes == 0:
                 siblings = getattr(info, 'siblings', [])
-                file_count = len([s for s in siblings 
+                file_count = len([s for s in siblings
                                  if getattr(s, 'rfilename', '')])
                 logger.info(
                     f"[DOWNLOAD] No size info available. "
@@ -156,17 +159,17 @@ class DownloadUploader:
                     f"Cannot determine model size ({file_count} files found)",
                     latency
                 )
-            
+
             # Convert to MB
             total_size_mb = total_size_bytes / (1024 * 1024)
             logger.info(
                 f"[DOWNLOAD] Total model size: {total_size_mb:.2f} MB"
             )
-            
+
             # Update the file_size in database
             artifact.file_size = int(total_size_bytes)
             artifact.save()
-            
+
             logger.info(
                 f"[DOWNLOAD] Updated artifact file_size to "
                 f"{total_size_mb:.2f} MB"
@@ -175,17 +178,17 @@ class DownloadUploader:
                 f"[DownloadUploader] Updated file size: "
                 f"{total_size_mb:.2f} MB"
             )
-            
+
             latency = time.time() - start_time
             logger.info(
                 f"[DOWNLOAD] Process complete (latency: {latency:.3f}s)"
             )
-            
+
             return self._create_success_result(
                 total_size_mb,
                 latency
             )
-            
+
         except Exception as e:
             logger.error(
                 f"[DOWNLOAD] Error during download/upload: {e}",
@@ -206,7 +209,7 @@ class DownloadUploader:
         print(
             f"[DownloadUploader] Success: {size_mb:.2f} MB"
         )
-        
+
         return {
             'job_name': 'download_upload',
             'success': True,
@@ -226,7 +229,7 @@ class DownloadUploader:
     ) -> Dict[str, Any]:
         """Create skip result"""
         print(f"[DownloadUploader] Skipped: {reason}")
-        
+
         return {
             'job_name': 'download_upload',
             'success': True,
@@ -246,7 +249,7 @@ class DownloadUploader:
     ) -> Dict[str, Any]:
         """Create error result"""
         print(f"[DownloadUploader] Error: {error_msg}")
-        
+
         return {
             'job_name': 'download_upload',
             'success': False,
@@ -263,10 +266,8 @@ class DownloadUploader:
 def download_and_upload_step(context):
     """
     Download artifact files and upload to S3
-    
     Args:
         context: Pipeline context containing metadata
-        
     Returns:
         dict: Result without metric_name (ignored by aggregate)
     """

@@ -4,6 +4,7 @@ Validates that artifact exists on HuggingFace and GitHub
 """
 import logging
 from app.bootstrap import get_gh_agent, get_hg_agent
+from app.models.Artifact_Model import Artifact_Model
 
 # Configure logger for CloudWatch
 logger = logging.getLogger(__name__)
@@ -30,11 +31,35 @@ def validate_artifact_step(context):
     if not hasattr(artifact, 'artifact_type'):
         logger.error("[VALIDATE] Artifact missing artifact_type")
         raise ValueError("Artifact missing artifact_type")
-    
+
     logger.info(
         f"[VALIDATE] Validating artifact: {artifact.name} "
         f"(type: {artifact.artifact_type})"
     )
+
+    # Validate artifact exists in database
+    if hasattr(artifact, 'id') and artifact.id:
+        logger.info(
+            f"[VALIDATE] Checking database for artifact ID: {artifact.id}"
+        )
+        db_artifact = Artifact_Model.get({'id': artifact.id})
+
+        if not db_artifact:
+            logger.error(
+                f"[VALIDATE] Artifact not found in database: {artifact.id}"
+            )
+            raise ValueError(
+                f"Artifact not found in database: {artifact.id}"
+            )
+
+        logger.info(
+            f"[VALIDATE] Artifact found in database: {artifact.id}"
+        )
+        print(f"[PIPELINE] Artifact exists in database: {artifact.id}")
+    else:
+        logger.warning(
+            "[VALIDATE] Artifact has no ID, skipping database check"
+        )
 
     # Validate HuggingFace model exists
     if artifact.artifact_type.lower() == 'model':

@@ -18,7 +18,8 @@ from app.jobs import (
     evaluate_bus_factor, evaluate_performance,
     evaluate_rampup, evaluate_size, evaluate_license,
     evaluate_availability, evaluate_code_quality,
-    evaluate_dataset_quality
+    evaluate_dataset_quality, evaluate_reviewedness,
+    evaluate_lineage, evaluate_tree_score
 )
 
 # Configure logging for CloudWatch
@@ -104,7 +105,7 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
             logger.info("Pipeline stages:")
             logger.info("  1. Validate Artifact")
             logger.info("  2. Fetch Metadata")
-            logger.info("  3. Parallel Evaluation (8 metrics + download)")
+            logger.info("  3. Parallel Evaluation (9 metrics + download)")
             logger.info("     - Bus Factor")
             logger.info("     - Performance Claims")
             logger.info("     - Ramp-up Time")
@@ -113,9 +114,12 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
             logger.info("     - Availability")
             logger.info("     - Code Quality")
             logger.info("     - Dataset Quality")
+            logger.info("     - Reviewedness")
             logger.info("     - Download & Upload (parallel)")
-            logger.info("  4. Aggregate Scores")
-            logger.info("  5. Save Ratings")
+            logger.info("  4. Lineage Extraction")
+            logger.info("  5. Tree Score Calculation")
+            logger.info("  6. Aggregate Scores")
+            logger.info("  7. Save Ratings")
 
             result = Pipeline(
                 validate_artifact_step,
@@ -129,8 +133,11 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
                     evaluate_availability,
                     evaluate_code_quality,
                     evaluate_dataset_quality,
+                    evaluate_reviewedness,
                     download_and_upload_step
                 ),
+                evaluate_lineage,
+                evaluate_tree_score,
                 aggregate_scores_step,
                 save_ratings_step
             ).start(artifact)
@@ -146,7 +153,7 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
             logger.info("Individual Scores:")
             for metric, score in result.get('scores', {}).items():
                 logger.info(f"  - {metric}: {score}")
-            
+
             total_duration = (datetime.now() - start_time).total_seconds()
             logger.info(f"Total Processing Time: {total_duration:.2f} seconds")
             logger.info("=" * 60)
@@ -188,7 +195,7 @@ def process_artifact(encrypted_artifact_id: str) -> dict:
         import traceback
         logger.error(traceback.format_exc())
         logger.error("=" * 60)
-        
+
         return {
             'success': False,
             'encrypted_artifact_id': encrypted_artifact_id,
@@ -216,14 +223,14 @@ def handler(event, context=None):
     logger.info("*" * 70)
     logger.info("*** FARGATE SERVICE HANDLER INVOKED ***")
     logger.info("*" * 70)
-    
+
     event_str = json.dumps(event) if isinstance(event, dict) else str(event)
     logger.info(f"Event Type: {type(event).__name__}")
     if len(event_str) > 200:
         logger.info(f"Event Data: {event_str[:200]}...")
     else:
         logger.info(f"Event Data: {event_str}")
-    
+
     if context:
         logger.info("Lambda Context Information:")
         request_id = getattr(context, 'aws_request_id', 'N/A')
@@ -274,7 +281,7 @@ def handler(event, context=None):
         if k not in ['ratings', 'error_type']
     }
     logger.info(f"Result Summary: {json.dumps(result_summary, indent=2)}")
-    
+
     return result
 
 

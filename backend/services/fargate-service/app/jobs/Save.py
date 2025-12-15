@@ -2,8 +2,10 @@
 Save Ratings Job
 Saves ratings to database
 """
+import uuid
 import logging
 from app.models.Rating_Model import Rating_Model
+from app.models.Artifact_Model import Artifact_Model
 
 # Configure logger for CloudWatch
 logger = logging.getLogger(__name__)
@@ -32,6 +34,27 @@ def save_ratings_step(context):
         print("[PIPELINE] Warning: No artifact found, skipping save")
         return aggregated_data
 
+    # Validate artifact exists in database
+    logger.info(
+        f"[SAVE] Validating artifact existence in database: {artifact.id}"
+    )
+    db_artifact = Artifact_Model.get({'id': artifact.id})
+
+    if not db_artifact:
+        logger.error(
+            f"[SAVE] Artifact not found in database: {artifact.id}"
+        )
+        print(
+            f"[PIPELINE] Error: Artifact {artifact.id} not found in database"
+        )
+        raise ValueError(
+            f"Artifact not found in database: {artifact.id}"
+        )
+
+    logger.info(
+        f"[SAVE] Artifact validated in database: {artifact.id}"
+    )
+
     logger.info(
         f"[SAVE] Saving ratings for artifact: {artifact.id} ({artifact.name})"
     )
@@ -45,13 +68,21 @@ def save_ratings_step(context):
                 'latency': latencies.get(metric_name, 0.0)
             }
 
-        # Generate rating ID (use artifact_id as rating id for uniqueness)
-        rating_id = f"rating_{artifact.id}"
+        # Generate unique rating ID
+        rating_id = str(uuid.uuid4())
 
         # Log which metrics were evaluated
         logger.info(f"[SAVE] Available metrics: {list(scores.keys())}")
         logger.info(f"[SAVE] Scores values: {scores}")
         
+        # Log lineage specifically
+        lineage_data = scores.get('lineage', {'parents': []})
+        logger.info(f"[SAVE] Lineage data: {lineage_data}")
+        logger.info(
+            f"[SAVE] Lineage parent count: "
+            f"{len(lineage_data.get('parents', []))}"
+        )
+
         # Create or update rating with evaluated metrics
         # All metrics in parallel pipeline should be present
         rating = Rating_Model(
@@ -69,8 +100,9 @@ def save_ratings_step(context):
             dataset_quality=metric_dict('dataset_quality', 0.0),
             code_quality=metric_dict('code_quality', 0.0),
             reproducibility={'value': 0.0, 'latency': 0.0},
-            reviewedness={'value': 0.0, 'latency': 0.0},
-            tree_score={'value': 0.0, 'latency': 0.0},
+            reviewedness=metric_dict('reviewedness', -1.0),
+            tree_score=metric_dict('tree_score', 0.0),
+            lineage_graph=scores.get('lineage', {'parents': []}),
             size_score={
                 'value': scores.get('size', {
                     'raspberry_pi': 0.0,
@@ -84,6 +116,9 @@ def save_ratings_step(context):
 
         rating.save()
         logger.info(f"[SAVE] Ratings saved for artifact {artifact.id}")
+        logger.info(
+            f"[SAVE] Saved lineage_graph: {rating.lineage_graph}"
+        )
         print(f"[PIPELINE] Ratings saved for artifact {artifact.id}")
 
         # Rating is now accessible via artifact.rating() relationship

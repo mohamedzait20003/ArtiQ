@@ -56,6 +56,7 @@ class Rating_Model(Model):
         reviewedness: Optional[Dict[str, float]] = None,
         tree_score: Optional[Dict[str, float]] = None,
         size_score: Optional[Dict[str, Any]] = None,
+        lineage_graph: Optional[Dict[str, Any]] = None,
         **kwargs
     ):
         """
@@ -76,6 +77,7 @@ class Rating_Model(Model):
             reviewedness: Peer review coverage {value, latency}
             tree_score: Dependency health {value, latency}
             size_score: Size suitability with nested device scores
+            lineage_graph: Lineage graph with parent models
         """
         self.id = id
         self.artifact_id = artifact_id
@@ -107,6 +109,7 @@ class Rating_Model(Model):
             },
             "latency": 0.0
         }
+        self.lineage_graph = lineage_graph or {"parents": []}
 
         super().__init__(**kwargs)
 

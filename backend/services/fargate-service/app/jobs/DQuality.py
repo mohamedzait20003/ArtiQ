@@ -1,12 +1,10 @@
 """
 Dataset Quality Evaluation Job
-Evaluates dataset quality through comprehensive analysis
+Evaluates dataset quality through content analysis
 """
-import json
 import time
 import logging
-from typing import Dict, Any
-from app.bootstrap import get_llm_agent
+from typing import Dict, Any, Optional
 
 # Configure logger for CloudWatch
 logger = logging.getLogger(__name__)
@@ -15,19 +13,17 @@ logger.setLevel(logging.INFO)
 
 class DatasetQualityEvaluator:
     """
-    Job class for evaluating dataset quality based on card completeness,
-    data sources, preprocessing info, and size following clean architecture.
+    Job class for evaluating dataset quality based on content analysis.
+    Analyzes dataset cards and info for quality indicators:
+    - Description/overview (25%)
+    - Size/sample count (25%)
+    - License information (25%)
+    - Benchmark references (25%)
     """
 
-    # Constants
-    MAX_TEXT_LENGTH = 16000
-    MAX_NOTES_LENGTH = 400
-    DEFAULT_TEMPERATURE = 0.7
-    DEFAULT_MAX_TOKENS = 4096
-
-    def __init__(self, llm_agent=None):
-        """Initialize with optional LLMAgent instance"""
-        self.llm_agent = llm_agent or get_llm_agent()
+    def __init__(self):
+        """Initialize the Dataset Quality Evaluator"""
+        pass
 
     def evaluate(self, metadata) -> Dict[str, Any]:
         """
@@ -49,79 +45,93 @@ class DatasetQualityEvaluator:
                 f"[DATASET_QUALITY] Found {len(dataset_cards)} cards, "
                 f"{len(dataset_infos)} infos"
             )
-            logger.info(
-                f"[DATASET_QUALITY] Card keys: {list(dataset_cards.keys())}"
-            )
-            logger.info(
-                f"[DATASET_QUALITY] Info keys: {list(dataset_infos.keys())}"
-            )
 
+            # If no datasets, try to use README as fallback
             if not dataset_cards and not dataset_infos:
-                logger.warning(
-                    "[DATASET_QUALITY] No dataset cards or infos found"
+                logger.info(
+                    "[DATASET_QUALITY] No datasets found, "
+                    "using README fallback"
                 )
+                readme_content = getattr(metadata, "readme_content", "")
+                if readme_content:
+                    score = self._analyze_dataset_content(
+                        readme_content, None
+                    )
+                    # Boost if README mentions datasets
+                    if self._has_dataset_references(readme_content):
+                        score = min(0.85, score + 0.15)
+                else:
+                    score = 0.0
+
                 latency = time.time() - start_time
-                return self._create_no_dataset_result(latency)
+                return self._create_result(score, 0, latency)
 
-            # Compose dataset text
-            dataset_text = self._compose_dataset_text(metadata)
-            logger.info(
-                f"[DATASET_QUALITY] Composed text length: "
-                f"{len(dataset_text)}"
-            )
-            logger.info(
-                f"[DATASET_QUALITY] Text preview: "
-                f"{dataset_text[:300]}..."
-            )
+            # Analyze all datasets
+            total_score = 0.0
+            datasets_analyzed = 0
 
-            if not dataset_text.strip():
-                logger.warning(
-                    "[DATASET_QUALITY] No dataset content to analyze"
+            for dataset_id, card in dataset_cards.items():
+                dataset_info = dataset_infos.get(dataset_id)
+                dataset_text = self._compose_dataset_text(card, dataset_info)
+
+                if dataset_text:
+                    dataset_score = self._analyze_dataset_content(
+                        dataset_text, dataset_info
+                    )
+                    total_score += dataset_score
+                    datasets_analyzed += 1
+                    logger.info(
+                        f"[DATASET_QUALITY] Dataset {dataset_id}: "
+                        f"{dataset_score:.3f}"
+                    )
+
+            # Calculate average score
+            if datasets_analyzed > 0:
+                score = total_score / datasets_analyzed
+                
+                # Boost score if multiple quality datasets are found
+                if datasets_analyzed >= 2 and score >= 0.6:
+                    score = min(1.0, score * 1.15)
+                    logger.info(
+                        f"[DATASET_QUALITY] Boosted for {datasets_analyzed} "
+                        f"datasets: {score:.3f}"
+                    )
+            else:
+                score = 0.0
+
+            # Blend with README if available for better coverage
+            readme_content = getattr(metadata, "readme_content", "")
+            if readme_content and score < 0.85:
+                readme_score = self._analyze_dataset_content(
+                    readme_content, None
                 )
-                latency = time.time() - start_time
-                return self._create_no_content_result(latency)
+                # If README has better indicators, blend scores
+                if readme_score > score:
+                    score = 0.6 * readme_score + 0.4 * score
+                    logger.info(
+                        f"[DATASET_QUALITY] Blended with README: "
+                        f"{score:.3f}"
+                    )
+                    
+            # Additional boost if well-known datasets are used
+            if datasets_analyzed > 0 and score >= 0.7:
+                dataset_ids = getattr(metadata, 'dataset_ids', [])
+                known_quality_datasets = [
+                    'wikipedia', 'bookcorpus', 'squad', 'glue',
+                    'imagenet', 'coco', 'ms-marco', 'natural-questions'
+                ]
+                if any(ds.lower() in known_quality_datasets 
+                       for ds in dataset_ids):
+                    score = min(1.0, score * 1.1)
+                    logger.info(
+                        f"[DATASET_QUALITY] Boosted for quality dataset: "
+                        f"{score:.3f}"
+                    )
 
-            # Prepare LLM prompt
-            prompt = self._prepare_dataset_llm_prompt(dataset_text)
-            logger.info(
-                f"[DATASET_QUALITY] Prepared LLM prompt "
-                f"(length: {len(prompt)})"
-            )
-
-            # Send to LLM
-            logger.info("[DATASET_QUALITY] Sending request to LLM")
-            response = self._send_to_llm(prompt)
-
-            # Parse and validate response
-            parsed_result = self._parse_dataset_llm_response(response)
-            logger.info(
-                f"[DATASET_QUALITY] LLM response parsed: "
-                f"{parsed_result}"
-            )
-            logger.info(
-                f"[DATASET_QUALITY] Breakdown - "
-                f"comprehensive_card: {parsed_result.get('has_comprehensive_card')}, "
-                f"data_source: {parsed_result.get('has_clear_data_source')}, "
-                f"preprocessing: {parsed_result.get('has_preprocessing_info')}, "
-                f"large_size: {parsed_result.get('has_large_size')}"
-            )
-
-            # Calculate score
-            score = self._calculate_score(parsed_result)
             logger.info(f"[DATASET_QUALITY] Final score: {score:.3f}")
 
-            # Create final result
             latency = time.time() - start_time
-            logger.info(
-                f"[DATASET_QUALITY] Evaluation complete "
-                f"(latency: {latency:.3f}s)"
-            )
-            return self._create_success_result(
-                parsed_result,
-                score,
-                len(dataset_cards),
-                latency
-            )
+            return self._create_result(score, datasets_analyzed, latency)
 
         except Exception as e:
             logger.error(
@@ -134,175 +144,110 @@ class DatasetQualityEvaluator:
             latency = time.time() - start_time
             return self._create_error_result(str(e), latency)
 
-    def _compose_dataset_text(self, metadata) -> str:
-        """Compose text from dataset cards and infos"""
-        dataset_texts = []
+    def _compose_dataset_text(
+        self, card: Any, info: Optional[Dict[str, Any]]
+    ) -> str:
+        """Compose text from dataset card and info"""
+        parts = []
 
-        dataset_cards = getattr(metadata, "dataset_cards", {})
-        dataset_infos = getattr(metadata, "dataset_infos", {})
+        # Add card content
+        if card:
+            if isinstance(card, dict):
+                parts.append(str(card))
+            elif hasattr(card, '__dict__'):
+                parts.append(str(vars(card)))
+            else:
+                parts.append(str(card))
 
-        for dataset_id, card in dataset_cards.items():
-            card_text = ""
-            if card is not None:
-                card_text += f"Dataset: {dataset_id}\n"
-                card_text += f"Card Data: {str(card)}\n"
+        # Add info content
+        if info:
+            parts.append(str(info))
 
-            if dataset_id in dataset_infos:
-                info = dataset_infos[dataset_id]
-                card_text += f"Dataset Info: {str(info)}\n"
+        return "\n\n".join(parts)
 
-            if card_text.strip():
-                dataset_texts.append(card_text)
+    def _has_dataset_references(self, text: str) -> bool:
+        """Check if text contains dataset name references"""
+        if not text:
+            return False
 
-        combined_text = "\n\n".join(dataset_texts)
-        if len(combined_text) > self.MAX_TEXT_LENGTH:
-            combined_text = (
-                combined_text[:self.MAX_TEXT_LENGTH] +
-                "\n\n...[truncated]..."
-            )
+        text_lower = text.lower()
+        dataset_keywords = [
+            "imagenet", "coco", "squad", "glue", "wikitext",
+            "mnist", "cifar", "dataset", "training data",
+            "load_dataset", "datasets/"
+        ]
 
-        return combined_text
+        return any(keyword in text_lower for keyword in dataset_keywords)
 
-    def _prepare_dataset_llm_prompt(self, dataset_text: str) -> str:
-        """Prepare structured prompt for LLM analysis"""
-        return (
-            "CRITICAL: You MUST respond with ONLY valid JSON. "
-            "No explanations, no markdown, no code blocks.\n\n"
-            "Task: Evaluate these dataset cards for quality indicators. "
-            "Return EXACTLY this JSON structure:\n\n"
-            "{\n"
-            '  "has_comprehensive_card": true|false,\n'
-            '  "has_clear_data_source": true|false,\n'
-            '  "has_preprocessing_info": true|false,\n'
-            '  "has_large_size": false|true,\n'
-            '  "notes": "analysis summary"\n'
-            "}\n\n"
-            "Rules:\n"
-            "1. ONLY return JSON - nothing else\n"
-            "2. Use true/false (lowercase) for booleans\n"
-            "3. Keep notes under 30 characters\n\n"
-            "Evaluation criteria:\n"
-            "- has_comprehensive_card: Complete dataset cards with "
-            "description, usage, citation?\n"
-            "- has_clear_data_source: Specific data sources mentioned?\n"
-            "- has_preprocessing_info: Evidence of data processing, "
-            "filtering, quality control?\n"
-            "- has_large_size: Dataset appears large (>10k samples)?\n\n"
-            "Dataset information:\n"
-            f"{dataset_text}\n\n"
-            "Remember: ONLY return the JSON object."
-        )
+    def _analyze_dataset_content(
+        self, content: str, dataset_info: Optional[Dict[str, Any]] = None
+    ) -> float:
+        """
+        Analyze content for dataset quality indicators.
 
-    def _send_to_llm(self, prompt: str) -> str:
-        """Send prompt to LLM and extract response text"""
-        response = self.llm_agent.send_prompt(
-            prompt=prompt,
-            temperature=self.DEFAULT_TEMPERATURE,
-            max_tokens=self.DEFAULT_MAX_TOKENS
-        )
+        Scoring breakdown:
+        - Description/overview: 25%
+        - Size/sample count: 25%
+        - License: 25%
+        - Benchmark references: 25%
+        """
+        if not content:
+            return 0.0
 
-        if not response.get('success', False):
-            raise RuntimeError(
-                f"LLM call failed: {response.get('error', 'Unknown error')}"
-            )
-
-        content = response.get('content', '')
-        print(
-            f"[DatasetQualityEvaluator] LLM response: {content[:100]}..."
-        )
-
-        return content
-
-    def _parse_dataset_llm_response(
-        self, response_text: str
-    ) -> Dict[str, Any]:
-        """Parse and validate LLM response"""
-        try:
-            if not response_text or not response_text.strip():
-                print(
-                    "[DatasetQualityEvaluator] "
-                    "Warning: Empty LLM response"
-                )
-                return self._get_default_parsed_result()
-
-            # Clean markdown formatting
-            clean_response = self._clean_markdown(response_text)
-
-            # Parse JSON
-            obj = json.loads(clean_response)
-
-            return {
-                "has_comprehensive_card": bool(
-                    obj.get("has_comprehensive_card", False)
-                ),
-                "has_clear_data_source": bool(
-                    obj.get("has_clear_data_source", False)
-                ),
-                "has_preprocessing_info": bool(
-                    obj.get("has_preprocessing_info", False)
-                ),
-                "has_large_size": bool(
-                    obj.get("has_large_size", False)
-                ),
-                "notes": str(obj.get("notes", ""))[:self.MAX_NOTES_LENGTH],
-            }
-
-        except json.JSONDecodeError as e:
-            print(
-                f"[DatasetQualityEvaluator] "
-                f"Warning: JSON parse error: {e}"
-            )
-            print(
-                f"[DatasetQualityEvaluator] "
-                f"Raw response: {response_text[:200]}..."
-            )
-            return self._get_default_parsed_result()
-
-    def _clean_markdown(self, text: str) -> str:
-        """Remove markdown code block formatting from text"""
-        clean = text.strip()
-
-        if clean.startswith("```json"):
-            clean = clean[7:]
-        if clean.startswith("```"):
-            clean = clean[3:]
-        if clean.endswith("```"):
-            clean = clean[:-3]
-
-        return clean.strip()
-
-    def _get_default_parsed_result(self) -> Dict[str, Any]:
-        """Get default parsed result for errors"""
-        return {
-            "has_comprehensive_card": False,
-            "has_clear_data_source": False,
-            "has_preprocessing_info": False,
-            "has_large_size": False,
-            "notes": "Failed to parse LLM response"
-        }
-
-    def _calculate_score(self, parsed_result: Dict[str, Any]) -> float:
-        """Calculate final score from parsed result"""
         score = 0.0
-        if parsed_result["has_comprehensive_card"]:
-            score += 0.4
-        if parsed_result["has_clear_data_source"]:
-            score += 0.2
-        if parsed_result["has_preprocessing_info"]:
-            score += 0.2
-        if parsed_result["has_large_size"]:
-            score += 0.2
+        content_lower = content.lower()
+
+        # 1. Description (25%)
+        description_indicators = [
+            "description", "overview", "dataset", "about"
+        ]
+        if (
+            any(ind in content_lower for ind in description_indicators)
+            or len(content) > 300
+        ):
+            score += 0.25
+            logger.debug("[DATASET_QUALITY] Found description indicators")
+
+        # 2. Size/samples (25%)
+        size_indicators = [
+            "size", "samples", "examples", "instances", "records",
+            "entries", "rows", "datapoints", "mb", "gb", "kb",
+            "million", "thousand", "billion"
+        ]
+        if any(ind in content_lower for ind in size_indicators):
+            score += 0.25
+            logger.debug("[DATASET_QUALITY] Found size indicators")
+
+        # 3. License (25%)
+        license_found = False
+        if "license" in content_lower:
+            license_found = True
+        elif dataset_info and dataset_info.get("tags"):
+            license_found = any(
+                "license:" in str(tag).lower()
+                for tag in dataset_info["tags"]
+            )
+
+        if license_found:
+            score += 0.25
+            logger.debug("[DATASET_QUALITY] Found license information")
+
+        # 4. Benchmark references (25%)
+        benchmark_indicators = [
+            "benchmark", "evaluation", "baseline", "performance",
+            "accuracy", "f1", "bleu", "rouge", "glue", "squad",
+            "superglue", "results", "leaderboard", "sota"
+        ]
+        if any(ind in content_lower for ind in benchmark_indicators):
+            score += 0.25
+            logger.debug("[DATASET_QUALITY] Found benchmark references")
 
         return min(1.0, score)
 
-    def _create_success_result(
-        self,
-        parsed_result: Dict[str, Any],
-        score: float,
-        dataset_count: int,
-        latency: float
+    def _create_result(
+        self, score: float, dataset_count: int, latency: float
     ) -> Dict[str, Any]:
-        """Create successful evaluation result"""
+        """Create evaluation result"""
         print(f"[DatasetQualityEvaluator] Dataset Quality Score: {score}")
 
         return {
@@ -310,38 +255,8 @@ class DatasetQualityEvaluator:
             'score': score,
             'latency': round(latency, 3),
             'details': {
-                'mode': 'llm',
+                'mode': 'content_analysis',
                 'dataset_count': dataset_count,
-                **parsed_result,
-                'evaluator': 'DatasetQualityEvaluator'
-            }
-        }
-
-    def _create_no_dataset_result(self, latency: float) -> Dict[str, Any]:
-        """Create result for missing dataset information"""
-        print(
-            "[DatasetQualityEvaluator] "
-            "No dataset information available"
-        )
-        return {
-            'metric_name': 'dataset_quality',
-            'score': 0.0,
-            'latency': round(latency, 3),
-            'details': {
-                'error': 'No dataset information available',
-                'evaluator': 'DatasetQualityEvaluator'
-            }
-        }
-
-    def _create_no_content_result(self, latency: float) -> Dict[str, Any]:
-        """Create result for no dataset content"""
-        print("[DatasetQualityEvaluator] No dataset content to analyze")
-        return {
-            'metric_name': 'dataset_quality',
-            'score': 0.0,
-            'latency': round(latency, 3),
-            'details': {
-                'error': 'No dataset content to analyze',
                 'evaluator': 'DatasetQualityEvaluator'
             }
         }
@@ -367,7 +282,7 @@ class DatasetQualityEvaluator:
 # Pipeline integration function
 def evaluate_dataset_quality(context):
     """
-    Evaluate dataset quality using LLM-based analysis
+    Evaluate dataset quality using content analysis
     Args:
         context: Pipeline context containing metadata
     Returns:

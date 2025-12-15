@@ -18,7 +18,8 @@ from app.jobs import (
     artifact_by_regex_job,
     model_artifact_rate_job,
     artifact_cost_job,
-    artifact_license_check_job
+    artifact_license_check_job,
+    artifact_lineage_get_job
 )
 
 
@@ -331,18 +332,36 @@ class ArtifactController:
             if status_code == 200:
                 return JSONResponse(content=response_data, status_code=200)
             elif status_code == 404:
-                raise HTTPException(status_code=404, detail=response_data.get('errorMessage', 'Artifact does not exist'))
+                raise HTTPException(
+                    status_code=404,
+                    detail=response_data.get(
+                        'errorMessage', 'Artifact does not exist'
+                    )
+                )
             elif status_code == 400:
-                raise HTTPException(status_code=400, detail=response_data.get('errorMessage', 'Invalid request'))
+                raise HTTPException(
+                    status_code=400,
+                    detail=response_data.get(
+                        'errorMessage', 'Invalid request'
+                    )
+                )
             else:
-                raise HTTPException(status_code=500, detail=response_data.get('errorMessage', 'Internal server error'))
+                raise HTTPException(
+                    status_code=500,
+                    detail=response_data.get(
+                        'errorMessage', 'Internal server error'
+                    )
+                )
         except HTTPException:
             raise
         except Exception as e:
             print(f"Error in artifact_cost controller: {str(e)}")
             raise HTTPException(
                 status_code=500,
-                detail=f"The artifact cost calculator encountered an error: {str(e)}"
+                detail=(
+                    f"The artifact cost calculator encountered "
+                    f"an error: {str(e)}"
+                )
             )
 
     async def artifact_by_name_get(
@@ -373,9 +392,55 @@ class ArtifactController:
     ):
         """Retrieve the lineage graph for this artifact (BASELINE)"""
         print(f"GET /artifact/model/{id}/lineage called")
-        # TODO: Implement logic
-        raise HTTPException(
-            status_code=501, detail="Not implemented")
+        
+        try:
+            # Call the lambda handler
+            response_data, status_code = artifact_lineage_get_job(
+                event={'artifact_id': id},
+                context=None
+            )
+            
+            # Return response based on status code
+            if status_code == 200:
+                return JSONResponse(
+                    content=response_data, status_code=200
+                )
+            elif status_code == 404:
+                raise HTTPException(
+                    status_code=404,
+                    detail=response_data.get(
+                        'errorMessage',
+                        'Artifact not found'
+                    )
+                )
+            elif status_code == 400:
+                raise HTTPException(
+                    status_code=400,
+                    detail=response_data.get(
+                        'errorMessage',
+                        'Lineage metadata is malformed'
+                    )
+                )
+            else:
+                raise HTTPException(
+                    status_code=500,
+                    detail=response_data.get(
+                        'errorMessage',
+                        'Internal server error'
+                    )
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(
+                f"Error in artifact_lineage_get controller: {str(e)}"
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"The lineage request is malformed: {str(e)}"
+                )
+            )
 
     async def artifact_license_check(
         self,
@@ -386,7 +451,10 @@ class ArtifactController:
         Assess license compatibility for fine-tune and
         inference usage (BASELINE)
         """
-        print(f"POST /artifact/model/{id}/license-check called with github_url={request.github_url}")
+        print(
+            f"POST /artifact/model/{id}/license-check called with "
+            f"github_url={request.github_url}"
+        )
         
         try:
             # Call the lambda handler
@@ -397,18 +465,44 @@ class ArtifactController:
                 },
                 context=None
             )
-            
+
             # Return response based on status code
             if status_code == 200:
-                return JSONResponse(content=response_data, status_code=200)
+                return JSONResponse(
+                    content=response_data, status_code=200
+                )
             elif status_code == 404:
-                raise HTTPException(status_code=404, detail=response_data.get('errorMessage', 'Artifact or GitHub project could not be found'))
+                raise HTTPException(
+                    status_code=404,
+                    detail=response_data.get(
+                        'errorMessage',
+                        'Artifact or GitHub project could not be found'
+                    )
+                )
             elif status_code == 400:
-                raise HTTPException(status_code=400, detail=response_data.get('errorMessage', 'License check request is malformed'))
+                raise HTTPException(
+                    status_code=400,
+                    detail=response_data.get(
+                        'errorMessage',
+                        'License check request is malformed'
+                    )
+                )
             elif status_code == 502:
-                raise HTTPException(status_code=502, detail=response_data.get('errorMessage', 'External license information could not be retrieved'))
+                raise HTTPException(
+                    status_code=502,
+                    detail=response_data.get(
+                        'errorMessage',
+                        'External license information could not be retrieved'
+                    )
+                )
             else:
-                raise HTTPException(status_code=500, detail=response_data.get('errorMessage', 'Internal server error'))
+                raise HTTPException(
+                    status_code=500,
+                    detail=response_data.get(
+                        'errorMessage',
+                        'Internal server error'
+                    )
+                )
         except HTTPException:
             raise
         except Exception as e:
