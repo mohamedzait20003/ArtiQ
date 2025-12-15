@@ -1,25 +1,229 @@
-<div class="p-6">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold">Users</h1>
-    <div class="text-sm text-gray-500">List of users (UI-only)</div>
+<div class="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 py-8">
+  <!-- Animated Background -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 right-0 w-96 h-96 bg-linear-to-br from-red-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 left-0 w-96 h-96 bg-linear-to-tl from-pink-500/10 to-rose-500/10 rounded-full blur-3xl"></div>
   </div>
 
-  <div class="bg-white rounded-lg shadow p-4">
-    <table class="w-full text-sm">
-      <thead>
-        <tr class="text-left text-gray-600 border-b">
-          <th class="py-2">ID</th>
-          <th class="py-2">Email</th>
-          <th class="py-2">Role</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let u of users" class="border-b hover:bg-gray-50">
-          <td class="py-2">{{ u.id }}</td>
-          <td class="py-2">{{ u.email }}</td>
-          <td class="py-2">{{ u.role }}</td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-4xl font-bold text-white mb-2">User Management</h1>
+      <p class="text-slate-400">Manage user accounts, roles, and permissions</p>
+    </div>
+
+    <!-- Controls -->
+    <div class="bg-slate-800/50 backdrop-blur-xl rounded-xl shadow-lg border border-slate-700/50 p-6 mb-8">
+      <div class="flex flex-col sm:flex-row gap-4">
+        <!-- Search -->
+        <div class="flex-1">
+          <div class="relative">
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              (input)="onSearchChange()"
+              placeholder="Search users by name..."
+              class="w-full px-4 py-3 pl-11 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all"
+            />
+            <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Sort -->
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-slate-400 whitespace-nowrap">Sort by:</span>
+          <select
+            [(ngModel)]="sortBy"
+            (change)="onSortChange(sortBy)"
+            class="px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all"
+          >
+            @for (option of sortOptions; track option) {
+              <option [value]="option">{{ option | titlecase }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- View Toggle -->
+        <button
+          (click)="toggleViewMode()"
+          class="px-4 py-3 bg-linear-to-r from-red-500/20 to-purple-500/20 hover:from-red-500/30 hover:to-purple-500/30 border border-red-400/30 rounded-lg text-red-300 font-medium transition-all"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            @if (viewMode === 'grid') {
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            } @else {
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+            }
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Users Grid/List -->
+    @if (filteredUsers$ | async; as users) {
+      @if (users.length > 0) {
+        @if (viewMode === 'grid') {
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for (user of users; track user.id) {
+              <div class="bg-slate-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-slate-700/50 p-6 hover:shadow-xl hover:border-red-500/30 transition-all group">
+                <div class="flex items-start justify-between mb-4">
+                  <div class="flex-1">
+                    <h3 class="text-xl font-bold text-white mb-1 group-hover:text-red-400 transition-colors">{{ user.name }}</h3>
+                    <p class="text-sm text-slate-400">{{ user.email }}</p>
+                  </div>
+                  <div [class]="'px-3 py-1 rounded-full text-xs font-medium border ' + getRoleBadgeClass(user.role)">
+                    {{ user.role | titlecase }}
+                  </div>
+                </div>
+
+                <div class="flex gap-2 mt-4 pt-4 border-t border-slate-700/50">
+                  <button
+                    (click)="openEditModal(user)"
+                    class="flex-1 px-4 py-2 bg-linear-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 border border-blue-400/30 rounded-lg text-blue-300 font-medium transition-all"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    (click)="openDeleteModal(user)"
+                    class="flex-1 px-4 py-2 bg-linear-to-r from-red-500/20 to-pink-500/20 hover:from-red-500/30 hover:to-pink-500/30 border border-red-400/30 rounded-lg text-red-300 font-medium transition-all"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="bg-slate-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-slate-700/50 overflow-hidden">
+            <div class="divide-y divide-slate-700/50">
+              @for (user of users; track user.id) {
+                <div class="p-6 hover:bg-slate-700/30 transition-all group">
+                  <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                      <div class="flex items-center gap-4">
+                        <div>
+                          <h3 class="text-lg font-bold text-white group-hover:text-red-400 transition-colors">{{ user.name }}</h3>
+                          <p class="text-sm text-slate-400 mt-1">{{ user.email }}</p>
+                        </div>
+                        <div [class]="'px-3 py-1 rounded-full text-xs font-medium border ' + getRoleBadgeClass(user.role)">
+                          {{ user.role | titlecase }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="flex gap-2 ml-4">
+                      <button
+                        (click)="openEditModal(user)"
+                        class="px-4 py-2 bg-linear-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 border border-blue-400/30 rounded-lg text-blue-300 font-medium transition-all"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        (click)="openDeleteModal(user)"
+                        class="px-4 py-2 bg-linear-to-r from-red-500/20 to-pink-500/20 hover:from-red-500/30 hover:to-pink-500/30 border border-red-400/30 rounded-lg text-red-300 font-medium transition-all"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      } @else {
+        <div class="bg-slate-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-slate-700/50 p-12 text-center">
+          <svg class="w-16 h-16 mx-auto text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>
+          <h3 class="text-xl font-semibold text-slate-300 mb-2">No Users Found</h3>
+          <p class="text-slate-500">Try adjusting your search or filters</p>
+        </div>
+      }
+    }
   </div>
 </div>
+
+<!-- Edit Modal -->
+@if (showEditModal && editingUser) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" (click)="closeEditModal()">
+    <div class="bg-slate-800 rounded-xl shadow-2xl border border-slate-700 max-w-md w-full p-6" (click)="$event.stopPropagation()">
+      <h3 class="text-2xl font-bold text-white mb-4">Edit User</h3>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Name</label>
+          <input
+            type="text"
+            [(ngModel)]="editingUser.name"
+            class="w-full px-4 py-2 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Email</label>
+          <input
+            type="email"
+            [(ngModel)]="editingUser.email"
+            class="w-full px-4 py-2 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Role</label>
+          <select
+            [(ngModel)]="editingUser.role"
+            class="w-full px-4 py-2 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50"
+          >
+            <option value="Admin">Admin</option>
+            <option value="Manager">Manager</option>
+            <option value="Visitor">Visitor</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button
+          (click)="saveUser()"
+          class="flex-1 px-4 py-2 bg-linear-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-medium rounded-lg transition-all"
+        >
+          Save Changes
+        </button>
+        <button
+          (click)="closeEditModal()"
+          class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-all"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteModal && userToDelete) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" (click)="closeDeleteModal()">
+    <div class="bg-slate-800 rounded-xl shadow-2xl border border-slate-700 max-w-md w-full p-6" (click)="$event.stopPropagation()">
+      <h3 class="text-2xl font-bold text-white mb-4">Delete User</h3>
+      <p class="text-slate-300 mb-6">
+        Are you sure you want to delete <strong class="text-red-400">{{ userToDelete.name }}</strong>? This action cannot be undone.
+      </p>
+
+      <div class="flex gap-3">
+        <button
+          (click)="confirmDelete()"
+          class="flex-1 px-4 py-2 bg-linear-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-medium rounded-lg transition-all"
+        >
+          Delete
+        </button>
+        <button
+          (click)="closeDeleteModal()"
+          class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-all"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+}

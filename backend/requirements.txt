@@ -13,8 +13,10 @@ pymongo==4.6.1
 pymongo[srv]==4.6.1
 
 # Security
+PyJWT==2.8.0
 bcrypt==4.1.2
 cryptography==43.0.3
+
 
 # Data generation
 faker==30.8.2

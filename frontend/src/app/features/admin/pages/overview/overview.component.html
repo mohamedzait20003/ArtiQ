@@ -1,26 +1,153 @@
-<div class="p-6">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold">Admin Overview</h1>
-    <div class="text-sm text-gray-500">UI-only initial dashboard for administrators</div>
+<div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+  <!-- Animated Background Elements -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-red-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tl from-pink-500/10 to-rose-500/10 rounded-full blur-3xl"></div>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <div class="bg-white rounded-lg shadow p-4">
-      <p class="text-sm text-gray-500">Total Users</p>
-      <p class="text-2xl font-bold">2</p>
-    </div>
-    <div class="bg-white rounded-lg shadow p-4">
-      <p class="text-sm text-gray-500">Active Models</p>
-      <p class="text-2xl font-bold">12</p>
-    </div>
-    <div class="bg-white rounded-lg shadow p-4">
-      <p class="text-sm text-gray-500">Pending Requests</p>
-      <p class="text-2xl font-bold">0</p>
+  <!-- Admin Header -->
+  <div class="relative z-10 bg-slate-800/50 border-b border-slate-700/50 backdrop-blur-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="flex items-center space-x-3 mb-2">
+            <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/50">
+              <span class="text-white font-bold text-lg">A</span>
+            </div>
+            <h1 class="text-3xl font-bold text-white">Admin Overview</h1>
+          </div>
+          <p class="mt-2 text-slate-400">Manage users, resources, and platform settings</p>
+        </div>
+        <div class="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-red-500/20 to-purple-500/20 rounded-lg border border-red-400/30 backdrop-blur-sm">
+          <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <span class="text-sm font-medium text-red-300">Administrator</span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="mt-8 bg-white rounded-lg shadow p-4">
-    <h2 class="text-lg font-semibold mb-3">Recent activity</h2>
-    <p class="text-sm text-gray-600">No activity to show (UI-only)</p>
+  <!-- Main Content -->
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="bg-slate-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-slate-700/50 p-6 hover:shadow-xl hover:border-slate-600/50 transition-all">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-slate-400 font-medium uppercase tracking-wide">Total Users</p>
+            <p class="text-4xl font-bold text-white mt-2">{{ totalUsers }}</p>
+            <p class="text-xs text-slate-500 mt-2">Active accounts</p>
+          </div>
+          <div class="w-14 h-14 bg-gradient-to-br from-red-500/20 to-purple-500/20 rounded-xl flex items-center justify-center border border-red-500/30">
+            <svg class="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-slate-700/50 p-6 hover:shadow-xl hover:border-slate-600/50 transition-all">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-slate-400 font-medium uppercase tracking-wide">Total Datasets</p>
+            <p class="text-4xl font-bold text-white mt-2">{{ totalDatasets }}</p>
+            <p class="text-xs text-slate-500 mt-2">Available datasets</p>
+          </div>
+          <div class="w-14 h-14 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-xl flex items-center justify-center border border-cyan-500/30">
+            <svg class="w-7 h-7 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-slate-700/50 p-6 hover:shadow-xl hover:border-slate-600/50 transition-all">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-slate-400 font-medium uppercase tracking-wide">Total Models</p>
+            <p class="text-4xl font-bold text-white mt-2">{{ totalModels }}</p>
+            <p class="text-xs text-slate-500 mt-2">Available models</p>
+          </div>
+          <div class="w-14 h-14 bg-gradient-to-br from-pink-500/20 to-rose-500/20 rounded-xl flex items-center justify-center border border-pink-500/30">
+            <svg class="w-7 h-7 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div class="bg-slate-800/80 backdrop-blur-xl rounded-xl shadow-lg border border-slate-700/50 p-8 mb-8">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-white">Recent Activity</h2>
+        <button class="text-sm text-red-400 hover:text-red-300 font-medium transition">
+          View All →
+        </button>
+      </div>
+      
+      <div class="space-y-4">
+        <!-- Empty State -->
+        <div class="text-center py-12 border-2 border-dashed border-slate-700 rounded-lg">
+          <svg class="w-12 h-12 text-slate-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <p class="text-slate-400 mb-2">No recent activity</p>
+          <p class="text-sm text-slate-500">Activity logs will appear here as actions are performed</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Admin Actions -->
+    <div class="bg-gradient-to-br from-red-500/20 to-purple-500/20 rounded-xl border border-red-400/30 p-8 backdrop-blur-sm">
+      <h2 class="text-2xl font-bold text-white mb-6">Admin Actions</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <button (click)="manageUsers()" class="bg-slate-800/80 backdrop-blur-xl hover:bg-slate-700/80 rounded-lg p-6 text-left transition border border-slate-700/50 hover:border-slate-600/50 hover:shadow-lg group">
+          <div class="w-12 h-12 bg-gradient-to-br from-red-500 to-purple-600 rounded-lg flex items-center justify-center mb-4 shadow-lg shadow-red-500/50 group-hover:shadow-red-500/70 transition">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-white mb-1">Manage Users</h3>
+          <p class="text-sm text-slate-400">View and manage user accounts</p>
+        </button>
+
+        <button class="bg-slate-800/80 backdrop-blur-xl hover:bg-slate-700/80 rounded-lg p-6 text-left transition border border-slate-700/50 hover:border-slate-600/50 hover:shadow-lg group">
+          <div class="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center mb-4 shadow-lg shadow-cyan-500/50 group-hover:shadow-cyan-500/70 transition">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-white mb-1">Analytics</h3>
+          <p class="text-sm text-slate-400">View platform statistics</p>
+        </button>
+
+        <button class="bg-slate-800/80 backdrop-blur-xl hover:bg-slate-700/80 rounded-lg p-6 text-left transition border border-slate-700/50 hover:border-slate-600/50 hover:shadow-lg group">
+          <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/50 group-hover:shadow-emerald-500/70 transition">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-white mb-1">Settings</h3>
+          <p class="text-sm text-slate-400">Configure platform settings</p>
+        </button>
+
+        <button class="bg-slate-800/80 backdrop-blur-xl hover:bg-slate-700/80 rounded-lg p-6 text-left transition border border-slate-700/50 hover:border-slate-600/50 hover:shadow-lg group">
+          <div class="w-12 h-12 bg-gradient-to-br from-pink-500 to-rose-600 rounded-lg flex items-center justify-center mb-4 shadow-lg shadow-pink-500/50 group-hover:shadow-pink-500/70 transition">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-white mb-1">Security</h3>
+          <p class="text-sm text-slate-400">Monitor security & permissions</p>
+        </button>
+
+      </div>
+    </div>
+
   </div>
 </div>

@@ -19,20 +19,33 @@
       <!-- Main Nav Links - Centered -->
       <div class="hidden md:flex space-x-6">
         @if (isAuthenticated$ | async) {
-          <a routerLink="/dashboard/models" class="text-gray-700 hover:text-gray-900 font-medium transition">Models</a>
-        }
-        @if (isAuthenticated$ | async) {
-          <a routerLink="/dashboard/datasets" class="text-gray-700 hover:text-gray-900 font-medium transition">Datasets</a>
+          @if ((role$ | async) === 'Admin') {
+            <a routerLink="/admin/users" class="text-gray-700 hover:text-gray-900 font-medium transition">Users</a>
+            <a routerLink="/dashboard/models" class="text-gray-700 hover:text-gray-900 font-medium transition">Models</a>
+            <a routerLink="/dashboard/datasets" class="text-gray-700 hover:text-gray-900 font-medium transition">Datasets</a>
+          }
+          @if ((role$ | async) === 'Manager') {
+            <a routerLink="/dashboard/models" class="text-gray-700 hover:text-gray-900 font-medium transition">Models</a>
+            <a routerLink="/dashboard/datasets" class="text-gray-700 hover:text-gray-900 font-medium transition">Datasets</a>
+          }
+          @if ((role$ | async) === 'Visitor') {
+            <a routerLink="/visitor/models" class="text-gray-700 hover:text-gray-900 font-medium transition">Models</a>
+            <a routerLink="/visitor/datasets" class="text-gray-700 hover:text-gray-900 font-medium transition">Datasets</a>
+          }
         }
       </div>
 
       <!-- Right Side Actions -->
-      <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-3">
         @if (!(isAuthenticated$ | async)) {
-          <a routerLink="/auth/login" class="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold rounded-lg transition shadow-sm">
+          <a routerLink="/auth/login" class="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium rounded-lg transition hover:bg-gray-50">
             Sign in
           </a>
+          <a routerLink="/auth/register" class="px-6 py-2 bg-linear-to-r from-yellow-400 via-orange-500 to-pink-500 hover:shadow-lg text-white font-semibold rounded-lg transition transform hover:-translate-y-0.5">
+            Sign up
+          </a>
         }
+        
         @if ((isAuthenticated$ | async)) {
           <button (click)="logout()" class="flex items-center space-x-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition border border-gray-300 shadow-sm">
             <mat-icon class="w-5 h-5">logout</mat-icon>

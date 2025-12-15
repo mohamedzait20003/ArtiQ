@@ -9,7 +9,11 @@ from app.controllers.auth_controller import AuthController
 from app.controllers.artifact_controller import ArtifactController
 from app.controllers.system_controller import SystemController
 from app.controllers.admin_controller import AdminController
-from app.types.auth_types import AuthenticationToken
+from app.types.auth_types import (
+    AuthenticationToken,
+    RegisterResponse,
+    LoginResponse
+)
 from app.middlewares.auth_middleware import (
     auth_optional,
     auth_required,
@@ -80,6 +84,35 @@ def register_api_routes(app) -> None:
         }
     )
 
+    Route.post(
+        '/register',
+        auth.register,
+        tags=['auth'],
+        response_model=RegisterResponse,
+        status_code=200,
+        responses={
+            200: {"description": "User registered successfully"},
+            400: {
+                "description": "Missing field(s) or passwords do not match"
+            }
+        }
+    )
+
+    Route.post(
+        '/login',
+        auth.login,
+        tags=['auth'],
+        response_model=LoginResponse,
+        status_code=200,
+        responses={
+            200: {"description": "User logged in successfully"},
+            400: {
+                "description": "Missing field(s) in the login request"
+            },
+            401: {"description": "Invalid email or password"}
+        }
+    )
+
     Route.delete(
         '/logout',
         auth.logout,
@@ -100,6 +133,17 @@ def register_api_routes(app) -> None:
             201: {"description": "User created successfully"},
             400: {"description": "Missing required fields"},
             409: {"description": "User with this email already exists"},
+            500: {"description": "Internal server error"}
+        }
+    )
+
+    Route.get(
+        '/admin/users',
+        admin.list_users,
+        tags=['admin'],
+        status_code=200,
+        responses={
+            200: {"description": "List of all users"},
             500: {"description": "Internal server error"}
         }
     )
@@ -165,6 +209,22 @@ def register_api_routes(app) -> None:
     Route.get(
         '/artifact/byName/{name}',
         artifacts.artifact_by_name_get,
+        tags=['artifacts'],
+        status_code=200
+    )
+
+    # Artifact by type and name (MUST be before other artifact routes)
+    Route.get(
+        '/artifact/{artifact_type}/byName/{name}',
+        artifacts.artifact_by_type_and_name_get,
+        tags=['artifacts'],
+        status_code=200
+    )
+
+    # First 10 artifacts by type (MUST be before other artifact routes)
+    Route.get(
+        '/artifact/{artifact_type}/first10',
+        artifacts.artifact_first_ten_by_type_get,
         tags=['artifacts'],
         status_code=200
     )

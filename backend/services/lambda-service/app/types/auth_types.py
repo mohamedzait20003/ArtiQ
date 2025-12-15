@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from typing import Optional
 
 
 class User(BaseModel):
@@ -33,10 +32,20 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     """Response model for successful login"""
     token: str
+    role: str
+    userData: dict
 
 
 class RegisterRequest(BaseModel):
     """Request model for user registration"""
+    name: str
     email: str
     password: str
-    name: Optional[str] = None
+    confirm_password: str
+
+
+class RegisterResponse(BaseModel):
+    """Response model for successful registration"""
+    token: str
+    role: str
+    userData: dict
