@@ -79,11 +79,14 @@ class LineageEvaluator:
             'architecture': None
         }
 
-        # Try to get HuggingFace info
-        hf_info = getattr(metadata, 'hf_info', None)
-        if isinstance(hf_info, dict):
-            # Check for config data
-            config = hf_info.get('config', {})
+        # Get model info directly
+        info = getattr(metadata, 'info', None)
+        card = getattr(metadata, 'card', None)
+
+        # Process ModelInfo object
+        if info:
+            # Get config
+            config = getattr(info, 'config', {})
             if isinstance(config, dict):
                 lineage['architecture'] = config.get(
                     'architectures', [None]
@@ -105,11 +108,19 @@ class LineageEvaluator:
                             'source': 'config._name_or_path'
                         })
 
-            # Check model card for additional lineage info
-            card = hf_info.get('card', {})
-            if isinstance(card, dict):
-                # Look for base_model in card metadata
-                card_base = card.get('base_model')
+            # Check card_data from ModelInfo
+            card_data = getattr(info, 'card_data', None)
+            if card_data:
+                # Convert to dict if needed
+                if hasattr(card_data, 'to_dict'):
+                    card_dict = card_data.to_dict()
+                elif isinstance(card_data, dict):
+                    card_dict = card_data
+                else:
+                    card_dict = {}
+
+                # Look for base_model in card
+                card_base = card_dict.get('base_model')
                 if card_base and card_base not in [
                     p['model_id'] for p in lineage['parents']
                 ]:
@@ -118,19 +129,39 @@ class LineageEvaluator:
                         'source': 'model_card.base_model'
                     })
 
-                # Look for parent models in tags
-                tags = card.get('tags', [])
-                if isinstance(tags, list):
-                    for tag in tags:
-                        if isinstance(tag, str) and 'base-model:' in tag:
-                            model_id = tag.split('base-model:')[1].strip()
-                            if model_id not in [
-                                p['model_id'] for p in lineage['parents']
-                            ]:
-                                lineage['parents'].append({
-                                    'model_id': model_id,
-                                    'source': 'model_card.tags'
-                                })
+        # Process ModelCardData object
+        if card:
+            # Convert to dict
+            if hasattr(card, 'to_dict'):
+                card_dict = card.to_dict()
+            elif isinstance(card, dict):
+                card_dict = card
+            else:
+                card_dict = {}
+
+            # Look for base_model
+            card_base = card_dict.get('base_model')
+            if card_base and card_base not in [
+                p['model_id'] for p in lineage['parents']
+            ]:
+                lineage['parents'].append({
+                    'model_id': card_base,
+                    'source': 'model_card.base_model'
+                })
+
+            # Look for parent models in tags
+            tags = card_dict.get('tags', [])
+            if isinstance(tags, list):
+                for tag in tags:
+                    if isinstance(tag, str) and 'base-model:' in tag:
+                        model_id = tag.split('base-model:')[1].strip()
+                        if model_id not in [
+                            p['model_id'] for p in lineage['parents']
+                        ]:
+                            lineage['parents'].append({
+                                'model_id': model_id,
+                                'source': 'model_card.tags'
+                            })
 
         # Check repo metadata for additional lineage info
         repo_metadata = getattr(metadata, 'repo_metadata', {})
@@ -153,6 +184,32 @@ class LineageEvaluator:
                         )
                         # Store pattern for reference
                         lineage['description_mentions'] = pattern
+
+        # Check README content for base model references
+        readme = getattr(metadata, 'readme', '')
+        if readme and isinstance(readme, str):
+            import re
+            # Look for model ID patterns after keywords
+            patterns = [
+                (r'(?:based on|fine-tuned from|derived from|'
+                 r'trained on top of)\s+(?:\[)?'
+                 r'([a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+)'),
+                (r'(?:base model|parent model|original model):'
+                 r'\s*(?:\[)?([a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+)'),
+                r'(?:https://huggingface\.co/)([a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+)',
+            ]
+            for pattern in patterns:
+                matches = re.findall(pattern, readme.lower(), re.IGNORECASE)
+                for match in matches:
+                    parent_ids = [p['model_id'] for p in lineage['parents']]
+                    if match and match not in parent_ids:
+                        lineage['parents'].append({
+                            'model_id': match,
+                            'source': 'readme'
+                        })
+                        logger.info(
+                            f"[LINEAGE] Found parent in README: {match}"
+                        )
 
         # If no parents found, check if model name suggests derivation
         if not lineage['parents']:

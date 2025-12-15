@@ -138,31 +138,31 @@ class BusFactorEvaluator:
 
                 # Downloads indicate community usage
                 if downloads > 1000000:
-                    contributor_estimate += 2.5
+                    contributor_estimate += 3.0
                 elif downloads > 500000:
-                    contributor_estimate += 2.0
+                    contributor_estimate += 2.5
                 elif downloads > 100000:
-                    contributor_estimate += 1.5
+                    contributor_estimate += 2.0
                 elif downloads > 50000:
-                    contributor_estimate += 1.0
+                    contributor_estimate += 1.5
                 elif downloads > 10000:
-                    contributor_estimate += 0.7
+                    contributor_estimate += 1.0
                 elif downloads > 1000:
-                    contributor_estimate += 0.5
+                    contributor_estimate += 0.6
 
                 # Likes indicate community engagement
                 if likes > 500:
-                    contributor_estimate += 2.0
+                    contributor_estimate += 2.5
                 elif likes > 200:
-                    contributor_estimate += 1.5
+                    contributor_estimate += 2.0
                 elif likes > 100:
-                    contributor_estimate += 1.2
+                    contributor_estimate += 1.5
                 elif likes > 50:
-                    contributor_estimate += 1.0
+                    contributor_estimate += 1.2
                 elif likes > 20:
-                    contributor_estimate += 0.7
+                    contributor_estimate += 0.9
                 elif likes > 5:
-                    contributor_estimate += 0.4
+                    contributor_estimate += 0.5
 
                 # File count suggests maintenance activity
                 if file_count > 100:

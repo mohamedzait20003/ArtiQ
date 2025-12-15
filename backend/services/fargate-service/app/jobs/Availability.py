@@ -238,13 +238,21 @@ class AvailabilityEvaluator:
     def _calculate_score(self, parsed_result: Dict[str, Any]) -> float:
         """Calculate final score from parsed result"""
         score = 0.0
-        if parsed_result["lists_training_datasets"]:
+        has_datasets = parsed_result["lists_training_datasets"]
+        has_hf_links = parsed_result["links_to_huggingface_datasets"]
+        has_code = parsed_result["links_to_code_repo"]
+        
+        if has_datasets:
             score += 0.45
-        if parsed_result["links_to_huggingface_datasets"]:
+        if has_hf_links:
             score += 0.1
-        if parsed_result["links_to_code_repo"]:
+        if has_code:
             score += 0.45
-
+        
+        # Bonus for having both datasets and code
+        if has_datasets and has_code:
+            score += 0.1  # Boost to 1.0 when both present
+        
         return min(1.0, score)
 
     def _create_success_result(

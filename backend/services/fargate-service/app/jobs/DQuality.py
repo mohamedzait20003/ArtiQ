@@ -88,6 +88,14 @@ class DatasetQualityEvaluator:
             # Calculate average score
             if datasets_analyzed > 0:
                 score = total_score / datasets_analyzed
+                
+                # Boost score if multiple quality datasets are found
+                if datasets_analyzed >= 2 and score >= 0.6:
+                    score = min(1.0, score * 1.15)
+                    logger.info(
+                        f"[DATASET_QUALITY] Boosted for {datasets_analyzed} "
+                        f"datasets: {score:.3f}"
+                    )
             else:
                 score = 0.0
 
@@ -102,6 +110,21 @@ class DatasetQualityEvaluator:
                     score = 0.6 * readme_score + 0.4 * score
                     logger.info(
                         f"[DATASET_QUALITY] Blended with README: "
+                        f"{score:.3f}"
+                    )
+                    
+            # Additional boost if well-known datasets are used
+            if datasets_analyzed > 0 and score >= 0.7:
+                dataset_ids = getattr(metadata, 'dataset_ids', [])
+                known_quality_datasets = [
+                    'wikipedia', 'bookcorpus', 'squad', 'glue',
+                    'imagenet', 'coco', 'ms-marco', 'natural-questions'
+                ]
+                if any(ds.lower() in known_quality_datasets 
+                       for ds in dataset_ids):
+                    score = min(1.0, score * 1.1)
+                    logger.info(
+                        f"[DATASET_QUALITY] Boosted for quality dataset: "
                         f"{score:.3f}"
                     )
 

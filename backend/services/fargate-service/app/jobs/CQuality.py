@@ -297,24 +297,34 @@ class CodeQualityEvaluator:
         Calculate code quality score from indicators.
 
         Scoring breakdown:
-        - Tests: 40%
-        - CI/CD: 25%
+        - Tests: 35%
+        - CI/CD: 20%
         - Dependency management: 20%
-        - Linting config: 10%
-        - README: 5%
+        - Linting config: 15%
+        - README: 10%
         """
         score = 0.5  # Baseline for having any code
 
         if has_tests:
-            score += 0.15
+            score += 0.20
         if has_ci:
-            score += 0.15
+            score += 0.10
         if has_dependency_mgmt:
-            score += 0.05
+            score += 0.10
         if has_lint_config:
-            score += 0.1
+            score += 0.05
         if has_readme:
             score += 0.05
+            
+        # Bonus for having multiple quality indicators
+        quality_count = sum([
+            has_tests, has_ci, has_dependency_mgmt,
+            has_lint_config, has_readme
+        ])
+        if quality_count >= 4:
+            score += 0.05
+        elif quality_count >= 3:
+            score += 0.03
 
         return min(1.0, score)
 

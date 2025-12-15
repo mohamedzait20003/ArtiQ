@@ -332,18 +332,36 @@ class ArtifactController:
             if status_code == 200:
                 return JSONResponse(content=response_data, status_code=200)
             elif status_code == 404:
-                raise HTTPException(status_code=404, detail=response_data.get('errorMessage', 'Artifact does not exist'))
+                raise HTTPException(
+                    status_code=404,
+                    detail=response_data.get(
+                        'errorMessage', 'Artifact does not exist'
+                    )
+                )
             elif status_code == 400:
-                raise HTTPException(status_code=400, detail=response_data.get('errorMessage', 'Invalid request'))
+                raise HTTPException(
+                    status_code=400,
+                    detail=response_data.get(
+                        'errorMessage', 'Invalid request'
+                    )
+                )
             else:
-                raise HTTPException(status_code=500, detail=response_data.get('errorMessage', 'Internal server error'))
+                raise HTTPException(
+                    status_code=500,
+                    detail=response_data.get(
+                        'errorMessage', 'Internal server error'
+                    )
+                )
         except HTTPException:
             raise
         except Exception as e:
             print(f"Error in artifact_cost controller: {str(e)}")
             raise HTTPException(
                 status_code=500,
-                detail=f"The artifact cost calculator encountered an error: {str(e)}"
+                detail=(
+                    f"The artifact cost calculator encountered "
+                    f"an error: {str(e)}"
+                )
             )
 
     async def artifact_by_name_get(
@@ -433,7 +451,10 @@ class ArtifactController:
         Assess license compatibility for fine-tune and
         inference usage (BASELINE)
         """
-        print(f"POST /artifact/model/{id}/license-check called with github_url={request.github_url}")
+        print(
+            f"POST /artifact/model/{id}/license-check called with "
+            f"github_url={request.github_url}"
+        )
         
         try:
             # Call the lambda handler
