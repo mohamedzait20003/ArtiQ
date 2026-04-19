@@ -1,77 +1,181 @@
-# ECE 30816-Project: AI/ML Models Manager and Evaluation
+# ArtiQ — AI/ML Artifact Registry & Evaluation Platform
 
-This project is a web application for managing and evaluating AI/ML models. It consists of a Python backend and an Angular frontend.
+ArtiQ is a full-stack platform for discovering, registering, and automatically scoring AI/ML artifacts (models and datasets) from GitHub and HuggingFace. It runs a multi-metric evaluation pipeline and surfaces a single trustworthiness score per artifact.
+
+---
+
+## Architecture
+
+```
+Angular Frontend (AWS Amplify)
+        │
+        ▼
+AWS API Gateway → Lambda Service (FastAPI + Mangum)
+                        │
+                        ▼ spawns ephemeral task
+                AWS Fargate (Evaluation Pipeline)
+                        │
+                        ▼
+                   MongoDB Atlas
+```
+
+**Stack**
+
+| Layer | Technology |
+|---|---|
+| Frontend | Angular 17, TypeScript, Node.js 22 |
+| API | Python 3.11, FastAPI, AWS Lambda (SAM) |
+| Evaluation | AWS Fargate, Docker (ECR) |
+| Database | MongoDB Atlas |
+| Auth | JWT + bcrypt |
+| CI/CD | GitHub Actions |
+| Cloud | AWS (Lambda, Fargate, ECR, Amplify, S3) |
+
+---
+
+## Evaluation Pipeline
+
+When an artifact is submitted, Fargate runs a 7-step pipeline:
+
+```
+1. Validate Artifact
+2. Fetch Metadata (GitHub / HuggingFace)
+3. Parallel Evaluation ──┬── Bus Factor
+                         ├── Performance Claims
+                         ├── Ramp-up Time
+                         ├── Size Score
+                         ├── License
+                         ├── Availability
+                         ├── Code Quality
+                         ├── Dataset Quality
+                         ├── Reviewedness
+                         └── Download & Upload
+4. Lineage Extraction
+5. Tree Score Calculation
+6. Aggregate Scores → Net Score
+7. Save Ratings to DB
+```
+
+The **Net Score** is the average across all applicable metrics, giving each artifact a single trustworthiness rating.
+
+---
 
 ## Project Structure
 
-The project is organized into two main parts:
+```
+.
+├── frontend/                        # Angular application
+└── backend/
+    ├── lib/                         # Shared utilities (AWS, cache, pipeline, ORM)
+    ├── database/
+    │   ├── migrations/              # Schema migrations
+    │   └── seeders/                 # Seed data
+    ├── scripts/                     # DB, key generation, and run scripts
+    └── services/
+        ├── lambda-service/          # FastAPI REST API (deployed via AWS SAM)
+        └── fargate-service/         # Evaluation pipeline (deployed via Docker/ECR)
+            └── app/
+                ├── jobs/            # One file per pipeline step/metric
+                ├── models/          # MongoDB ODM models
+                ├── providers/       # GitHub, HuggingFace, and LLM agents
+                └── utils/           # Encryption, artifact helpers
+```
 
--   `frontend/`: Contains the Angular frontend application.
--   `backend/`: Contains the Python backend server.
+---
 
 ## Getting Started
 
 ### Prerequisites
 
--   [Node.js and npm](https://nodejs.org/)
--   [Python 3](https://www.python.org/downloads/)
--   [Angular CLI](https://angular.io/cli) (`npm install -g @angular/cli`)
+- [Node.js 22+](https://nodejs.org/)
+- [Python 3.11+](https://www.python.org/downloads/)
+- [Angular CLI](https://angular.io/cli) — `npm install -g @angular/cli`
+- [Docker](https://www.docker.com/) (for Fargate service)
+- [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html) (for Lambda deployment)
+- MongoDB instance (local or Atlas)
+
+### Environment Setup
+
+Copy the example env file and fill in your values:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Required variables:
+
+```
+MONGODB_URI=
+ARTIFACT_ENCRYPTION_KEY=
+JWT_SECRET_KEY=
+PASSWORD_SALT=
+GH_TOKEN=
+HF_TOKEN=
+AWS_REGION=us-east-2
+```
+
+Generate secrets with the provided scripts:
+
+```bash
+python backend/scripts/generate_jwt_secret.py
+python backend/scripts/generate_key.py
+python backend/scripts/generate_salt.py
+```
 
 ### Installation
 
-1.  **Clone the repository:**
-    ```bash
-    git clone <your-repository-url>
-    cd <your-project-directory>
-    ```
+```bash
+# Backend dependencies
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\Activate.ps1
+pip install -r backend/requirements.txt
 
-2.  **Set up Python Virtual Environment:**
-    It is recommended to use a virtual environment to manage Python dependencies.
+# Frontend dependencies
+cd frontend && npm install && cd ..
+```
 
-    - Create a virtual environment (e.g., named `.venv`):
-      ```bash
-      python -m venv .venv
-      ```
+### Database Setup
 
-    - Activate the virtual environment:
-      - On Windows:
-        ```powershell
-        .venv\Scripts\Activate.ps1
-        ```
-      - On macOS/Linux:
-        ```bash
-        source .venv/bin/activate
-        ```
+```bash
+python backend/scripts/migrate.py   # Run migrations
+python backend/scripts/seed.py      # Seed roles and admin users
+```
 
-3.  **Install backend dependencies:**
-    With the virtual environment activated, install the required packages:
-    ```bash
-    pip install -r backend/requirements.txt
-    ```
+### Running Locally
 
-4.  **Install frontend dependencies:**
-    ```bash
-    cd frontend
-    npm install
-    cd ..
-    ```
+```bash
+# Lambda API (backend)
+cd backend/services/lambda-service
+python -m uvicorn app.main:app --reload
 
-### Running the Application
+# Frontend
+cd frontend
+ng serve
+```
 
-1.  **Start the backend server:**
-    ```bash
-    cd backend
-    python src/main.py
-    ```
-    The backend server will start.
+Navigate to `http://localhost:4200`.
 
-2.  **Start the frontend development server:**
-    ```bash
-    cd frontend
-    ng serve
-    ```
-    Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+---
 
-## Further Help
+## CI/CD
 
-To get more help with the Angular CLI, use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+GitHub Actions runs on every push and pull request:
+
+| Job | Trigger |
+|---|---|
+| Lambda — test & lint | All branches |
+| Fargate — lint & validate | All branches |
+| Frontend — build & test | All branches |
+| Build & push Fargate image to ECR | Push to `main` |
+| Deploy Lambda via AWS SAM | Push to `main` |
+| Deploy frontend to AWS Amplify | Push to `main` |
+
+---
+
+## Roles
+
+| Role | Access |
+|---|---|
+| Admin | Full access — manage users, roles, artifacts |
+| Manager | Submit and review artifacts |
+| User | Browse and view artifact ratings |
