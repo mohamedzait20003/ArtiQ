@@ -125,6 +125,11 @@ python backend/scripts/generate_salt.py
 ### Installation
 
 ```bash
+git clone https://github.com/mohamedzait20003/ArtiQ.git
+cd ArtiQ
+```
+
+```bash
 # Backend dependencies
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\Activate.ps1
